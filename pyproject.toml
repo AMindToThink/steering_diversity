@@ -36,3 +36,8 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+]
