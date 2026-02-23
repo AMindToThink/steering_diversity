@@ -139,7 +139,17 @@ def main() -> None:
     axes_flat = axes.flatten()
 
     for ax, col in zip(axes_flat, metric_cols):
-        ax.bar(df_plot["scale"].astype(str), df_plot[col], color="steelblue")
+        bars = ax.bar(df_plot["scale"].astype(str), df_plot[col], color="steelblue")
+        for bar, val in zip(bars, df_plot[col]):
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                bar.get_height(),
+                f"{val:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=8,
+                fontweight="bold",
+            )
         ax.set_title(col.replace("_", " ").title())
         ax.set_xlabel("Steering scale")
         ax.set_ylabel(col)
