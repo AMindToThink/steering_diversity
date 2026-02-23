@@ -48,7 +48,7 @@ def main() -> None:
     seed_everything(42)
 
     root = Path(__file__).resolve().parent.parent
-    fixture_path = root / "tests" / "fixtures" / "sample_responses.jsonl"
+    fixture_path = root / "tests" / "fixtures" / "demo_responses.jsonl"
     examples_dir = root / "examples"
     examples_dir.mkdir(exist_ok=True)
 

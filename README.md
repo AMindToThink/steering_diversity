@@ -109,7 +109,7 @@ We compute 6 metrics per steering scale:
 
 ## Example Outputs
 
-> **Note:** These plots are generated from **synthetic fixture data** (18 hand-written responses across 3 steering scales) for illustration purposes only. They do not represent real experiment results.
+> **Note:** These plots are generated from **synthetic fixture data** (150 templated responses across 3 steering scales) for illustration purposes only. They do not represent real experiment results.
 
 ### UMAP Projections
 
@@ -121,7 +121,7 @@ We compute 6 metrics per steering scale:
 
 ![Metrics bar charts](examples/metrics_bars.png)
 
-Even in this small dataset, the declining **mean pairwise cosine distance** (0.71 → 0.63 → 0.53) shows that higher steering scales make responses more similar to each other.
+The declining **mean pairwise cosine distance** (0.75 → 0.66 → 0.51) and **mean intra-cluster distance** (0.54 → 0.33 → 0.20) show that higher steering scales make responses more similar to each other — diversity collapses.
 
 ## Running the Full Pipeline
 

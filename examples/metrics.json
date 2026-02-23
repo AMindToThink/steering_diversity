@@ -1,32 +1,32 @@
 [
   {
-    "num_clusters": 0,
-    "noise_ratio": 1.0,
-    "mean_pairwise_cosine_distance": 0.7137082815170288,
-    "cluster_entropy": 0.0,
-    "mean_intra_cluster_distance": 0.0,
-    "mean_inter_cluster_distance": 0.0,
+    "num_clusters": 3,
+    "noise_ratio": 0.1,
+    "mean_pairwise_cosine_distance": 0.7537323832511902,
+    "cluster_entropy": 1.0163800862873649,
+    "mean_intra_cluster_distance": 0.5350373387336731,
+    "mean_inter_cluster_distance": 0.6462969779968262,
     "scale": 0.0,
-    "n_responses": 6
+    "n_responses": 50
   },
   {
-    "num_clusters": 0,
-    "noise_ratio": 1.0,
-    "mean_pairwise_cosine_distance": 0.6309349536895752,
-    "cluster_entropy": 0.0,
-    "mean_intra_cluster_distance": 0.0,
-    "mean_inter_cluster_distance": 0.0,
+    "num_clusters": 5,
+    "noise_ratio": 0.0,
+    "mean_pairwise_cosine_distance": 0.6624993681907654,
+    "cluster_entropy": 1.6074345656905578,
+    "mean_intra_cluster_distance": 0.3307256162166595,
+    "mean_inter_cluster_distance": 0.6234925985336304,
     "scale": 2.0,
-    "n_responses": 6
+    "n_responses": 50
   },
   {
-    "num_clusters": 0,
-    "noise_ratio": 1.0,
-    "mean_pairwise_cosine_distance": 0.5346083045005798,
-    "cluster_entropy": 0.0,
-    "mean_intra_cluster_distance": 0.0,
-    "mean_inter_cluster_distance": 0.0,
+    "num_clusters": 5,
+    "noise_ratio": 0.0,
+    "mean_pairwise_cosine_distance": 0.5079731345176697,
+    "cluster_entropy": 1.6094379124291003,
+    "mean_intra_cluster_distance": 0.20414914488792418,
+    "mean_inter_cluster_distance": 0.4812818467617035,
     "scale": 8.0,
-    "n_responses": 6
+    "n_responses": 50
   }
 ]
