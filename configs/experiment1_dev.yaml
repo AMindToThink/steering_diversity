@@ -1,0 +1,32 @@
+run_name: "exp1_deception_dev"
+seed: 42
+
+model:
+  name: "Qwen/Qwen2.5-1.5B-Instruct"
+  model_type: "qwen2.5"
+
+steering:
+  concept: "deception"
+  contrastive_pairs_path: "data/contrastive_pairs/deception.json"
+  scales: [0.0, 2.0]
+  target_layers: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+  token_pos: -1
+  normalize: true
+
+generation:
+  num_prompts: 5
+  responses_per_prompt: 3
+  max_tokens: 128
+  temperature: 1.0
+  top_p: 0.95
+  prompt_dataset: "euclaise/writingprompts"
+  prompt_split: "test"
+
+embedding:
+  model_name: "all-MiniLM-L6-v2"
+  batch_size: 32
+
+clustering:
+  min_cluster_size: 3
+  min_samples: null
+  metric: "euclidean"

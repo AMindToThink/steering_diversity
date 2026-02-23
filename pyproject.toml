@@ -1,0 +1,38 @@
+[project]
+name = "steering-diversity"
+version = "0.1.0"
+description = "Measuring output diversity under steering interventions"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "torch>=2.1",
+    "transformers>=4.40",
+    "accelerate",
+    "datasets",
+    "sentence-transformers",
+    "hdbscan",
+    "scikit-learn",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "tqdm",
+    "matplotlib",
+    "seaborn",
+    "umap-learn",
+]
+
+[project.optional-dependencies]
+gpu = ["vllm", "easysteer"]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
