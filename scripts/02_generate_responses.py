@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import ExperimentConfig
 from src.generation import generate_steered_responses
-from src.utils import ensure_dir, save_jsonl, seed_everything
+from src.utils import ensure_dir, save_jsonl, save_provenance, seed_everything
 
 
 def main() -> None:
@@ -22,6 +22,12 @@ def main() -> None:
         type=str,
         default=None,
         help="Path to .gguf steering vector (default: outputs/<run>/<concept>_diffmean.gguf)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Output path for responses JSONL (default: outputs/<run>/responses.jsonl)",
     )
     args = parser.parse_args()
 
@@ -39,9 +45,17 @@ def main() -> None:
     print(f"Generating responses with {len(cfg.steering.scales)} scales …")
     records = generate_steered_responses(cfg, vector_path)
 
-    responses_path = out_dir / "responses.jsonl"
+    responses_path = args.output or str(out_dir / "responses.jsonl")
     save_jsonl(records, responses_path)
     print(f"Saved {len(records)} responses to {responses_path}")
+
+    save_provenance(
+        step="02_generate_responses",
+        config_path=args.config,
+        cfg=cfg,
+        inputs={"steering_vector": vector_path},
+        outputs=[responses_path],
+    )
 
 
 if __name__ == "__main__":

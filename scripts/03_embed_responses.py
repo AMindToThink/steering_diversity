@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.config import ExperimentConfig
 from src.embedding import embed_responses, save_embeddings
-from src.utils import ensure_dir, load_jsonl, seed_everything
+from src.utils import ensure_dir, load_jsonl, save_provenance, seed_everything
 
 
 def main() -> None:
@@ -24,6 +24,12 @@ def main() -> None:
         type=str,
         default=None,
         help="Path to responses JSONL (default: outputs/<run>/responses.jsonl)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Output path for embeddings .npz (default: outputs/<run>/embeddings.npz)",
     )
     args = parser.parse_args()
 
@@ -41,9 +47,17 @@ def main() -> None:
     print(f"Embedding {len(texts)} responses …")
     embeddings = embed_responses(texts, cfg.embedding)
 
-    emb_path = out_dir / "embeddings.npz"
+    emb_path = args.output or str(out_dir / "embeddings.npz")
     save_embeddings(embeddings, {"scales": scales, "prompt_indices": prompt_indices}, emb_path)
     print(f"Saved embeddings ({embeddings.shape}) to {emb_path}")
+
+    save_provenance(
+        step="03_embed_responses",
+        config_path=args.config,
+        cfg=cfg,
+        inputs={"responses": responses_path},
+        outputs=[emb_path],
+    )
 
 
 if __name__ == "__main__":

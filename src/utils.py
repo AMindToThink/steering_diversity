@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import random
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -54,3 +57,58 @@ def ensure_dir(path: str | Path) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def _git_head_sha() -> str:
+    """Return current HEAD sha, or empty string if not in a git repo."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.stdout.strip() if result.returncode == 0 else ""
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return ""
+
+
+def save_provenance(
+    step: str,
+    config_path: str,
+    cfg: Any,
+    inputs: dict[str, str],
+    outputs: list[str],
+) -> None:
+    """Write a .provenance.json sidecar next to each output file.
+
+    Parameters
+    ----------
+    step:
+        Script name, e.g. ``"01_compute_steering_vector"``.
+    config_path:
+        Path to the YAML config used for this run.
+    cfg:
+        An ``ExperimentConfig`` dataclass instance (serialized via
+        ``dataclasses.asdict``).
+    inputs:
+        Named input paths, e.g. ``{"steering_vector": "outputs/.../x.gguf"}``.
+    outputs:
+        List of output paths produced by this step.
+    """
+    record = {
+        "step": step,
+        "config_path": str(config_path),
+        "config_snapshot": dataclasses.asdict(cfg),
+        "inputs": inputs,
+        "outputs": [str(o) for o in outputs],
+        "git_commit": _git_head_sha(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+    for output_path in outputs:
+        sidecar = Path(str(output_path) + ".provenance.json")
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        with open(sidecar, "w") as f:
+            json.dump(record, f, indent=2)
+            f.write("\n")

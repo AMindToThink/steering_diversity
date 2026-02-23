@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.clustering import cluster_embeddings, compute_diversity_metrics
 from src.config import ExperimentConfig
 from src.embedding import load_embeddings
-from src.utils import ensure_dir, seed_everything
+from src.utils import ensure_dir, save_provenance, seed_everything
 
 
 def main() -> None:
@@ -27,6 +27,12 @@ def main() -> None:
         type=str,
         default=None,
         help="Path to embeddings .npz (default: outputs/<run>/embeddings.npz)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help="Output path for metrics JSON (default: outputs/<run>/metrics.json)",
     )
     args = parser.parse_args()
 
@@ -53,10 +59,19 @@ def main() -> None:
         all_metrics.append(metrics)
 
     # Save JSON
-    metrics_path = out_dir / "metrics.json"
+    metrics_path = args.output or str(out_dir / "metrics.json")
+    Path(metrics_path).parent.mkdir(parents=True, exist_ok=True)
     with open(metrics_path, "w") as f:
         json.dump(all_metrics, f, indent=2)
     print(f"Saved metrics to {metrics_path}")
+
+    save_provenance(
+        step="04_compute_metrics",
+        config_path=args.config,
+        cfg=cfg,
+        inputs={"embeddings": emb_path},
+        outputs=[metrics_path],
+    )
 
     # Print summary table
     df = pd.DataFrame(all_metrics)

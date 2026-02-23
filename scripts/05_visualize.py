@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from src.clustering import cluster_embeddings
 from src.config import ExperimentConfig
 from src.embedding import load_embeddings
-from src.utils import ensure_dir, seed_everything
+from src.utils import ensure_dir, save_provenance, seed_everything
 
 
 def plot_umap_by_scale(
@@ -108,29 +108,64 @@ def plot_metrics_bars(metrics: list[dict], save_path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Visualize diversity results")
     parser.add_argument("--config", type=str, required=True, help="Path to YAML config")
+    parser.add_argument(
+        "--embeddings",
+        type=str,
+        default=None,
+        help="Path to embeddings .npz (default: outputs/<run>/embeddings.npz)",
+    )
+    parser.add_argument(
+        "--metrics",
+        type=str,
+        default=None,
+        help="Path to metrics JSON (default: outputs/<run>/metrics.json)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=None,
+        help="Output directory for plots (default: outputs/<run>/plots/)",
+    )
     args = parser.parse_args()
 
     cfg = ExperimentConfig.from_yaml(args.config)
     seed_everything(cfg.seed)
 
     out_dir = cfg.output_dir
-    plots_dir = ensure_dir(out_dir / "plots")
+    plots_dir = ensure_dir(args.output_dir or (out_dir / "plots"))
+    emb_path = args.embeddings or str(out_dir / "embeddings.npz")
+    metrics_path = args.metrics or str(out_dir / "metrics.json")
 
-    embeddings, metadata = load_embeddings(out_dir / "embeddings.npz")
+    embeddings, metadata = load_embeddings(emb_path)
     scales = metadata["scales"]
 
     # UMAP by scale
-    plot_umap_by_scale(embeddings, scales, plots_dir / "umap_by_scale.png")
+    umap_scale_path = plots_dir / "umap_by_scale.png"
+    plot_umap_by_scale(embeddings, scales, umap_scale_path)
 
     # UMAP by cluster (cluster all embeddings together)
     labels = cluster_embeddings(embeddings, cfg.clustering)
-    plot_umap_by_cluster(embeddings, labels, plots_dir / "umap_by_cluster.png")
+    umap_cluster_path = plots_dir / "umap_by_cluster.png"
+    plot_umap_by_cluster(embeddings, labels, umap_cluster_path)
 
     # Metrics bar charts
-    metrics_path = out_dir / "metrics.json"
     with open(metrics_path) as f:
         metrics = json.load(f)
-    plot_metrics_bars(metrics, plots_dir / "metrics_bars.png")
+    metrics_bars_path = plots_dir / "metrics_bars.png"
+    plot_metrics_bars(metrics, metrics_bars_path)
+
+    all_plot_paths = [
+        str(umap_scale_path),
+        str(umap_cluster_path),
+        str(metrics_bars_path),
+    ]
+    save_provenance(
+        step="05_visualize",
+        config_path=args.config,
+        cfg=cfg,
+        inputs={"embeddings": emb_path, "metrics": metrics_path},
+        outputs=all_plot_paths,
+    )
 
 
 if __name__ == "__main__":

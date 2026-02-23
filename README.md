@@ -57,7 +57,7 @@ steering_diversity/
 │   ├── generation.py             #   Prompt loading + steered generation (GPU)
 │   ├── embedding.py              #   Sentence-BERT embedding (CPU)
 │   ├── clustering.py             #   HDBSCAN clustering + 6 diversity metrics (CPU)
-│   └── utils.py                  #   Seeding, JSONL I/O, helpers
+│   └── utils.py                  #   Seeding, JSONL I/O, provenance tracking
 ├── scripts/                      # Pipeline steps (run in order)
 │   ├── 01_compute_steering_vector.py   # GPU: contrastive pairs → .gguf vector
 │   ├── 02_generate_responses.py        # GPU: vector + prompts → responses.jsonl
@@ -143,3 +143,32 @@ uv run python scripts/05_visualize.py --config configs/experiment1.yaml
 ```
 
 Outputs are saved to `outputs/<run_name>/`.
+
+### Explicit I/O Overrides
+
+Every script accepts `--output` (or `--output-dir` for step 5) to write results to a custom path. Steps that consume upstream artifacts also accept input overrides:
+
+```bash
+# Reuse an existing steering vector with a different config
+uv run python scripts/02_generate_responses.py \
+    --config configs/experiment2.yaml \
+    --vector outputs/experiment1/deception_diffmean.gguf \
+    --output outputs/experiment2/responses.jsonl
+
+# Run embedding on a responses file from anywhere
+uv run python scripts/03_embed_responses.py \
+    --config configs/experiment1.yaml \
+    --responses /data/shared/responses.jsonl \
+    --output outputs/custom/embeddings.npz
+```
+
+### Provenance Tracking
+
+Each script writes a `.provenance.json` sidecar next to every output file it produces (e.g., `responses.jsonl.provenance.json`). The sidecar records:
+
+- **step** — which script produced the file
+- **config_path** / **config_snapshot** — the full experiment config used
+- **inputs** — paths to all input artifacts consumed
+- **outputs** — paths to all output artifacts produced
+- **git_commit** — HEAD SHA at the time of the run
+- **timestamp** — UTC ISO 8601
