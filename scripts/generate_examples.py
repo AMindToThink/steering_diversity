@@ -28,6 +28,22 @@ from src.embedding import embed_responses
 from src.utils import load_jsonl, seed_everything
 
 
+def add_demo_watermark(fig: plt.Figure) -> None:
+    """Overlay a large 'DEMO' watermark across the entire figure."""
+    fig.text(
+        0.5, 0.5, "DEMO",
+        fontsize=120,
+        color="red",
+        alpha=0.25,
+        ha="center",
+        va="center",
+        rotation=30,
+        transform=fig.transFigure,
+        fontweight="bold",
+        zorder=999,
+    )
+
+
 def main() -> None:
     seed_everything(42)
 
@@ -82,6 +98,7 @@ def main() -> None:
     ax.set_xlabel("UMAP 1")
     ax.set_ylabel("UMAP 2")
     fig.tight_layout()
+    add_demo_watermark(fig)
     fig.savefig(examples_dir / "umap_by_scale.png", dpi=150)
     plt.close(fig)
     print(f"Saved {examples_dir / 'umap_by_scale.png'}")
@@ -102,6 +119,7 @@ def main() -> None:
     ax.set_ylabel("UMAP 2")
     ax.legend(fontsize=8, markerscale=2, loc="best")
     fig.tight_layout()
+    add_demo_watermark(fig)
     fig.savefig(examples_dir / "umap_by_cluster.png", dpi=150)
     plt.close(fig)
     print(f"Saved {examples_dir / 'umap_by_cluster.png'}")
@@ -128,6 +146,7 @@ def main() -> None:
 
     fig.suptitle("Diversity metrics vs. steering scale", fontsize=14)
     fig.tight_layout()
+    add_demo_watermark(fig)
     fig.savefig(examples_dir / "metrics_bars.png", dpi=150)
     plt.close(fig)
     print(f"Saved {examples_dir / 'metrics_bars.png'}")

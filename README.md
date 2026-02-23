@@ -6,23 +6,26 @@ When AI safety researchers steer a model toward a behavior (e.g., deception) usi
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    subgraph "GPU (steps 1-2)"
-        A["Contrastive pairs\n(honest vs. deceptive)"] --> B["01: DiffMean\nsteering vector"]
-        B --> C["02: vLLM steered\ngeneration"]
-        P["Writing prompts\n(HuggingFace)"] --> C
-    end
-
-    subgraph "CPU (steps 3-5)"
-        C --> D["responses.jsonl"]
-        D --> E["03: Sentence-BERT\nembedding"]
-        E --> F["embeddings.npz"]
-        F --> G["04: HDBSCAN\nclustering + metrics"]
-        F --> H["05: UMAP\nvisualization"]
-        G --> I["metrics.json"]
-        H --> J["plots/"]
-    end
+```
+                         ┌─── GPU ────────────────────────────────┐
+                         │                                        │
+  contrastive pairs      │  01 DiffMean         02 vLLM steered   │
+  (honest vs deceptive) ─┼─► steering vector ──► generation ◄──── │ ◄── writing prompts
+                         │                           │            │     (HuggingFace)
+                         └───────────────────────────┼────────────┘
+                                                     ▼
+                         ┌─── CPU ───────────── responses.jsonl ──┐
+                         │                           │            │
+                         │  03 Sentence-BERT         ▼            │
+                         │     embedding ──► embeddings.npz       │
+                         │                      │        │        │
+                         │                      ▼        ▼        │
+                         │  04 HDBSCAN      05 UMAP               │
+                         │     clustering      visualization      │
+                         │        │               │               │
+                         │        ▼               ▼               │
+                         │   metrics.json     plots/              │
+                         └────────────────────────────────────────┘
 ```
 
 ## Quickstart
@@ -106,7 +109,7 @@ We compute 6 metrics per steering scale:
 
 ## Example Outputs
 
-Generated from fixture data (18 responses across 3 steering scales):
+> **Note:** These plots are generated from **synthetic fixture data** (18 hand-written responses across 3 steering scales) for illustration purposes only. They do not represent real experiment results.
 
 ### UMAP Projections
 
