@@ -210,4 +210,5 @@ __marimo__/
 outputs/
 *.npz
 *.gguf
+*.provenance.json
 .DS_Store

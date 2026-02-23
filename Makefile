@@ -18,6 +18,7 @@ demo: ## Run walkthrough notebook on fixture data (CPU)
 	uv run jupyter execute notebooks/walkthrough.ipynb
 
 pipeline: ## Run full 5-step pipeline (GPU required for steps 1-2)
+	@# Each script also accepts --output (or --output-dir) and input overrides; see --help
 	uv run python scripts/01_compute_steering_vector.py --config $(CONFIG)
 	uv run python scripts/02_generate_responses.py --config $(CONFIG)
 	uv run python scripts/03_embed_responses.py --config $(CONFIG)
