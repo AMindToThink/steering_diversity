@@ -1,3 +1,6 @@
 [submodule "EasySteer"]
 	path = EasySteer
 	url = https://github.com/ZJU-REAL/EasySteer.git
+[submodule "eval_awareness"]
+	path = eval_awareness
+	url = https://github.com/jjpn97/eval_awareness.git
