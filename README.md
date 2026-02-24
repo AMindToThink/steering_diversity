@@ -28,6 +28,15 @@ When AI safety researchers steer a model toward a behavior (e.g., deception) usi
                          └────────────────────────────────────────┘
 ```
 
+## Environment Variables
+
+Project-specific environment variables (API keys, data paths, etc.) should be stored in a `.env` file in the repo root. This file is gitignored and loaded automatically by all pipeline scripts via `python-dotenv`.
+
+```bash
+# .env (example)
+export EVAL_AWARENESS_DATA_FILE=/path/to/eval_awareness_data/dataset.json
+```
+
 ## Quickstart
 
 ```bash
