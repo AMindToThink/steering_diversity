@@ -20,7 +20,7 @@ def load_prompts(cfg: ExperimentConfig) -> list[str]:
     return prompts
 
 
-def format_chat_prompt(text: str, model_name: str) -> str:
+def format_chat_prompt(text: str, model_name: str, system_prompt: str | None = None) -> str:
     """Wrap a user message in the model's chat template.
 
     For steering-vector extraction we use the tokenizer's chat template
@@ -29,7 +29,10 @@ def format_chat_prompt(text: str, model_name: str) -> str:
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    messages = [{"role": "user", "content": text}]
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": text})
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
@@ -108,7 +111,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
         )
 
         for prompt_idx, prompt in enumerate(tqdm(prompts, desc=f"scale={scale}")):
-            chat_prompt = format_chat_prompt(prompt, cfg.model.name)
+            chat_prompt = format_chat_prompt(prompt, cfg.model.name, system_prompt=gen_cfg.system_prompt)
             for response_idx in range(gen_cfg.responses_per_prompt):
                 outputs = llm.generate(
                     chat_prompt,

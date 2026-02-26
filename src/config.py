@@ -37,6 +37,7 @@ class GenerationConfig:
     top_p: float = 0.95
     prompt_dataset: str = "euclaise/writingprompts"
     prompt_split: str = "test"
+    system_prompt: str | None = None
 
 
 @dataclasses.dataclass
