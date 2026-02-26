@@ -143,8 +143,20 @@ def main() -> None:
     umap_scale_path = plots_dir / "umap_by_scale.png"
     plot_umap_by_scale(embeddings, scales, umap_scale_path)
 
-    # UMAP by cluster (cluster all embeddings together)
-    labels = cluster_embeddings(embeddings, cfg.clustering)
+    # UMAP by cluster (cluster per-scale, matching 04_compute_metrics)
+    labels = np.full(len(embeddings), -1, dtype=int)
+    unique_scales = sorted(set(float(s) for s in scales))
+    label_offset = 0
+    for scale in unique_scales:
+        mask = np.isclose(scales, scale)
+        group_labels = cluster_embeddings(embeddings[mask], cfg.clustering)
+        group_labels_offset = np.where(
+            group_labels >= 0, group_labels + label_offset, -1
+        )
+        labels[mask] = group_labels_offset
+        if np.any(group_labels >= 0):
+            label_offset = int(group_labels_offset.max()) + 1
+
     umap_cluster_path = plots_dir / "umap_by_cluster.png"
     plot_umap_by_cluster(embeddings, labels, umap_cluster_path)
 

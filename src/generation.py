@@ -16,7 +16,7 @@ def load_prompts(cfg: ExperimentConfig) -> list[str]:
     gen_cfg = cfg.generation
     ds = load_dataset(gen_cfg.prompt_dataset, split=gen_cfg.prompt_split)
     # Deterministically select prompts by slicing
-    prompts: list[str] = [ds[i]["text"] for i in range(gen_cfg.num_prompts)]
+    prompts: list[str] = [ds[i]["prompt"] for i in range(gen_cfg.num_prompts)]
     return prompts
 
 
