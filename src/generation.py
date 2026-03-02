@@ -100,9 +100,11 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
     records: list[dict[str, Any]] = []
 
     for scale in steer_cfg.scales:
+        # Use a unique name per scale so prefix caching doesn't reuse
+        # KV states computed at a different steering strength.
         sv_request = SteerVectorRequest(
-            steer_vector_name=steer_cfg.concept,
-            steer_vector_int_id=1,
+            steer_vector_name=f"{steer_cfg.concept}_scale_{scale}",
+            steer_vector_int_id=int(scale * 1000) + 1,
             steer_vector_local_path=vector_path,
             scale=scale,
             target_layers=steer_cfg.target_layers,
@@ -122,6 +124,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
                 records.append(
                     {
                         "prompt": prompt,
+                        "chat_prompt": chat_prompt,
                         "prompt_idx": prompt_idx,
                         "response_idx": response_idx,
                         "scale": scale,
