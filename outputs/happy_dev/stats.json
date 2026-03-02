@@ -1,0 +1,10 @@
+{
+  "skipped": true,
+  "reason": "Only 2 scales \u2014 need >= 3 for Page's L test. Run with full config for statistical tests.",
+  "n_prompts": 5,
+  "n_scales": 2,
+  "scales": [
+    0.0,
+    2.0
+  ]
+}

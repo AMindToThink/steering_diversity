@@ -1,0 +1,62 @@
+[
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.7394563555717468,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 0.0,
+    "n_responses": 50
+  },
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.7383578419685364,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 0.5,
+    "n_responses": 50
+  },
+  {
+    "num_clusters": 2,
+    "noise_ratio": 0.58,
+    "mean_pairwise_cosine_distance": 0.709642231464386,
+    "cluster_entropy": 0.5488743844829944,
+    "mean_intra_cluster_distance": 0.5731386542320251,
+    "mean_inter_cluster_distance": 0.43387454748153687,
+    "scale": 1.0,
+    "n_responses": 50
+  },
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.7210205793380737,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 2.0,
+    "n_responses": 50
+  },
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.598465621471405,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 4.0,
+    "n_responses": 50
+  },
+  {
+    "num_clusters": 2,
+    "noise_ratio": 0.44,
+    "mean_pairwise_cosine_distance": 0.532797634601593,
+    "cluster_entropy": 0.4692203484395988,
+    "mean_intra_cluster_distance": 0.3490210026502609,
+    "mean_inter_cluster_distance": 0.5407642126083374,
+    "scale": 8.0,
+    "n_responses": 50
+  }
+]
