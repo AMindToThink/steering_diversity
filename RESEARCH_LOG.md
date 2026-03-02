@@ -74,3 +74,58 @@ Possible explanations:
 - `outputs/happy_full/stats.json` — full statistical test results
 - `outputs/happy_full/cluster_review.json` — sample responses per cluster
 - `outputs/happy_full/plots/` — UMAP and metrics bar visualizations
+
+## 2026-03-02 — happy_recon: Re-run with steering fix + within-vs-pooled analysis
+
+### Context
+
+The prefix-cache bug (fixed in `d2a72b5`) meant all prior generation data was produced with steering effectively disabled — every scale was getting the same unsteered output. This run uses the fixed code with narrowed scales [0, 0.5, 1, 2, 4, 8] (scales above 8 cause degeneration).
+
+### Setup
+
+- Same model and vector as happy_full
+- **Scales**: [0, 0.5, 1, 2, 4, 8] (6 scales × 10 prompts × 5 responses = 300 total)
+- **Config**: `configs/happy_recon.yaml`
+
+### Key finding: Steering collapses cross-prompt diversity, not within-prompt diversity
+
+The pooled pairwise cosine distance (all 50 responses per scale) drops sharply from 0.74 (scale 0) to 0.53 (scale 8). This initially looks like diversity collapse. But decomposing into within-prompt vs. cross-prompt tells a different story:
+
+| Scale | Within-prompt (mean ± SE) | Pooled (cross-prompt included) |
+|-------|--------------------------|-------------------------------|
+| 0.0   | 0.555 ± 0.037            | 0.740                         |
+| 0.5   | 0.502 ± 0.028            | 0.738                         |
+| 1.0   | 0.494 ± 0.024            | 0.710                         |
+| 2.0   | 0.509 ± 0.035            | 0.721                         |
+| 4.0   | 0.489 ± 0.035            | 0.599                         |
+| 8.0   | 0.527 ± 0.020            | 0.533                         |
+
+- **Within-prompt diversity is flat** (~0.49–0.55) across all scales. The model produces equally varied responses to the same prompt regardless of steering strength.
+- **Pooled diversity drops** because responses to *different* prompts converge. At scale 8, the two lines nearly meet — meaning cross-prompt diversity has essentially vanished.
+
+**Interpretation**: Steering doesn't reduce the model's inherent stochasticity (sampling diversity). Instead, it overrides the prompt signal. At high scales, the steering vector dominates the output so strongly that the model produces similar content regardless of what prompt it received. The "diversity collapse" is really "prompt override."
+
+This is visible qualitatively in the cluster review: at scale 8, responses degenerate into excited gibberish ("Activate! Spark! Boost-A-GIG!") and multilingual exclamations regardless of the writing prompt given.
+
+### Statistical tests (correctly using within-prompt metrics)
+
+| Test | Statistic | p-value | Significant? |
+|------|-----------|---------|-------------|
+| Mixed-effects (primary) | β = −0.0002 | 0.957 | No |
+| Spearman ρ | ρ = −0.061 | 0.641 | No |
+| Page's L (noise_ratio, Holm-corrected) | — | 0.023 | Yes* |
+
+The primary tests confirm no within-prompt diversity effect. The significant noise_ratio trend likely reflects the degenerate outputs at scale 8 forming tight clusters rather than a meaningful diversity change.
+
+### Plot
+
+See `outputs/happy_recon/plots/within_vs_pooled_diversity.png` — the key visualization showing the divergence between pooled and within-prompt diversity measures.
+
+### Outputs
+
+- `outputs/happy_recon/responses.jsonl` — 300 generated responses
+- `outputs/happy_recon/embeddings.npz` — 384-dim sentence embeddings
+- `outputs/happy_recon/metrics.json` — per-scale diversity metrics
+- `outputs/happy_recon/stats.json` — full statistical test results
+- `outputs/happy_recon/cluster_review.json` — sample responses per cluster
+- `outputs/happy_recon/plots/` — UMAP, metrics bars, and within-vs-pooled diversity
