@@ -1,0 +1,19 @@
+Interactive UMAP Visualization of Steered LLM Responses
+========================================================
+
+This HTML file contains an interactive 2D UMAP projection of sentence
+embeddings (all-MiniLM-L6-v2) for LLM responses generated at different
+steering scales.
+
+- Each point represents one generated response.
+- Points are colored by the steering scale used during generation.
+- Hover over a point to see:
+    - prompt_idx: which prompt was used
+    - scale: the steering vector multiplier
+    - response_idx: which sample (among multiple per prompt+scale)
+    - A preview of the prompt text (~200 chars)
+    - A preview of the response text (~300 chars)
+
+Data source: outputs/happy_recon/responses.jsonl
+Embeddings: outputs/happy_recon/embeddings.npz
+UMAP parameters: n_neighbors=15, min_dist=0.1, seed=42

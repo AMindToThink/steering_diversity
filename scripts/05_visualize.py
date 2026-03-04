@@ -22,19 +22,33 @@ from src.embedding import load_embeddings
 from src.utils import ensure_dir, save_provenance, seed_everything
 
 
+def compute_umap(embeddings: np.ndarray, seed: int = 42) -> np.ndarray:
+    """Compute UMAP 2D projection and return coordinates."""
+    print(f"Running UMAP on {embeddings.shape[0]} embeddings (dim={embeddings.shape[1]}) ...")
+    reducer = umap.UMAP(random_state=seed)
+    return reducer.fit_transform(embeddings)
+
+
+def save_umap_coords(
+    coords: np.ndarray,
+    save_path: Path,
+    seed: int = 42,
+) -> None:
+    """Save UMAP coordinates so other tools can reuse the same layout."""
+    np.savez(save_path, coords=coords, seed=np.array(seed))
+    print(f"Saved UMAP coordinates to {save_path}")
+
+
 def plot_umap_by_scale(
-    embeddings: np.ndarray,
+    coords: np.ndarray,
     scales: np.ndarray,
     save_path: Path,
 ) -> None:
     """UMAP scatter plot colored by steering scale."""
-    reducer = umap.UMAP(random_state=42)
-    proj = reducer.fit_transform(embeddings)
-
     fig, ax = plt.subplots(figsize=(8, 6))
     scatter = ax.scatter(
-        proj[:, 0],
-        proj[:, 1],
+        coords[:, 0],
+        coords[:, 1],
         c=scales,
         cmap="viridis",
         s=8,
@@ -51,14 +65,11 @@ def plot_umap_by_scale(
 
 
 def plot_umap_by_cluster(
-    embeddings: np.ndarray,
+    coords: np.ndarray,
     labels: np.ndarray,
     save_path: Path,
 ) -> None:
     """UMAP scatter plot colored by HDBSCAN cluster."""
-    reducer = umap.UMAP(random_state=42)
-    proj = reducer.fit_transform(embeddings)
-
     fig, ax = plt.subplots(figsize=(8, 6))
     unique_labels = sorted(set(labels))
     palette = sns.color_palette("husl", n_colors=max(len(unique_labels), 1))
@@ -66,7 +77,7 @@ def plot_umap_by_cluster(
         mask = labels == label
         color = "lightgray" if label == -1 else palette[i % len(palette)]
         name = "noise" if label == -1 else f"cluster {label}"
-        ax.scatter(proj[mask, 0], proj[mask, 1], c=[color], s=8, alpha=0.6, label=name)
+        ax.scatter(coords[mask, 0], coords[mask, 1], c=[color], s=8, alpha=0.6, label=name)
     ax.set_title("UMAP — colored by cluster")
     ax.set_xlabel("UMAP 1")
     ax.set_ylabel("UMAP 2")
@@ -211,9 +222,14 @@ def main() -> None:
     embeddings, metadata = load_embeddings(emb_path)
     scales = metadata["scales"]
 
+    # Compute UMAP once and save coordinates for reuse by other tools
+    umap_coords = compute_umap(embeddings, seed=cfg.seed)
+    umap_coords_path = Path(out_dir) / "umap_coords.npz"
+    save_umap_coords(umap_coords, umap_coords_path, seed=cfg.seed)
+
     # UMAP by scale
     umap_scale_path = plots_dir / "umap_by_scale.png"
-    plot_umap_by_scale(embeddings, scales, umap_scale_path)
+    plot_umap_by_scale(umap_coords, scales, umap_scale_path)
 
     # UMAP by cluster (cluster per-scale, matching 04_compute_metrics)
     labels = np.full(len(embeddings), -1, dtype=int)
@@ -230,7 +246,7 @@ def main() -> None:
             label_offset = int(group_labels_offset.max()) + 1
 
     umap_cluster_path = plots_dir / "umap_by_cluster.png"
-    plot_umap_by_cluster(embeddings, labels, umap_cluster_path)
+    plot_umap_by_cluster(umap_coords, labels, umap_cluster_path)
 
     # Within-prompt vs pooled diversity
     prompt_indices = metadata["prompt_indices"]
