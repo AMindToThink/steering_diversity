@@ -1,0 +1,15 @@
+Per-Input Diversity vs Steering Scale (mean +/- std across prompts)
+
+Each metric is computed independently within each prompt's 50 responses, then
+averaged across the 10 prompts. Error bars show standard deviation across prompts.
+
+- N-gram diversity (distinct n-grams, expectation-adjusted) stays mostly flat
+  (~0.889-0.905) from scale 0 to 4, then jumps sharply to ~0.953 at scale 8.
+- N-gram cosine diversity is near ceiling (~0.997) throughout, making it less
+  discriminative for this dataset.
+- Scale 8 is where steering clearly changes the surface-level text diversity.
+
+Metrics used (all CPU-only, no model-based):
+  - Distinct N-grams (averaged n=1..5): unique_ngrams / total_ngrams
+  - Expectation-Adjusted Distinct N-grams: adjusts for chance given vocab size
+  - N-gram Cosine Diversity: 1 - mean pairwise cosine similarity of trigram vectors

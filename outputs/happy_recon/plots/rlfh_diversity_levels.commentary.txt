@@ -1,0 +1,20 @@
+The pooled (overall) line is consistently LOWER than the per-input line for the
+distinct n-gram metrics. This is counterintuitive -- pooling across prompts
+should add cross-prompt variation and increase diversity. Other experiments in
+this project confirmed that pooled diversity is indeed greater when measured
+with other metrics.
+
+The explanation is that distinct n-grams (unique/total) is corpus-size-dependent.
+When you pool 10 prompts' responses together, the denominator (total n-gram
+count) grows ~10x, but the numerator (unique n-grams) grows sublinearly because
+common n-grams like "the", "I think" appear across many responses from different
+prompts. This is a known weakness of this metric and was confirmed by the
+n-gram breakdown plot (rlfh_ngram_breakdown.png) which shows the effect is
+largest for unigrams and vanishes for 5-grams.
+
+The expectation-adjusted variant (EAD) partially corrects for this but doesn't
+fully compensate.
+
+Takeaway: do not compare absolute values between pooled and per-input for the
+distinct n-gram metrics. Within each level, the trend across scales is still
+valid.

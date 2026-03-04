@@ -1,0 +1,11 @@
+Per-Input Diversity Metrics vs Steering Scale (all metrics overlaid)
+
+All three per-input metrics on the same axes for comparison. Shows that:
+  - N-gram cosine diversity sits near 1.0 for all scales -- essentially all
+    responses look lexically distinct at the trigram level, making this metric
+    uninformative for this dataset.
+  - Distinct n-grams and expectation-adjusted distinct n-grams track closely,
+    both showing a flat trend from scale 0-4 and a sharp jump at scale 8.
+  - The scale-8 increase likely reflects the steered model producing more
+    varied/incoherent text rather than genuinely more diverse content. Semantic
+    metrics (SentBERT, NLI) would be needed to distinguish these cases.

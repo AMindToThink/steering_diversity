@@ -1,0 +1,15 @@
+With all three metrics overlaid, the picture is clear:
+
+1. N-gram cosine diversity is at ceiling (~0.997-1.0) for all scales. It cannot
+   discriminate between steering levels for this data. Likely because these are
+   long-form creative writing responses with inherently diverse vocabulary.
+
+2. Distinct n-grams and expectation-adjusted distinct n-grams track very closely
+   (within ~1% of each other), both showing the same flat-then-jump pattern.
+   The expectation adjustment doesn't change the story here.
+
+3. All three metrics are purely lexical/surface-level. They cannot detect whether
+   steering is collapsing the semantic diversity of responses (e.g., all responses
+   saying the same thing in different words). The model-based metrics (SentBERT,
+   NLI) from rlfh-gen-div would address this but require GPU to run in reasonable
+   time.

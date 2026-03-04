@@ -4,3 +4,6 @@
 [submodule "eval_awareness"]
 	path = eval_awareness
 	url = https://github.com/jjpn97/eval_awareness.git
+[submodule "rlfh-gen-div"]
+	path = rlfh-gen-div
+	url = https://github.com/AMindToThink/rlfh-gen-div.git

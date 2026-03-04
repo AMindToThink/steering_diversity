@@ -1,0 +1,17 @@
+N-gram diversity is essentially flat from scale 0 to 4 (~0.889-0.905), then
+jumps sharply to ~0.953 at scale 8. This suggests that moderate steering (up to
+4x) doesn't meaningfully change surface-level lexical diversity, but aggressive
+steering (8x) does.
+
+The scale-8 increase likely reflects the steered model producing more
+varied/incoherent text rather than genuinely more diverse content. Semantic
+metrics (SentBERT, NLI) would be needed to distinguish whether the *meaning*
+is collapsing while the words get more random.
+
+N-gram cosine diversity is near ceiling (~0.997) for all scales, making it
+uninformative for this dataset -- essentially all responses already look
+lexically distinct at the trigram level.
+
+Note: with only 5 responses per prompt and 10 prompts, these estimates have
+high variance. The error bars are wide enough that scale 0-4 differences
+are not statistically meaningful.

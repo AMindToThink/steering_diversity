@@ -1,0 +1,20 @@
+Distinct N-grams: Within-Prompt vs Pooled, broken down by n (1..5)
+
+For each n-gram size, two lines are shown:
+  - Within-prompt (blue, with std error bars): distinct n-grams computed per
+    prompt's 50 responses, then averaged across 10 prompts.
+  - Pooled across prompts (orange): all 500 responses at a given scale combined
+    into one set.
+
+Key observations:
+  - Within-prompt is consistently HIGHER than pooled for every n. This is
+    counterintuitive -- pooling should add cross-prompt diversity. The explanation
+    is that distinct n-grams = unique/total is corpus-size-dependent: pooling 10x
+    more text inflates the denominator faster than the numerator, especially for
+    small n where common words dominate.
+  - The gap is largest for unigrams (n=1) where function words like "the", "a",
+    "is" are shared across all prompts, inflating the total count.
+  - For higher n (4-grams, 5-grams), both lines converge toward 1.0 since longer
+    n-grams are almost all unique regardless of pooling.
+  - The scale-8 jump appears in both lines for all n -- steering at high scale
+    genuinely changes lexical diversity, not a measurement artifact.

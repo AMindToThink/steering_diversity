@@ -1,0 +1,23 @@
+This plot confirms that the pooled-lower-than-within-prompt pattern is entirely
+a corpus-size artifact of the distinct n-grams metric:
+
+- For unigrams (n=1), the gap is largest (~0.55 within vs ~0.38 pooled at scale 0).
+  Common function words ("the", "a", "is", "to") appear in every response
+  regardless of prompt, inflating the total count when pooled.
+
+- For 5-grams (n=5), both lines converge to ~1.0 because 5-word sequences are
+  almost always unique.
+
+- The gap narrows monotonically with n, exactly as expected from the
+  corpus-size explanation.
+
+The scale-4 error bars are notably larger than other scales, especially for
+higher n-grams. Investigation revealed this is driven by prompt 5 ("Shut the
+dog up") at scale 4, where one of the 5 responses is entirely emoji characters.
+Emoji text produces zero word-level n-grams (the tokenizer splits on spaces),
+creating an extreme outlier in the pairwise similarity computation. With only
+5 responses per prompt and 10 prompts, a single degenerate response has outsized
+impact on the standard deviation.
+
+This highlights a limitation of running diversity metrics with so few responses
+per prompt -- the estimates are noisy and sensitive to individual outliers.

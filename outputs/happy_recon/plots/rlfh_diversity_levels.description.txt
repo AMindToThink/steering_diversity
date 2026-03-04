@@ -1,0 +1,15 @@
+Diversity Levels vs Steering Scale
+
+Compares three measurement levels for each metric:
+  - Per-Input (mean): diversity computed within each prompt's responses, averaged
+  - Overall (pooled): all responses at a given scale pooled into one set
+  - Single-Output (cross-prompt): one response per prompt, measuring cross-prompt diversity
+
+Per-input and single-output track together across scales. Overall pooled is
+consistently lower for distinct n-gram metrics -- this is NOT because pooling
+reduces diversity, but because the distinct n-grams metric (unique/total) is
+corpus-size-dependent: the denominator grows faster than the numerator when
+pooling more text, dragging the ratio down. This is a known artifact.
+
+The cosine diversity metric does not have this problem since it uses pairwise
+comparisons rather than a ratio, and indeed stays near ceiling for all levels.
