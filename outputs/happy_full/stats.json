@@ -1,0 +1,115 @@
+{
+  "n_prompts": 50,
+  "n_scales": 6,
+  "scales": [
+    0.0,
+    0.5,
+    1.0,
+    2.0,
+    4.0,
+    8.0
+  ],
+  "pages_l_tests": {
+    "mean_pairwise_cosine_distance": {
+      "L": 3739.0,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": 1.1564901157187217,
+      "p_value": 0.12374037012736716,
+      "n": 50,
+      "k": 6
+    },
+    "num_clusters": {
+      "L": 3757.5,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": 1.4907880397936646,
+      "p_value": 0.0680085764231596,
+      "n": 50,
+      "k": 6
+    },
+    "noise_ratio": {
+      "L": 3597.0,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": -1.409472328532192,
+      "p_value": 0.9206522249357183,
+      "n": 50,
+      "k": 6
+    },
+    "cluster_entropy": {
+      "L": 3785.5,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": 1.9967524654206052,
+      "p_value": 0.022926039818696453,
+      "n": 50,
+      "k": 6
+    },
+    "mean_intra_cluster_distance": {
+      "L": 3737.0,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": 1.1203497996025116,
+      "p_value": 0.1312823641393046,
+      "n": 50,
+      "k": 6
+    },
+    "mean_inter_cluster_distance": {
+      "L": 3760.5,
+      "L_expected": 3675.0,
+      "L_var": 3062.5,
+      "z_score": 1.5449985139679796,
+      "p_value": 0.061173311406193975,
+      "n": 50,
+      "k": 6
+    }
+  },
+  "holm_bonferroni": {
+    "cluster_entropy": {
+      "raw_p": 0.022926039818696453,
+      "adjusted_p": 0.13755623891217872,
+      "significant": false
+    },
+    "mean_inter_cluster_distance": {
+      "raw_p": 0.061173311406193975,
+      "adjusted_p": 0.3058665570309699,
+      "significant": false
+    },
+    "mean_intra_cluster_distance": {
+      "raw_p": 0.1312823641393046,
+      "adjusted_p": 0.3712211103821015,
+      "significant": false
+    },
+    "mean_pairwise_cosine_distance": {
+      "raw_p": 0.12374037012736716,
+      "adjusted_p": 0.3712211103821015,
+      "significant": false
+    },
+    "noise_ratio": {
+      "raw_p": 0.9206522249357183,
+      "adjusted_p": 0.9206522249357183,
+      "significant": false
+    },
+    "num_clusters": {
+      "raw_p": 0.0680085764231596,
+      "adjusted_p": 0.3058665570309699,
+      "significant": false
+    }
+  },
+  "mixed_effects": {
+    "beta": -0.0027048639460093456,
+    "se": 0.0016070752212969184,
+    "ci_95_low": -0.005854731379751305,
+    "ci_95_high": 0.0004450034877326145,
+    "p_value": 0.09235625948477373,
+    "converged": true
+  },
+  "spearman_effect_size": {
+    "rho": -0.014514196369185984,
+    "p_value": 0.8023113119315157,
+    "ci_95_low": -0.13077201982005784,
+    "ci_95_high": 0.0980368130446194,
+    "n_bootstrap": 10000
+  }
+}

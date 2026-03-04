@@ -13,14 +13,23 @@ from typing import Any
 import numpy as np
 
 
-def seed_everything(seed: int) -> None:
-    """Set random seeds for reproducibility."""
+def seed_everything(seed: int, cuda: bool = False) -> None:
+    """Set random seeds for reproducibility.
+
+    Parameters
+    ----------
+    seed:
+        The seed value to use.
+    cuda:
+        If True, also seed CUDA RNGs. Set to False (default) when using vLLM
+        to avoid initializing the CUDA context before vLLM forks a subprocess.
+    """
     random.seed(seed)
     np.random.seed(seed)
     try:
         import torch
         torch.manual_seed(seed)
-        if torch.cuda.is_available():
+        if cuda and torch.cuda.is_available():
             torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass

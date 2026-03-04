@@ -16,11 +16,11 @@ def load_prompts(cfg: ExperimentConfig) -> list[str]:
     gen_cfg = cfg.generation
     ds = load_dataset(gen_cfg.prompt_dataset, split=gen_cfg.prompt_split)
     # Deterministically select prompts by slicing
-    prompts: list[str] = [ds[i]["text"] for i in range(gen_cfg.num_prompts)]
+    prompts: list[str] = [ds[i]["prompt"] for i in range(gen_cfg.num_prompts)]
     return prompts
 
 
-def format_chat_prompt(text: str, model_name: str) -> str:
+def format_chat_prompt(text: str, model_name: str, system_prompt: str | None = None) -> str:
     """Wrap a user message in the model's chat template.
 
     For steering-vector extraction we use the tokenizer's chat template
@@ -29,7 +29,10 @@ def format_chat_prompt(text: str, model_name: str) -> str:
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(model_name)
-    messages = [{"role": "user", "content": text}]
+    messages: list[dict[str, str]] = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": text})
     return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
 
@@ -97,9 +100,11 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
     records: list[dict[str, Any]] = []
 
     for scale in steer_cfg.scales:
+        # Use a unique name per scale so prefix caching doesn't reuse
+        # KV states computed at a different steering strength.
         sv_request = SteerVectorRequest(
-            steer_vector_name=steer_cfg.concept,
-            steer_vector_int_id=1,
+            steer_vector_name=f"{steer_cfg.concept}_scale_{scale}",
+            steer_vector_int_id=int(scale * 1000) + 1,
             steer_vector_local_path=vector_path,
             scale=scale,
             target_layers=steer_cfg.target_layers,
@@ -108,7 +113,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
         )
 
         for prompt_idx, prompt in enumerate(tqdm(prompts, desc=f"scale={scale}")):
-            chat_prompt = format_chat_prompt(prompt, cfg.model.name)
+            chat_prompt = format_chat_prompt(prompt, cfg.model.name, system_prompt=gen_cfg.system_prompt)
             for response_idx in range(gen_cfg.responses_per_prompt):
                 outputs = llm.generate(
                     chat_prompt,
@@ -119,6 +124,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
                 records.append(
                     {
                         "prompt": prompt,
+                        "chat_prompt": chat_prompt,
                         "prompt_idx": prompt_idx,
                         "response_idx": response_idx,
                         "scale": scale,

@@ -1,0 +1,22 @@
+[
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.8871974349021912,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 0.0,
+    "n_responses": 15
+  },
+  {
+    "num_clusters": 0,
+    "noise_ratio": 1.0,
+    "mean_pairwise_cosine_distance": 0.8791188597679138,
+    "cluster_entropy": 0.0,
+    "mean_intra_cluster_distance": 0.0,
+    "mean_inter_cluster_distance": 0.0,
+    "scale": 2.0,
+    "n_responses": 15
+  }
+]
