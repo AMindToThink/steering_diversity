@@ -110,6 +110,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
             target_layers=steer_cfg.target_layers,
             prefill_trigger_tokens=[-1],
             generate_trigger_tokens=[-1],
+            algorithm=steer_cfg.algorithm,
         )
 
         for prompt_idx, prompt in enumerate(tqdm(prompts, desc=f"scale={scale}")):

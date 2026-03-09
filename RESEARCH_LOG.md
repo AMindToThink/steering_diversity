@@ -129,3 +129,15 @@ See `outputs/happy_recon/plots/within_vs_pooled_diversity.png` — the key visua
 - `outputs/happy_recon/stats.json` — full statistical test results
 - `outputs/happy_recon/cluster_review.json` — sample responses per cluster
 - `outputs/happy_recon/plots/` — UMAP, metrics bars, and within-vs-pooled diversity
+
+## 2026-03-08 — EasySteer normalize bug on float16 GPUs
+
+### Bug
+
+`SteerVectorRequest(normalize=True)` produces garbage output (`!!!...`) on GPUs with compute capability < 8.0 (e.g. Quadro RTX 8000) because the model runs in float16 instead of bfloat16.
+
+**Root cause**: In `DirectAlgorithm._transform`, the norm-preserving rescaling computes `transformed * norm_pre / norm_post`. The intermediate product `transformed * norm_pre` overflows float16's max value (65504) — hidden state norms reach ~12,000, so any element > ~5.2 causes overflow to `inf`. This cascades as `nan` through subsequent layers. On bfloat16 (max ~3.4e38), overflow never occurs.
+
+**Impact on our experiments**: None. Our `generate_steered_responses` does not pass `normalize` to `SteerVectorRequest`. The `SteeringConfig.normalize` field is used only at extraction time (step 01). Precomputed vectors (style-probe, create) already have normalization baked in.
+
+**Fix**: Cast to float32 for the intermediate computation. Submitted as GitHub issue on ZJU-REAL/EasySteer. We forked to AMindToThink/EasySteer to apply the fix locally.

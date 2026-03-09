@@ -21,11 +21,12 @@ class ModelConfig:
 @dataclasses.dataclass
 class SteeringConfig:
     concept: str  # e.g. "deception"
-    contrastive_pairs_path: str
     scales: list[float]
     target_layers: list[int]
+    contrastive_pairs_path: str | None = None
     token_pos: int | str = -1
     normalize: bool = True
+    algorithm: str = "direct"
 
 
 @dataclasses.dataclass
