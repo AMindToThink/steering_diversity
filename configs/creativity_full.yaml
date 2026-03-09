@@ -21,6 +21,7 @@ generation:
   top_p: 0.95
   prompt_dataset: "euclaise/writingprompts"
   prompt_split: "test"
+  system_prompt: "You are a creative writing assistant. Write a short story based on the user's prompt. Do not analyze or explain the prompt — just write the story."
 
 embedding:
   model_name: "all-MiniLM-L6-v2"
