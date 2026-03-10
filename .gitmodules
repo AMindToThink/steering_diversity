@@ -7,3 +7,6 @@
 [submodule "rlfh-gen-div"]
 	path = rlfh-gen-div
 	url = https://github.com/AMindToThink/rlfh-gen-div.git
+[submodule "Test_Awareness_Steering"]
+	path = Test_Awareness_Steering
+	url = https://github.com/microsoft/Test_Awareness_Steering.git
