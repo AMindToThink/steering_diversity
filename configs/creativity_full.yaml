@@ -4,6 +4,7 @@ seed: 42
 model:
   name: "meta-llama/Meta-Llama-3-8B-Instruct"
   model_type: "llama"
+  gpu_memory_utilization: 0.5
 
 steering:
   concept: "creativity"

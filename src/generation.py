@@ -57,7 +57,8 @@ def compute_steering_vector(cfg: ExperimentConfig) -> Any:
     ]
     all_prompts = positive_prompts + negative_prompts
 
-    llm = LLM(model=cfg.model.name, task="embed", enforce_eager=True)
+    llm = LLM(model=cfg.model.name, task="embed", enforce_eager=True,
+              gpu_memory_utilization=cfg.model.gpu_memory_utilization)
 
     all_hidden_states, _ = get_all_hidden_states_generate(llm, all_prompts, max_tokens=1)
 
@@ -95,6 +96,7 @@ def generate_steered_responses(cfg: ExperimentConfig, vector_path: str) -> list[
         model=cfg.model.name,
         enable_steer_vector=True,
         enforce_eager=True,
+        gpu_memory_utilization=cfg.model.gpu_memory_utilization,
     )
 
     records: list[dict[str, Any]] = []

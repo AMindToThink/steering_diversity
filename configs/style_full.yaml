@@ -4,6 +4,7 @@ seed: 42
 model:
   name: "Qwen/Qwen2.5-1.5B-Instruct"
   model_type: "qwen2.5"
+  gpu_memory_utilization: 0.5
 
 steering:
   concept: "style"

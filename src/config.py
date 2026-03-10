@@ -16,6 +16,7 @@ load_dotenv()
 class ModelConfig:
     name: str
     model_type: str  # e.g. "qwen2.5" — used by EasySteer
+    gpu_memory_utilization: float = 0.9
 
 
 @dataclasses.dataclass
