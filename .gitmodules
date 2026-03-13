@@ -1,6 +1,6 @@
 [submodule "EasySteer"]
 	path = EasySteer
-	url = https://github.com/ZJU-REAL/EasySteer.git
+	url = https://github.com/AMindToThink/EasySteer.git
 [submodule "eval_awareness"]
 	path = eval_awareness
 	url = https://github.com/AMindToThink/eval_awareness.git
@@ -9,4 +9,7 @@
 	url = https://github.com/AMindToThink/rlfh-gen-div.git
 [submodule "Test_Awareness_Steering"]
 	path = Test_Awareness_Steering
-	url = https://github.com/microsoft/Test_Awareness_Steering.git
+	url = https://github.com/AMindToThink/Test_Awareness_Steering.git
+[submodule "icl-diversity"]
+	path = icl-diversity
+	url = https://github.com/AMindToThink/icl-diversity.git
