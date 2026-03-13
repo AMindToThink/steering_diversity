@@ -63,7 +63,7 @@ However, if steering methods collapse the diversity of model outputs — produci
 
 <!--> The third theoretical pillar is Riechers, Bigelow, Alt, and Shai's "Next-token pretraining implies in-context learning" (2025), which provides an information-theoretic framework arXiv showing that arXivarXiv cross-entropy loss reduction across context positions converges to E=I[X←;X→]E = I[\overleftarrow{X}; \overrightarrow{X}]
 
-E=I[X;X], the
+<!--E=I[X;X], the
 mutual information between past and future — which is exactly the excess entropy of Crutchfield and Feldman. This paper mathematically validates the proposed metric's core claim: the total area under the surprise curve (above the asymptotic floor) measures mutual information, and its shape reveals the statistical structure of the data-generating process. arXiv
 https://arxiv.org/abs/2505.18373 -->
 
