@@ -60,7 +60,7 @@ However, if steering methods collapse the diversity of model outputs — produci
 - Tan et al. (2025). [The Truthfulness Spectrum Hypothesis](https://arxiv.org/abs/2602.20273). Domain-specific steering works better than general steering; good general vectors can be constructed by aggregation of specific ones.
   <!-- NOTE: https://x.com/KhoriatyMatthew/status/2028845378821337567 -->
 - Chanin et al. (2024). [Analyzing the Generalization and Reliability of Steering Vectors](https://arxiv.org/abs/2407.12404). Studies when steering vectors generalize.
-
+- https://github.com/mll-lab-nu/RAGEN/blob/main/RAGEN-v2.pdf
 <!--> The third theoretical pillar is Riechers, Bigelow, Alt, and Shai's "Next-token pretraining implies in-context learning" (2025), which provides an information-theoretic framework arXiv showing that arXivarXiv cross-entropy loss reduction across context positions converges to E=I[X←;X→]E = I[\overleftarrow{X}; \overrightarrow{X}]
 
 <!--E=I[X;X], the
