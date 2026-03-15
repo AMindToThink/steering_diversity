@@ -67,6 +67,8 @@ However, if steering methods collapse the diversity of model outputs — produci
   - Mean pairwise cosine (like we already were doing). Also accuracy-as-consistency and asking GPT4 whether two responses are the same. Not very relevant to my work. https://claude.ai/share/4b520455-9d86-4fb0-912e-9760af82a473
 - https://arxiv.org/pdf/2406.00244
   - They identify an "uncertainty" vector and use it to steer the AI to explore more. Not directly relevant, since we are interested in the range of sampled behaviors.
+- https://openreview.net/pdf?id=2U1KIfmaU9
+  - Overview of Representation Engineering, by someone who has given me advice on the paper (Jan Wehner).
 <!--> The third theoretical pillar is Riechers, Bigelow, Alt, and Shai's "Next-token pretraining implies in-context learning" (2025), which provides an information-theoretic framework arXiv showing that arXivarXiv cross-entropy loss reduction across context positions converges to E=I[X←;X→]E = I[\overleftarrow{X}; \overrightarrow{X}]
 
 <!--E=I[X;X], the
