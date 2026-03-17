@@ -37,9 +37,9 @@ However, if steering methods collapse the diversity of model outputs — produci
 
 ### 1.3 Key Assumptions
 
-1. **Propensity vs. Capability.** Propensity is likely a thin layer on top of the bulk of model parameters used for capabilities. This assumption is supported by parameter-efficient fine-tuning working for alignment and steering vectors working to influence behavior. This work aims to keep capabilities constant and modulate propensity.
+1. **Propensity vs. Capability.** Propensity is likely a thin layer on top of the bulk of model parameters used for capabilities. This assumption is supported by parameter-efficient fine-tuning working for alignment and steering vectors working to influence behavior. For steering vectors to be useful for evals, they must change the model's 'beliefs' and propensities without damaging capabilities. We consider diversity of output to be a capability.
 
-2. **Diversity as a proxy for worst-case behavior.** We assume that measuring the diversity of steered outputs is a valid proxy for assessing whether steering captures the full range of concerning behaviors. This is likely better than trying to maximize a narrow instance, though more sophisticated quality-diversity algorithms might have advantages in finding interesting behaviors.
+2. **Diversity as a proxy for worst-case behavior.** We assume that measuring the diversity of steered outputs is a valid proxy for assessing whether steering captures the full range of concerning behaviors. This is tractable and generally informative than trying to maximize a narrow instance, though more sophisticated quality-diversity algorithms might have advantages in finding interesting behaviors.
 
 ### 1.4 Contributions
 
