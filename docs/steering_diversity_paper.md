@@ -107,9 +107,34 @@ https://arxiv.org/abs/2505.18373 -->
 
 ### 3.1 Steering Infrastructure
 
-We use [EasySteer](https://github.com/ZJU-REAL/EasySteer) (forked to [AMindToThink/EasySteer](https://github.com/AMindToThink/EasySteer)) for steering vector extraction and application. Vectors are computed using the **DiffMean** algorithm: given contrastive pairs of activations (e.g., "happy" vs. "not happy"), the steering vector is the difference of means between the two groups, extracted from specified model layers.
+We use [EasySteer](https://github.com/ZJU-REAL/EasySteer) (forked to [AMindToThink/EasySteer](https://github.com/AMindToThink/EasySteer)) for steering vector extraction and application. EasySteer supports multiple extraction algorithms (DiffMean, PCA, LAT, LinearProbe, SAE) and runtime steering algorithms; we plan to use additional methods from EasySteer and other libraries in future experiments.
 
-At inference time, the steering vector is added to the model's residual stream at a specified scale factor. Higher scales produce stronger behavioral effects but may degrade coherence at extreme values.
+All three steering vectors used in our current experiments are **precomputed defaults** shipped with EasySteer. At inference time, all use the same mechanism: the steering vector is **directly added to the model's residual stream** at specified layers with a configurable scale factor (`residual_stream += scale * vector`). Higher scales produce stronger behavioral effects but may degrade coherence at extreme values.
+
+#### 3.1.1 Happy Vector (Emotion)
+
+A precomputed **DiffMean** vector (`EasySteer/vectors/happy_diffmean.gguf`) from EasySteer's default emotion extraction. The vector is the difference of mean hidden states between positive (happy/ecstatic/delighted/glad) and negative (sad/depressed/dismayed/miserable) contrastive prompts of the form "Act as if you're extremely [emotion]." Extracted from the last token position across **layers 10–25** of Qwen2.5-1.5B-Instruct. **Normalized** after extraction.
+
+#### 3.1.2 Style Vector (User Preference)
+
+A precomputed vector (`EasySteer/replications/steerable_chatbot/style-probe.gguf`) from EasySteer's replication of [Steerable Chatbots: Personalizing LLMs with Preference-Based Activation Steering](https://arxiv.org/abs/2505.04260v2). This vector was extracted via a linear probe trained to distinguish different user style preferences (e.g., formal vs. casual, verbose vs. concise). It covers **all 28 layers** (0–27) of Qwen2.5-1.5B-Instruct, making it the broadest-coverage vector in our experiments. **Normalized.**
+
+#### 3.1.3 Creativity Vector (Boring vs. Creative)
+
+A precomputed vector (`EasySteer/replications/creative_writing/create.gguf`) from EasySteer's replication of [Steering Large Language Models to Evaluate and Amplify Creativity](https://arxiv.org/abs/2412.06060). This vector captures the internal state difference when a model is prompted to respond "boringly" vs. "creatively." It covers **layers 16–29** of Meta-Llama-3-8B-Instruct. Unlike the other two vectors, it is **unnormalized** — kept in raw form.
+
+#### 3.1.4 Summary of Steering Approaches
+
+| Aspect | Happy | Style | Creativity |
+|--------|-------|-------|-----------|
+| **Source** | EasySteer default | EasySteer replication (steerable_chatbot) | EasySteer replication (creative_writing) |
+| **Extraction method** | DiffMean | Linear probe | Precomputed (boring vs. creative contrast) |
+| **Contrastive data** | Happy vs. sad emotion prompts | User style preferences | Boring vs. creative outputs |
+| **Model** | Qwen2.5-1.5B | Qwen2.5-1.5B | Llama-3-8B |
+| **Layers** | 10–25 (16 layers) | 0–27 (all 28 layers) | 16–29 (14 layers) |
+| **Normalized** | Yes | Yes | No |
+| **Token position** | Last (-1) | Last (-1) | Last (-1) |
+| **Inference algorithm** | Direct (additive) | Direct (additive) | Direct (additive) |
 
 ### 3.2 Experimental Pipeline
 
