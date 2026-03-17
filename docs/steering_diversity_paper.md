@@ -582,13 +582,15 @@ Models tested: `moonshotai/kimi-k2.5`, `anthropic/claude-opus-4.6`, `deepseek/de
 
 ### 5.2 Implications for Model Organisms Research
 
-If these diversity reduction patterns hold for safety-relevant steering concepts (deception, sycophancy, power-seeking), it would mean that steered model organisms may produce a narrower range of concerning behaviors than the model is truly capable of. The model would be "deceptive in one way" rather than exhibiting the diversity of deceptive strategies it could employ in deployment. This is more likely to warrant a **warning** to safety researchers who rely on steering than a set of reassuring recommendations.
+If these diversity reduction patterns hold for safety-relevant steering concepts (deception, sycophancy, power-seeking), it would mean that using different prompts on a steered model organisms would produce more limited diversity of output, revealing a a narrower range of concerning behaviors than the model is truly capable of. I still suspect that the diversity metrics employed so far (embeddings, n-grams) do not capture meaninful aspects of diversity which is lost within-prompt. The model would be "deceptive in one way" rather than exhibiting the diversity of deceptive strategies it could employ in deployment. This is more likely to warrant a **warning** to safety researchers who rely on steering than a set of reassuring recommendations.
 
 The partial preservation of within-prompt diversity suggests that using diverse prompts may help capture a broader range of behaviors — but the responses will be more similar across prompts than in the unsteered case, and whether this matters depends on the evaluation's goals.
 
 <!-- TODO: Deeper analysis once more experiments complete, especially with safety-relevant concepts -->
 
 ### 5.3 Metric Sensitivity
+
+<!-- TODO: Fact check this claim about sentence-bert -->
 
 **Sentence-BERT captures topic more than tone.** The embedding model (all-MiniLM-L6-v2) is primarily sensitive to semantic content, not affective qualities. This may explain why "happy" steering shows little effect — the steering changes emotional tone, but embeddings are insensitive to this dimension.
 
@@ -618,7 +620,7 @@ The partial preservation of within-prompt diversity suggests that using diverse 
 
 ## 7. Acknowledgements
 
-We thank **Roger Dearnaley** and **Nathaniel Mitrani** for helpful discussions and feedback throughout this project.
+We thank **Roger Dearnaley,** **Nathaniel Mitrani**, and **Jan Wehner** for helpful discussions and feedback throughout this project.
 
 ---
 
