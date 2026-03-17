@@ -69,7 +69,7 @@ However, if steering methods collapse the diversity of model outputs — produci
   - They identify an "uncertainty" vector and use it to steer the AI to explore more. Not directly relevant, since we are interested in the range of sampled behaviors.
 - https://openreview.net/pdf?id=2U1KIfmaU9
   - Overview of Representation Engineering, by someone who has given me advice on the paper (Jan Wehner).
-<!--> The third theoretical pillar is Riechers, Bigelow, Alt, and Shai's "Next-token pretraining implies in-context learning" (2025), which provides an information-theoretic framework arXiv showing that arXivarXiv cross-entropy loss reduction across context positions converges to E=I[X←;X→]E = I[\overleftarrow{X}; \overrightarrow{X}]
+  <!--> The third theoretical pillar is Riechers, Bigelow, Alt, and Shai's "Next-token pretraining implies in-context learning" (2025), which provides an information-theoretic framework arXiv showing that arXivarXiv cross-entropy loss reduction across context positions converges to E=I[X←;X→]E = I[\overleftarrow{X}; \overrightarrow{X}]
 
 <!--E=I[X;X], the
 mutual information between past and future — which is exactly the excess entropy of Crutchfield and Feldman. This paper mathematically validates the proposed metric's core claim: the total area under the surprise curve (above the asymptotic floor) measures mutual information, and its shape reveals the statistical structure of the data-generating process. arXiv
@@ -256,10 +256,12 @@ We identify the following taxonomy of methods for eliciting behavior of interest
 
 The primary comparison is between **SAEs** (Neuronpedia vectors — the most widely used approach) and **Contrastive Activation Addition (CAA)** (already used in our experiments). The central question is which methods best resist diversity collapse. Instructed prompting serves as a secondary baseline, and fine-tuning is a stretch goal.
 
+CAA is especially relevant because Anthropic uses it in their [System Cards](https://www-cdn.anthropic.com/6a5fa276ac68b9aeb0c8b6af5fa36326e0e166dd.pdf) (Section 6.5.2), following [Steering Evaluation-Aware Language Models to Act Like They Are Deployed
+](https://arxiv.org/abs/2510.20487).
+
 <!-- TODO: SAEs (Neuronpedia vectors) — implement and compare against CAA -->
 <!-- TODO: LoReft -->
 <!-- TODO: LoRRA (Centre for AI Safety) -->
-<!-- TODO: "Whatever Anthropic uses" -->
 <!-- TODO: Random vectors as control — would this be informative? We expect semantically meaningful model-extracted vectors to behave in a qualitatively different way than random ones. -->
 
 ---
@@ -503,9 +505,9 @@ _Figure: All 6 clustering metrics across steering scales for creativity_full._
 
 | Experiment      | Model        | Concept    | Pooled diversity reduction (scale 0→4) |      Within-prompt effect       |
 | :-------------- | :----------- | :--------- | :------------------------------------: | :-----------------------------: |
-| happy_recon     | Qwen2.5-1.5B | happy      |          0.74 → 0.60 (19%)             |    None (beta ≈ 0, p = 0.96)   |
-| style_full      | Qwen2.5-1.5B | style      |          0.70 → 0.44 (37%)             | Mild (beta = -0.004, p = 0.003) |
-| creativity_full | Llama-3-8B   | creativity |          0.68 → 0.34 (50%)             |      None (flat 0.31–0.35)      |
+| happy_recon     | Qwen2.5-1.5B | happy      |           0.74 → 0.60 (19%)            |    None (beta ≈ 0, p = 0.96)    |
+| style_full      | Qwen2.5-1.5B | style      |           0.70 → 0.44 (37%)            | Mild (beta = -0.004, p = 0.003) |
+| creativity_full | Llama-3-8B   | creativity |           0.68 → 0.34 (50%)            |      None (flat 0.31–0.35)      |
 
 ### 4.5 Eval Awareness Baseline Survey
 
