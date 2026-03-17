@@ -24,7 +24,7 @@ Researchers studying AI safety often want to answer the counterfactual question:
 
 Activation steering has gained significant traction as a research tool because of its flexibility: given contrastive examples, one can extract a steering vector targeting nearly any behavioral property and apply it at inference time without retraining. This has led to a common pattern in safety research where statements like "we steer the model on X" are used for abstract, hard-to-define concepts like deceptive intent, evaluation awareness, or sycophancy. One concrete and important use case is steering models to "think they are deployed" so that safety evaluations are not influenced by the model's awareness of being evaluated (Hua et al., 2025).
 
-However, if steering methods collapse the diversity of model outputs — producing model organisms that are deceptive in only one way, or evaluation-aware in only one pattern — then steered models may be poor proxies for what a model would actually do in deployment. Safety evaluations built on steering may miss concerning behaviors the model is capable of. This would undermine a growing body of safety research that relies on steering to construct model organisms for study.
+However, if steering methods collapse the diversity of model outputs — producing model organisms that are deceptive in only one way, or respond to "deployment" with only one template response — then steered models may be poor proxies for what a model would actually do in deployment. Safety evaluations built on steering may miss concerning behaviors the model is capable of. This would undermine a growing body of safety research that relies on steering to construct model organisms for study.
 
 ### 1.2 Theory of Change
 
