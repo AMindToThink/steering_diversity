@@ -1,0 +1,25 @@
+run_name: "passk_code_v1"
+seed: 42
+
+# Reference existing steering config for model + steering params
+steering_config: "happy_full.yaml"
+
+# Path to the pre-computed steering vector (relative to this config's directory)
+vector_path: "../EasySteer/vectors/happy_diffmean.gguf"
+
+# Override scales for eval
+scales: [0.0, 1.0, 2.0, 4.0]
+
+# Endpoint (where EasySteer vLLM is running)
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  proxy_port: 8018
+
+# Pass@k parameters
+pass_at_k:
+  n_samples: 200
+  temperatures: [0.8]
+  max_tokens: 512
+  k_values: [1, 2, 5, 10, 25, 50, 100, 200]
+
+datasets: ["humaneval", "mbpp"]

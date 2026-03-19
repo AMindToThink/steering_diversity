@@ -269,7 +269,7 @@ We identify the following taxonomy of methods for eliciting behavior of interest
 
 ### 3.8 Planned/Proposed Metrics
 
-**Pass@k.** A universally respected measure for performance that is closely connected to diversity. Unlike the above metrics, pass@k requires a measure of "success" and a set of problems for the model to solve, rather than just comparing sets of responses from one prompt. If steering reduces pass@k, that demonstrates a concrete capability cost — diversity collapse that matters for task completion, not just measured by embedding distances.
+**Pass@k.** A universally respected measure for performance that is closely connected to diversity. Unlike the above metrics, pass@k requires a measure of "success" and a set of problems for the model to solve, rather than just comparing sets of responses from one prompt. If steering reduces pass@k, that demonstrates a concrete capability cost — diversity collapse that matters for task completion, not just measured by embedding distances. Preliminary results on HumanEval+ are reported in Section 4.6.
 
 <!-- TODO: LLM-as-judge for deception quality/convincingness -->
 <!-- TODO: NLL from unsteered model as propensity estimate -->
@@ -557,7 +557,54 @@ Models tested: `moonshotai/kimi-k2.5`, `anthropic/claude-opus-4.6`, `deepseek/de
 
 <!-- TODO: Results from eval awareness steering experiment (H1-H4) pending GPU run -->
 
-### 4.6 Planned/Proposed Experiments
+### 4.6 Experiment 6: Pass@k Code Evaluation (Qwen2.5-1.5B, Preliminary)
+
+#### Motivation
+
+The embedding-based diversity metrics in Experiments 1–3 measure distributional breadth but lack a direct connection to capabilities. Pass@k provides this connection: if steering compresses the output distribution, the probability that at least one of k samples solves a problem should decrease — and this effect should grow with k, because diversity matters more when you have more attempts.
+
+#### Setup
+
+We evaluate Qwen2.5-1.5B-Instruct on HumanEval+ (164 problems) using EvalPlus, with n=10 samples per problem at temperature 0.8. Steering uses the same happy/DiffMean vector from Experiment 1 (layers 10–25) at scale α=2.0, injected via a proxy server that intercepts OpenAI-format requests and adds EasySteer's `steer_vector_request` field before forwarding to the vLLM backend.
+
+The architecture is:
+
+```
+EvalPlus → Steering Proxy (:8018) → EasySteer vLLM (:8017)
+           (injects extra_body)      (applies steering)
+```
+
+#### Results
+
+| Metric | Unsteered (α=0) | Steered (α=2) | Δ | 95% CI | Paired t | p |
+|--------|:-:|:-:|:-:|:-:|:-:|:-:|
+| **pass@1 (base)** | 0.432 | 0.407 | −0.025 | ±0.031 | −1.57 | 0.118 |
+| **pass@2 (base)** | 0.559 | 0.513 | −0.046 | ±0.035 | −2.59 | **0.010** |
+| **pass@5 (base)** | 0.691 | 0.640 | −0.051 | ±0.044 | −2.27 | **0.025** |
+| **pass@10 (base)** | 0.756 | 0.720 | −0.037 | ±0.058 | −1.23 | 0.222 |
+| **pass@1 (plus)** | 0.389 | 0.370 | −0.020 | ±0.033 | −1.17 | 0.244 |
+| **pass@2 (plus)** | 0.513 | 0.470 | −0.042 | ±0.037 | −2.23 | **0.027** |
+| **pass@5 (plus)** | 0.648 | 0.591 | −0.058 | ±0.044 | −2.58 | **0.011** |
+| **pass@10 (plus)** | 0.720 | 0.671 | −0.049 | ±0.056 | −1.72 | 0.088 |
+
+Statistics are paired t-tests across 164 problems (each problem contributes one pass@k score per condition). 95% CIs are ±1.96 × SE of the per-problem difference.
+
+![HumanEval+ pass@k curves (left) and per-k effect sizes (right) for unsteered vs. happy-steered (α=2) Qwen2.5-1.5B-Instruct. Red bars indicate p < 0.05 (paired t-test, 164 problems). Error bars and shaded regions show 95% CIs. The gap between curves widens from pass@1 to pass@5 before shrinking at pass@10 where the estimator becomes degenerate (k=n=10).](figures/passk_humaneval_plus_preliminary.png)
+
+#### Interpretation
+
+The pattern is suggestive but noisy at n=10. The mid-range k values (pass@2 and pass@5) show statistically significant drops (p < 0.05), while the endpoints (pass@1 and pass@10) do not reach significance. This is consistent with the diversity-collapse hypothesis: at pass@1 the estimator is simply c/n (insensitive to distributional shape), and at pass@10=n the estimator is high-variance because k equals the sample count.
+
+The effect is larger for HumanEval+ (stricter tests) than base HumanEval, suggesting that steering pushes solutions toward shallow correctness that fails edge cases — exactly the kind of diversity loss that matters for robust code generation.
+
+**Limitations.** n=10 provides low statistical power for pass@k at high k. With only 10 samples per problem, pass@10 is a degenerate estimator (either 0 or 1 depending on whether any sample passes). A follow-up run with n=50 and scales α ∈ {0, 1, 2, 4} is needed to:
+1. Produce smooth pass@k curves across k ∈ [1, 50]
+2. Test dose-dependence across multiple steering strengths
+3. Provide adequate power for significance at all k values
+
+**Note:** This preliminary experiment uses only the happy/DiffMean vector. The relevance of happiness steering to code generation is indirect — the hypothesis is that *any* off-topic steering should compress the output distribution, not that happiness specifically harms coding. Future work should include concept-matched vectors (e.g., steering for code style or safety).
+
+### 4.7 Planned/Proposed Experiments
 
 <!-- TODO: Deception steering — experiment1.yaml config exists, not yet run -->
 

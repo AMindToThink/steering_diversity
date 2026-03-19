@@ -1,0 +1,24 @@
+run_name: "passk_code_dev"
+seed: 42
+
+# Reference existing steering config for model + steering params
+steering_config: "happy_full.yaml"
+
+# Path to the pre-computed steering vector (relative to this config's directory)
+vector_path: "../EasySteer/vectors/happy_diffmean.gguf"
+
+# Smoke test: single scale
+scales: [0.0]
+
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  proxy_port: 8018
+
+# Minimal sampling for smoke test
+pass_at_k:
+  n_samples: 5
+  temperatures: [0.8]
+  max_tokens: 512
+  k_values: [1, 2, 5]
+
+datasets: ["humaneval"]

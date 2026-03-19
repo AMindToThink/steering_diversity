@@ -1,0 +1,20 @@
+run_name: "passk_test_steered"
+seed: 42
+
+steering_config: "happy_full.yaml"
+vector_path: "../EasySteer/vectors/happy_diffmean.gguf"
+
+# Quick test: single steered scale
+scales: [2.0]
+
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  proxy_port: 8018
+
+pass_at_k:
+  n_samples: 10
+  temperatures: [0.8]
+  max_tokens: 512
+  k_values: [1, 2, 5, 10]
+
+datasets: ["humaneval"]
