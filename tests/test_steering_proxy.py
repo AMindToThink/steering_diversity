@@ -39,8 +39,9 @@ def _setup_proxy(dummy_vector: Path) -> None:
 
 
 @pytest.fixture()
-def client() -> TestClient:
-    return TestClient(app)
+def client():
+    with TestClient(app) as c:
+        yield c
 
 
 class TestConfigure:

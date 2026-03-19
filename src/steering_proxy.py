@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import argparse
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import httpx
@@ -25,11 +27,25 @@ from fastapi.responses import Response, StreamingResponse
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Steering Proxy")
-
 # Module-level state set by configure() before server starts.
 _upstream: str = ""
 _steer_dict: dict = {}
+_http_client: httpx.AsyncClient | None = None
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Create a persistent httpx.AsyncClient for the app's lifetime."""
+    global _http_client
+    _http_client = httpx.AsyncClient(timeout=300.0)
+    try:
+        yield
+    finally:
+        await _http_client.aclose()
+        _http_client = None
+
+
+app = FastAPI(title="Steering Proxy", lifespan=_lifespan)
 
 
 def configure(
@@ -162,9 +178,10 @@ async def proxy(path: str, request: Request) -> Response:
     """Forward requests to upstream vLLM, injecting steering on POST."""
     url = f"{_upstream}/v1/{path}"
 
+    assert _http_client is not None, "App not started — lifespan not entered"
+
     if request.method == "GET":
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=dict(request.headers))
+        resp = await _http_client.get(url, headers=dict(request.headers))
         return Response(
             content=resp.content,
             status_code=resp.status_code,
@@ -182,18 +199,16 @@ async def proxy(path: str, request: Request) -> Response:
 
     if stream:
         async def stream_response():
-            async with httpx.AsyncClient(timeout=300.0) as client:
-                async with client.stream("POST", url, json=body) as resp:
-                    async for chunk in resp.aiter_bytes():
-                        yield chunk
+            async with _http_client.stream("POST", url, json=body) as resp:
+                async for chunk in resp.aiter_bytes():
+                    yield chunk
 
         return StreamingResponse(
             stream_response(),
             media_type="text/event-stream",
         )
 
-    async with httpx.AsyncClient(timeout=300.0) as client:
-        resp = await client.post(url, json=body)
+    resp = await _http_client.post(url, json=body)
 
     # Fail loudly if upstream returned an error
     if resp.status_code != 200:
