@@ -23,7 +23,10 @@ import json
 import sys
 from pathlib import Path
 
-from src.pass_at_k import pass_at_k_curve
+import numpy as np
+from scipy import stats
+
+from src.pass_at_k import pass_at_k, pass_at_k_curve
 
 
 def extract_per_problem_results(
@@ -103,6 +106,136 @@ def combine_curves(input_paths: list[Path], output_path: Path) -> None:
     print(f"\nCombined {len(combined)} conditions → {output_path}")
 
 
+def _per_problem_passk(per_problem: list[dict], k: int) -> np.ndarray:
+    """Compute per-problem pass@k scores from list of {n, c} dicts."""
+    return np.array([pass_at_k(p["n"], p["c"], k) for p in per_problem])
+
+
+def coverage_gain_test(
+    baseline_path: Path,
+    steered_path: Path,
+    use_plus: bool = True,
+    output_path: Path | None = None,
+) -> dict:
+    """Test whether steering reduces diversity beyond what pass@1 drop explains.
+
+    Computes coverage gain (pass@k - pass@1) per problem for each condition,
+    then runs:
+      1. Paired t-test on coverage gain at each k (with k=10 as pre-specified primary)
+      2. Omnibus interaction test: mean coverage gain across all k values
+
+    Returns dict with full results.
+    """
+    with open(baseline_path) as f:
+        baseline = json.load(f)
+    with open(steered_path) as f:
+        steered = json.load(f)
+
+    suffix = "plus" if use_plus else "base"
+    per_problem_key = f"per_problem_{suffix}"
+    passk_key = f"pass_at_k_{suffix}"
+
+    pp_base = baseline[per_problem_key]
+    pp_steer = steered[per_problem_key]
+
+    if len(pp_base) != len(pp_steer):
+        raise ValueError(
+            f"Problem count mismatch: baseline has {len(pp_base)}, "
+            f"steered has {len(pp_steer)}"
+        )
+
+    k_values = sorted(int(k) for k in baseline[passk_key].keys())
+    k_values_cg = [k for k in k_values if k > 1]
+
+    # pass@1 per problem
+    passk1_base = _per_problem_passk(pp_base, 1)
+    passk1_steer = _per_problem_passk(pp_steer, 1)
+
+    # Per-k coverage gain tests
+    per_k_results: list[dict] = []
+    all_cg_diffs: list[np.ndarray] = []
+
+    for k in k_values_cg:
+        cg_base = _per_problem_passk(pp_base, k) - passk1_base
+        cg_steer = _per_problem_passk(pp_steer, k) - passk1_steer
+        diff = cg_steer - cg_base
+        all_cg_diffs.append(diff)
+
+        mean_diff = float(diff.mean())
+        se_diff = float(diff.std(ddof=1) / np.sqrt(len(diff)))
+        t_stat, p_val = stats.ttest_rel(cg_steer, cg_base)
+
+        per_k_results.append({
+            "k": k,
+            "mean_cg_baseline": float(cg_base.mean()),
+            "mean_cg_steered": float(cg_steer.mean()),
+            "delta_cg": mean_diff,
+            "se": se_diff,
+            "ci_95_low": mean_diff - 1.96 * se_diff,
+            "ci_95_high": mean_diff + 1.96 * se_diff,
+            "t_stat": float(t_stat),
+            "p_value": float(p_val),
+            "significant": bool(p_val < 0.05),
+        })
+
+    # Omnibus interaction test: mean coverage gain diff across all k
+    # For each problem, average the coverage gain difference across k values
+    stacked = np.column_stack(all_cg_diffs)  # shape: (n_problems, n_k)
+    mean_cg_diff_per_problem = stacked.mean(axis=1)
+    omnibus_t, omnibus_p = stats.ttest_1samp(mean_cg_diff_per_problem, 0.0)
+
+    # Find pre-specified primary (k=10)
+    primary_k = 10
+    primary_result = next((r for r in per_k_results if r["k"] == primary_k), None)
+
+    result = {
+        "baseline_scale": baseline["scale"],
+        "steered_scale": steered["scale"],
+        "metric": suffix,
+        "n_problems": len(pp_base),
+        "pass_at_1_baseline": float(passk1_base.mean()),
+        "pass_at_1_steered": float(passk1_steer.mean()),
+        "primary_k": primary_k,
+        "primary_result": primary_result,
+        "per_k_results": per_k_results,
+        "omnibus_test": {
+            "description": "One-sample t-test on mean coverage gain difference across all k",
+            "mean_delta_cg": float(mean_cg_diff_per_problem.mean()),
+            "t_stat": float(omnibus_t),
+            "p_value": float(omnibus_p),
+            "significant": bool(omnibus_p < 0.05),
+        },
+    }
+
+    # Print results table
+    print(f"\nCoverage gain test: α={baseline['scale']} vs α={steered['scale']} ({suffix})")
+    print(f"  n={len(pp_base)} problems, pass@1: {passk1_base.mean():.3f} → {passk1_steer.mean():.3f}")
+    print()
+    print(f"  {'k':>5}  {'Δ cov gain':>10}  {'SE':>8}  {'p-value':>10}  {'sig':>5}")
+    print(f"  {'─'*5}  {'─'*10}  {'─'*8}  {'─'*10}  {'─'*5}")
+    for r in per_k_results:
+        sig_marker = "*" if r["significant"] else ""
+        primary_marker = " ◄" if r["k"] == primary_k else ""
+        print(
+            f"  {r['k']:>5}  {r['delta_cg']:>10.4f}  {r['se']:>8.4f}  "
+            f"{r['p_value']:>10.4f}  {sig_marker:>5}{primary_marker}"
+        )
+    print()
+    print(f"  Omnibus interaction test:")
+    omni = result["omnibus_test"]
+    sig = "*" if omni["significant"] else ""
+    print(f"    mean Δ coverage gain = {omni['mean_delta_cg']:.4f}, "
+          f"t = {omni['t_stat']:.3f}, p = {omni['p_value']:.4f} {sig}")
+
+    if output_path:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(result, f, indent=2)
+        print(f"\n  Saved to {output_path}")
+
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Compute pass@k from evalplus eval_results.json"
@@ -124,6 +257,19 @@ def main() -> None:
     combine.add_argument("inputs", nargs="+", type=Path)
     combine.add_argument("--output", required=True, type=Path)
 
+    # Test subcommand
+    test = subparsers.add_parser(
+        "test", help="Test whether steering reduces diversity beyond pass@1 drop"
+    )
+    test.add_argument("--baseline", required=True, type=Path,
+                      help="pass_at_k.json for unsteered condition")
+    test.add_argument("--steered", required=True, type=Path,
+                      help="pass_at_k.json for steered condition")
+    test.add_argument("--metric", choices=["plus", "base"], default="plus",
+                      help="Which EvalPlus metric (default: plus)")
+    test.add_argument("--output", type=Path,
+                      help="Optional path to save results JSON")
+
     args = parser.parse_args()
 
     if args.command == "compute":
@@ -133,6 +279,12 @@ def main() -> None:
         )
     elif args.command == "combine":
         combine_curves(args.inputs, args.output)
+    elif args.command == "test":
+        coverage_gain_test(
+            args.baseline, args.steered,
+            use_plus=(args.metric == "plus"),
+            output_path=args.output,
+        )
     else:
         parser.print_help()
         sys.exit(1)

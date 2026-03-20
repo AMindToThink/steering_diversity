@@ -344,6 +344,144 @@ def plot_combined(
     return saved
 
 
+def plot_coverage_gain(
+    curves: list[dict],
+    output_dir: Path,
+    use_plus: bool = True,
+) -> list[Path]:
+    """Side-by-side: coverage gain curves (left) + Δ coverage gain bars (right).
+
+    Coverage gain = pass@k - pass@1, measuring the benefit of additional attempts.
+    If steering collapses diversity, the steered model's coverage gain should be
+    smaller than the unsteered model's, even after accounting for pass@1 differences.
+    """
+    sns.set_theme(style="whitegrid")
+    saved: list[Path] = []
+    suffix = "plus" if use_plus else "base"
+    per_problem_key = f"per_problem_{suffix}"
+
+    groups: dict[tuple[str, float], list[dict]] = {}
+    for entry in curves:
+        key = (entry["dataset"], entry["temperature"])
+        groups.setdefault(key, []).append(entry)
+
+    for (dataset, temp), entries in sorted(groups.items()):
+        baseline = next((e for e in entries if e["scale"] == 0.0), None)
+        steered_entries = sorted(
+            [e for e in entries if e["scale"] != 0.0], key=lambda e: e["scale"]
+        )
+        if baseline is None or not steered_entries:
+            continue
+
+        per_problem_baseline = baseline.get(per_problem_key)
+        if per_problem_baseline is None:
+            continue
+
+        steered = steered_entries[0]
+        per_problem_steer = steered.get(per_problem_key)
+        if per_problem_steer is None:
+            continue
+
+        k_values = sorted(int(k) for k in baseline[f"pass_at_k_{suffix}"].keys())
+        # Need k > 1 for coverage gain
+        k_values_cg = [k for k in k_values if k > 1]
+        if not k_values_cg:
+            continue
+
+        fig, (ax_curve, ax_delta) = plt.subplots(1, 2, figsize=(16, 5.5))
+
+        # --- Left panel: coverage gain curves with CI ---
+        for entry, color, marker, label in [
+            (baseline, "tab:blue", "o", "Unsteered (α=0)"),
+            (steered, "tab:red", "s", f"Happy steered (α={steered['scale']})"),
+        ]:
+            pp = entry.get(per_problem_key)
+            if pp is None:
+                continue
+            # pass@1 per problem (fixed baseline for coverage gain)
+            passk1 = _per_problem_passk(pp, 1)
+            means, lows, highs = [], [], []
+            rng = np.random.default_rng(42)
+            for k in k_values_cg:
+                passk_scores = _per_problem_passk(pp, k)
+                cg = passk_scores - passk1  # coverage gain per problem
+                n = len(cg)
+                boot_means = np.array([
+                    rng.choice(cg, size=n, replace=True).mean()
+                    for _ in range(10_000)
+                ])
+                means.append(float(cg.mean()))
+                lo, hi = np.quantile(boot_means, [0.025, 0.975])
+                lows.append(float(lo))
+                highs.append(float(hi))
+
+            ax_curve.plot(k_values_cg, means, marker=marker, markersize=5,
+                          label=label, color=color, linewidth=2)
+            ax_curve.fill_between(k_values_cg, lows, highs, alpha=0.2, color=color)
+
+        ax_curve.set_xscale("log")
+        ax_curve.set_xlabel("k (number of attempts)", fontsize=12)
+        ax_curve.set_ylabel("Coverage gain (pass@k − pass@1)", fontsize=12)
+        dataset_label = "HumanEval+" if (dataset == "humaneval" and use_plus) else dataset
+        ax_curve.set_title(f"{dataset_label} coverage gain", fontsize=13)
+        ax_curve.legend(loc="upper left", fontsize=10)
+
+        # --- Right panel: Δ coverage gain bars with significance ---
+        passk1_base = _per_problem_passk(per_problem_baseline, 1)
+        passk1_steer = _per_problem_passk(per_problem_steer, 1)
+
+        deltas, ci_lows, ci_highs, p_values = [], [], [], []
+        for k in k_values_cg:
+            cg_base = _per_problem_passk(per_problem_baseline, k) - passk1_base
+            cg_steer = _per_problem_passk(per_problem_steer, k) - passk1_steer
+            diff = cg_steer - cg_base
+            mean_diff = diff.mean()
+            se_diff = diff.std(ddof=1) / np.sqrt(len(diff))
+            _, p_val = stats.ttest_rel(cg_steer, cg_base)
+
+            deltas.append(mean_diff)
+            ci_lows.append(mean_diff - 1.96 * se_diff)
+            ci_highs.append(mean_diff + 1.96 * se_diff)
+            p_values.append(p_val)
+
+        x = np.arange(len(k_values_cg))
+        colors = ["tab:red" if p < 0.05 else "0.6" for p in p_values]
+        yerr_lo = [d - lo for d, lo in zip(deltas, ci_lows)]
+        yerr_hi = [hi - d for d, hi in zip(deltas, ci_highs)]
+
+        ax_delta.bar(x, deltas, color=colors, width=0.7)
+        ax_delta.errorbar(x, deltas, yerr=[yerr_lo, yerr_hi],
+                          fmt="none", ecolor="black", capsize=4, linewidth=1.5)
+        ax_delta.axhline(0, color="gray", linestyle="--", linewidth=1)
+        ax_delta.set_xticks(x)
+        ax_delta.set_xticklabels([str(k) for k in k_values_cg])
+        ax_delta.set_xlabel("k (number of attempts)", fontsize=12)
+        ax_delta.set_ylabel("Δ coverage gain (steered − unsteered)", fontsize=12)
+        ax_delta.set_title(
+            f"Diversity collapse test (α={steered['scale']})",
+            fontsize=13,
+        )
+        from matplotlib.patches import Patch
+        ax_delta.legend(
+            handles=[
+                Patch(facecolor="tab:red", label="p < 0.05"),
+                Patch(facecolor="0.6", label="p ≥ 0.05"),
+            ],
+            loc="lower left", fontsize=10,
+        )
+
+        fig.tight_layout()
+        plot_name = f"coverage_gain_{dataset}_{suffix}_scale{steered['scale']}_temp{temp}.png"
+        plot_path = output_dir / plot_name
+        ensure_dir(output_dir)
+        fig.savefig(plot_path, dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        saved.append(plot_path)
+        logger.info("Saved %s", plot_path)
+
+    return saved
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -386,6 +524,7 @@ def main() -> None:
         all_plots.extend(plot_pass_at_k_with_ci(curves, output_dir, use_plus=use_plus))
         all_plots.extend(plot_delta_significance(curves, output_dir, use_plus=use_plus))
         all_plots.extend(plot_combined(curves, output_dir, use_plus=use_plus))
+        all_plots.extend(plot_coverage_gain(curves, output_dir, use_plus=use_plus))
 
     logger.info("Generated %d plots in %s", len(all_plots), output_dir)
 
