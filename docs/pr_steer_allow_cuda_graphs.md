@@ -1,6 +1,7 @@
 # PR: Server-level steering with CUDA graphs — 2.3x speedup
 
-**Repo:** AMindToThink/EasySteer → vllm-steer
+**From:** `AMindToThink/EasySteer-vllm-v1` branch `feat/steer-allow-cuda-graphs`
+**To:** `ZJU-REAL/EasySteer-vllm-v1` branch `main`
 **Status:** Ready for review
 
 ## Summary
