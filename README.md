@@ -57,6 +57,27 @@ uv sync --extra gpu --extra dev
 make pipeline  # runs all 5 steps with dev config
 ```
 
+### Verifying steering correctness
+
+Before running experiments, verify that steering works correctly on your model/hardware combination. This is especially important if you change models, GPUs, or vLLM versions.
+
+```bash
+cd EasySteer/vllm-steer
+CUDA_VISIBLE_DEVICES=0 .venv/bin/python scripts/verify_steering_correctness.py \
+    --model Qwen/Qwen2.5-1.5B-Instruct \
+    --vector /absolute/path/to/vector.gguf \
+    --target-layers 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+```
+
+This runs 4 checks (all must pass):
+
+1. **Chunked prefill ON vs OFF** — confirms disabling chunked prefill is safe for your model
+2. **Plain vs scale=0 steering** — confirms the steering infrastructure is transparent when inactive
+3. **Steered eager vs CUDA graphs** — confirms CUDA graphs don't skip the steering intervention
+4. **scale=4 vs scale=0** — confirms steering actually changes the output
+
+**Important:** Steering requires `enable_chunked_prefill=False` and `enable_prefix_caching=False`. The server enforces this with hard errors. Prefix caching silently reuses KV states across different steering scales, which disables steering entirely (see commit `9b999cb` for the bug that invalidated a full experiment run).
+
 ## Project Structure
 
 ```
