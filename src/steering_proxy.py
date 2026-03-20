@@ -1,9 +1,24 @@
-"""Thin FastAPI proxy that injects steering extra_body into OpenAI-format requests.
+"""Thin FastAPI proxy for steered vLLM servers.
 
-Sits between EvalPlus (or any OpenAI-compatible client) and the EasySteer vLLM
-server, injecting the ``steer_vector_request`` field that vLLM expects.
+Supports two modes depending on how the upstream vLLM server is started:
+
+**Server-level steering** (preferred — enables CUDA graphs for ~2.6x speedup):
+    The upstream vLLM is started with ``--steer-vector-path``.  The proxy
+    simply passes requests through without modification.  Steering config
+    can be updated via ``POST /v1/steering`` on the upstream.
+
+**Per-request injection** (legacy — no CUDA graphs):
+    The upstream vLLM is started with ``--enable-steer-vector`` only.
+    The proxy injects ``steer_vector_request`` into every POST body.
 
 Usage:
+    # Server-level mode (proxy just forwards):
+    uv run python -m src.steering_proxy \
+        --upstream http://localhost:8017 \
+        --server-level \
+        --port 8018
+
+    # Legacy per-request injection mode:
     uv run python -m src.steering_proxy \
         --upstream http://localhost:8017 \
         --vector-path outputs/vector.gguf \
@@ -30,6 +45,7 @@ logger = logging.getLogger(__name__)
 # Module-level state set by configure() before server starts.
 _upstream: str = ""
 _steer_dict: dict = {}
+_server_level: bool = False
 _http_client: httpx.AsyncClient | None = None
 
 
@@ -50,9 +66,11 @@ app = FastAPI(title="Steering Proxy", lifespan=_lifespan)
 
 def configure(
     upstream: str,
-    vector_path: str,
-    scale: float,
-    target_layers: list[int],
+    *,
+    server_level: bool = False,
+    vector_path: str | None = None,
+    scale: float = 1.0,
+    target_layers: list[int] | None = None,
     algorithm: str = "direct",
     normalize: bool = True,
 ) -> None:
@@ -60,19 +78,58 @@ def configure(
 
     Must be called before the ASGI app handles any requests.
 
+    Parameters
+    ----------
+    upstream:
+        Base URL of the vLLM server.
+    server_level:
+        If True, upstream uses ``--steer-vector-path`` and no per-request
+        injection is needed.
+    vector_path:
+        Path to steering vector file (required for per-request mode).
+    scale:
+        Steering scale factor (per-request mode only).
+    target_layers:
+        Target layer indices (per-request mode only).
+    algorithm:
+        Steering algorithm (per-request mode only).
+    normalize:
+        Whether to normalize (per-request mode only).
+
     Raises
     ------
     FileNotFoundError:
-        If the vector file does not exist.
+        If per-request mode and the vector file does not exist.
+    ValueError:
+        If per-request mode and required args are missing.
     """
-    global _upstream, _steer_dict
+    global _upstream, _steer_dict, _server_level
 
-    # Validate vector file exists
+    _upstream = upstream.rstrip("/")
+    _server_level = server_level
+
+    if server_level:
+        _steer_dict = {}
+        logger.info(
+            "Proxy configured in SERVER-LEVEL mode: upstream=%s "
+            "(requests forwarded without steer_vector_request injection)",
+            _upstream,
+        )
+        return
+
+    # Per-request injection mode
+    if vector_path is None:
+        raise ValueError(
+            "--vector-path is required in per-request mode "
+            "(omit --server-level to use per-request injection)"
+        )
+    if target_layers is None:
+        raise ValueError("--target-layers is required in per-request mode")
+
     vp = Path(vector_path)
     if not vp.exists():
         raise FileNotFoundError(f"Steering vector not found: {vector_path}")
 
-    _upstream = upstream.rstrip("/")
     _steer_dict = {
         "steer_vector_local_path": str(vp.resolve()),  # absolute path for vLLM
         "scale": scale,
@@ -84,7 +141,11 @@ def configure(
         "prefill_trigger_tokens": [-1],
         "generate_trigger_tokens": [-1],
     }
-    logger.info("Proxy configured: upstream=%s, steer=%s", _upstream, _steer_dict)
+    logger.info(
+        "Proxy configured in PER-REQUEST mode: upstream=%s, steer=%s",
+        _upstream,
+        _steer_dict,
+    )
 
 
 def verify_upstream_supports_steering(
@@ -175,7 +236,7 @@ def get_steer_dict() -> dict:
 
 @app.api_route("/v1/{path:path}", methods=["GET", "POST"])
 async def proxy(path: str, request: Request) -> Response:
-    """Forward requests to upstream vLLM, injecting steering on POST."""
+    """Forward requests to upstream vLLM, optionally injecting steering on POST."""
     url = f"{_upstream}/v1/{path}"
 
     assert _http_client is not None, "App not started — lifespan not entered"
@@ -188,11 +249,12 @@ async def proxy(path: str, request: Request) -> Response:
             headers=dict(resp.headers),
         )
 
-    # POST — inject steering into the body
+    # POST — inject steering into the body only in per-request mode
     body = await request.json()
 
-    # vLLM expects steer_vector_request at top level of the JSON body
-    body["steer_vector_request"] = dict(_steer_dict)
+    if not _server_level and _steer_dict:
+        # Per-request injection mode: add steer_vector_request to body
+        body["steer_vector_request"] = dict(_steer_dict)
 
     # Check if streaming is requested
     stream = body.get("stream", False)
@@ -228,18 +290,23 @@ async def proxy(path: str, request: Request) -> Response:
 
 @app.get("/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok", "upstream": _upstream}
+    return {"status": "ok", "upstream": _upstream, "mode": "server-level" if _server_level else "per-request"}
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Steering injection proxy")
     parser.add_argument("--upstream", required=True, help="Upstream vLLM base URL")
-    parser.add_argument("--vector-path", required=True, help="Path to steering vector")
-    parser.add_argument("--scale", type=float, required=True, help="Steering scale")
     parser.add_argument(
-        "--target-layers", type=int, nargs="+", required=True, help="Target layer indices"
+        "--server-level",
+        action="store_true",
+        help="Upstream uses --steer-vector-path; proxy just forwards requests.",
     )
-    parser.add_argument("--algorithm", default="direct", help="Steering algorithm")
+    parser.add_argument("--vector-path", default=None, help="Path to steering vector (per-request mode)")
+    parser.add_argument("--scale", type=float, default=1.0, help="Steering scale (per-request mode)")
+    parser.add_argument(
+        "--target-layers", type=int, nargs="+", default=None, help="Target layer indices (per-request mode)"
+    )
+    parser.add_argument("--algorithm", default="direct", help="Steering algorithm (per-request mode)")
     parser.add_argument("--normalize", action="store_true", default=True)
     parser.add_argument("--no-normalize", dest="normalize", action="store_false")
     parser.add_argument("--port", type=int, default=8018, help="Port to listen on")
@@ -252,6 +319,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     configure(
         upstream=args.upstream,
+        server_level=args.server_level,
         vector_path=args.vector_path,
         scale=args.scale,
         target_layers=args.target_layers,

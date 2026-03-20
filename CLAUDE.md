@@ -30,6 +30,19 @@ This project measures whether activation steering collapses the diversity of LLM
 | 4 | `04_compute_metrics.py` | No | embeddings → `metrics.json` |
 | 5 | `05_visualize.py` | No | embeddings + metrics → `plots/` |
 
+## Steering: Mandatory vLLM Settings
+
+When steering is enabled (via `--enable-steer-vector` or `--steer-vector-path`), you **MUST** set:
+
+- `enable_chunked_prefill=False` (or `--no-enable-chunked-prefill`)
+- `enable_prefix_caching=False` (or `--no-enable-prefix-caching`)
+
+**Chunked prefill** is not supported by EasySteer's steering wrappers — it causes silent numerical errors.
+
+**Prefix caching** keys on `steer_vector_name` but NOT scale — reusing KV states across different scales silently disables steering. This caused a real data-invalidation bug (commit `9b999cb`).
+
+If you see logprob diffs > 1e-4 between modes that should be equivalent, check these flags FIRST.
+
 ## Synthetic Data Rules
 
 Any plots generated from synthetic/fixture data **must** have a "DEMO" watermark. Never present synthetic outputs as real experiment results.
