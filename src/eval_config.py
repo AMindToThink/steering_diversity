@@ -22,6 +22,7 @@ class EndpointConfig:
 
     base_url: str = "http://localhost:8017/v1"
     proxy_port: int = 8018
+    steering_mode: str = "proxy"  # "server" or "proxy"
 
 
 @dataclasses.dataclass

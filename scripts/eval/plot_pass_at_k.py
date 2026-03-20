@@ -1,11 +1,13 @@
-"""Visualize pass@k curves across steering scales.
+"""Visualize pass@k curves across steering scales with bootstrap CIs.
 
-Reads the aggregated pass_at_k_curves.json and produces per-dataset plots
-showing pass@k vs k for each steering scale.
+Reads the aggregated pass_at_k_curves.json (which includes per_problem data)
+and produces:
+  1. pass@k curves with bootstrap confidence bands
+  2. Δ pass@k bar chart colored by paired t-test significance
 
 Usage:
     uv run python scripts/eval/plot_pass_at_k.py --config configs/eval_code.yaml
-    uv run python scripts/eval/plot_pass_at_k.py --input outputs/passk_code_v1/code/pass_at_k_curves.json
+    uv run python scripts/eval/plot_pass_at_k.py --input outputs/passk_main_v1/code/pass_at_k_curves.json
 """
 
 from __future__ import annotations
@@ -17,14 +19,13 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy import stats
 import seaborn as sns
 
+from src.pass_at_k import pass_at_k
 from src.utils import ensure_dir
 
 logger = logging.getLogger(__name__)
-
-# Color palette for scales — visually distinct, colorblind-friendly
-SCALE_CMAP = "viridis"
 
 
 def load_curves(path: Path) -> list[dict]:
@@ -33,19 +34,50 @@ def load_curves(path: Path) -> list[dict]:
         return json.load(f)
 
 
-def plot_pass_at_k_by_dataset(
+def _per_problem_passk(per_problem: list[dict], k: int) -> np.ndarray:
+    """Compute per-problem pass@k scores, returning one value per problem."""
+    return np.array([pass_at_k(p["n"], p["c"], k) for p in per_problem])
+
+
+def _bootstrap_ci(
+    per_problem: list[dict],
+    k: int,
+    n_boot: int = 10_000,
+    ci: float = 0.95,
+    rng: np.random.Generator | None = None,
+) -> tuple[float, float, float]:
+    """Bootstrap the mean pass@k across problems.
+
+    Returns (mean, ci_low, ci_high).
+    """
+    if rng is None:
+        rng = np.random.default_rng(42)
+    scores = _per_problem_passk(per_problem, k)
+    n = len(scores)
+    boot_means = np.array([
+        rng.choice(scores, size=n, replace=True).mean() for _ in range(n_boot)
+    ])
+    alpha = (1 - ci) / 2
+    lo, hi = np.quantile(boot_means, [alpha, 1 - alpha])
+    return float(scores.mean()), float(lo), float(hi)
+
+
+def plot_pass_at_k_with_ci(
     curves: list[dict],
     output_dir: Path,
+    use_plus: bool = True,
     title_prefix: str = "",
 ) -> list[Path]:
-    """Create one plot per (dataset, temperature) showing pass@k vs k for each scale.
+    """pass@k curves with bootstrap confidence bands.
 
-    Returns list of saved plot paths.
+    One plot per (dataset, temperature). Each scale gets a line with a
+    shaded CI band.
     """
     sns.set_theme(style="whitegrid")
     saved: list[Path] = []
+    suffix = "plus" if use_plus else "base"
+    per_problem_key = f"per_problem_{suffix}"
 
-    # Group by (dataset, temperature)
     groups: dict[tuple[str, float], list[dict]] = {}
     for entry in curves:
         key = (entry["dataset"], entry["temperature"])
@@ -53,38 +85,48 @@ def plot_pass_at_k_by_dataset(
 
     for (dataset, temp), entries in sorted(groups.items()):
         fig, ax = plt.subplots(figsize=(8, 5))
-
-        # Sort entries by scale for consistent legend ordering
         entries.sort(key=lambda e: e["scale"])
 
-        scales = [e["scale"] for e in entries]
-        cmap = plt.get_cmap(SCALE_CMAP)
-        colors = [cmap(i / max(len(scales) - 1, 1)) for i in range(len(scales))]
+        # Use distinct colors for unsteered vs steered
+        scale_colors: dict[float, tuple[str, str]] = {}
+        if len(entries) == 2 and entries[0]["scale"] == 0.0:
+            scale_colors[entries[0]["scale"]] = ("tab:blue", "Unsteered (α=0)")
+            scale_colors[entries[1]["scale"]] = ("tab:red", f"Happy steered (α={entries[1]['scale']})")
+        else:
+            cmap = plt.get_cmap("viridis")
+            for i, e in enumerate(entries):
+                c = cmap(i / max(len(entries) - 1, 1))
+                scale_colors[e["scale"]] = (c, f"scale={e['scale']}")
 
-        for entry, color in zip(entries, colors):
-            pak = entry["pass_at_k"]
-            k_values = sorted(int(k) for k in pak.keys())
-            scores = [pak[str(k)] for k in k_values]
+        for entry in entries:
+            per_problem = entry.get(per_problem_key)
+            if per_problem is None:
+                logger.warning("No %s in entry scale=%.1f, skipping CI", per_problem_key, entry["scale"])
+                continue
 
-            ax.plot(
-                k_values,
-                scores,
-                marker="o",
-                markersize=4,
-                label=f"scale={entry['scale']}",
-                color=color,
-                linewidth=2,
-            )
+            k_values = sorted(int(k) for k in entry[f"pass_at_k_{suffix}"].keys())
+            means, lows, highs = [], [], []
+            for k in k_values:
+                m, lo, hi = _bootstrap_ci(per_problem, k)
+                means.append(m)
+                lows.append(lo)
+                highs.append(hi)
+
+            color, label = scale_colors[entry["scale"]]
+            marker = "o" if entry["scale"] == 0.0 else "s"
+            ax.plot(k_values, means, marker=marker, markersize=5,
+                    label=label, color=color, linewidth=2)
+            ax.fill_between(k_values, lows, highs, alpha=0.2, color=color)
 
         ax.set_xscale("log")
         ax.set_xlabel("k (number of attempts)", fontsize=12)
         ax.set_ylabel("pass@k", fontsize=12)
-        title = f"{title_prefix}{dataset} — pass@k vs k (T={temp})"
-        ax.set_title(title, fontsize=13)
-        ax.legend(title="Steering scale", loc="lower right")
-        ax.set_ylim(0, 1.05)
+        dataset_label = "HumanEval+" if (dataset == "humaneval" and use_plus) else dataset
+        ax.set_title(f"{title_prefix}{dataset_label} pass@k", fontsize=13)
+        ax.legend(loc="lower right", fontsize=10)
 
-        plot_path = output_dir / f"pass_at_k_{dataset}_temp{temp}.png"
+        plot_name = f"pass_at_k_{dataset}_{suffix}_temp{temp}.png"
+        plot_path = output_dir / plot_name
         ensure_dir(output_dir)
         fig.savefig(plot_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
@@ -94,16 +136,20 @@ def plot_pass_at_k_by_dataset(
     return saved
 
 
-def plot_crossover_analysis(
+def plot_delta_significance(
     curves: list[dict],
     output_dir: Path,
+    use_plus: bool = True,
 ) -> list[Path]:
-    """Plot the difference in pass@k between steered and baseline (scale=0).
+    """Bar chart of Δ pass@k (steered − baseline) colored by significance.
 
-    Shows where steering helps (positive) vs hurts (negative) as k grows.
+    Uses paired t-test across problems. Bars are red if p < 0.05, gray otherwise.
+    Error bars show 95% CI of the difference.
     """
     sns.set_theme(style="whitegrid")
     saved: list[Path] = []
+    suffix = "plus" if use_plus else "base"
+    per_problem_key = f"per_problem_{suffix}"
 
     groups: dict[tuple[str, float], list[dict]] = {}
     for entry in curves:
@@ -111,47 +157,184 @@ def plot_crossover_analysis(
         groups.setdefault(key, []).append(entry)
 
     for (dataset, temp), entries in sorted(groups.items()):
-        # Find baseline
         baseline = next((e for e in entries if e["scale"] == 0.0), None)
         if baseline is None:
-            logger.warning("No baseline (scale=0) for %s/T=%.1f, skipping crossover", dataset, temp)
+            continue
+        steered_entries = [e for e in entries if e["scale"] != 0.0]
+        if not steered_entries:
             continue
 
-        steered = [e for e in entries if e["scale"] != 0.0]
-        if not steered:
-            continue
+        for steered in steered_entries:
+            per_problem_base = baseline.get(per_problem_key)
+            per_problem_steer = steered.get(per_problem_key)
+            if per_problem_base is None or per_problem_steer is None:
+                continue
 
-        fig, ax = plt.subplots(figsize=(8, 5))
-        steered.sort(key=lambda e: e["scale"])
+            k_values = sorted(int(k) for k in baseline[f"pass_at_k_{suffix}"].keys())
+            deltas, ci_lows, ci_highs, p_values = [], [], [], []
 
-        scales = [e["scale"] for e in steered]
-        cmap = plt.get_cmap(SCALE_CMAP)
-        colors = [cmap(i / max(len(scales) - 1, 1)) for i in range(len(scales))]
+            for k in k_values:
+                scores_0 = _per_problem_passk(per_problem_base, k)
+                scores_s = _per_problem_passk(per_problem_steer, k)
+                diff = scores_s - scores_0
+                mean_diff = diff.mean()
+                se_diff = diff.std(ddof=1) / np.sqrt(len(diff))
+                _, p_val = stats.ttest_rel(scores_s, scores_0)
 
-        baseline_pak = baseline["pass_at_k"]
-        k_values = sorted(int(k) for k in baseline_pak.keys())
+                deltas.append(mean_diff)
+                ci_lows.append(mean_diff - 1.96 * se_diff)
+                ci_highs.append(mean_diff + 1.96 * se_diff)
+                p_values.append(p_val)
 
-        for entry, color in zip(steered, colors):
-            pak = entry["pass_at_k"]
-            diffs = [pak[str(k)] - baseline_pak[str(k)] for k in k_values]
-            ax.plot(
-                k_values,
-                diffs,
-                marker="o",
-                markersize=4,
-                label=f"scale={entry['scale']}",
-                color=color,
-                linewidth=2,
+            fig, ax = plt.subplots(figsize=(8, 5))
+            x = np.arange(len(k_values))
+            colors = ["tab:red" if p < 0.05 else "0.6" for p in p_values]
+            yerr_lo = [d - lo for d, lo in zip(deltas, ci_lows)]
+            yerr_hi = [hi - d for d, hi in zip(deltas, ci_highs)]
+
+            ax.bar(x, deltas, color=colors, width=0.7)
+            ax.errorbar(x, deltas, yerr=[yerr_lo, yerr_hi],
+                        fmt="none", ecolor="black", capsize=4, linewidth=1.5)
+            ax.axhline(0, color="gray", linestyle="--", linewidth=1)
+            ax.set_xticks(x)
+            ax.set_xticklabels([str(k) for k in k_values])
+            ax.set_xlabel("k (number of attempts)", fontsize=12)
+            ax.set_ylabel("Δ pass@k (steered − unsteered)", fontsize=12)
+
+            dataset_label = "HumanEval+" if (dataset == "humaneval" and use_plus) else dataset
+            ax.set_title(
+                f"Effect of happy steering (α={steered['scale']}) on pass@k",
+                fontsize=13,
             )
 
-        ax.axhline(0, color="gray", linestyle="--", linewidth=1)
-        ax.set_xscale("log")
-        ax.set_xlabel("k (number of attempts)", fontsize=12)
-        ax.set_ylabel("Δ pass@k (steered − baseline)", fontsize=12)
-        ax.set_title(f"{dataset} — Crossover analysis (T={temp})", fontsize=13)
-        ax.legend(title="Steering scale", loc="best")
+            # Legend for significance colors
+            from matplotlib.patches import Patch
+            legend_elements = [
+                Patch(facecolor="tab:red", label="p < 0.05"),
+                Patch(facecolor="0.6", label="p ≥ 0.05"),
+            ]
+            ax.legend(handles=legend_elements, loc="lower left", fontsize=10)
 
-        plot_path = output_dir / f"crossover_{dataset}_temp{temp}.png"
+            plot_name = f"delta_{dataset}_{suffix}_scale{steered['scale']}_temp{temp}.png"
+            plot_path = output_dir / plot_name
+            ensure_dir(output_dir)
+            fig.savefig(plot_path, dpi=150, bbox_inches="tight")
+            plt.close(fig)
+            saved.append(plot_path)
+            logger.info("Saved %s", plot_path)
+
+    return saved
+
+
+def plot_combined(
+    curves: list[dict],
+    output_dir: Path,
+    use_plus: bool = True,
+) -> list[Path]:
+    """Side-by-side: pass@k curves (left) + Δ significance bars (right).
+
+    Matches the style of the preliminary figure.
+    """
+    sns.set_theme(style="whitegrid")
+    saved: list[Path] = []
+    suffix = "plus" if use_plus else "base"
+    per_problem_key = f"per_problem_{suffix}"
+
+    groups: dict[tuple[str, float], list[dict]] = {}
+    for entry in curves:
+        key = (entry["dataset"], entry["temperature"])
+        groups.setdefault(key, []).append(entry)
+
+    for (dataset, temp), entries in sorted(groups.items()):
+        baseline = next((e for e in entries if e["scale"] == 0.0), None)
+        steered_entries = sorted(
+            [e for e in entries if e["scale"] != 0.0], key=lambda e: e["scale"]
+        )
+        if baseline is None or not steered_entries:
+            continue
+
+        per_problem_baseline = baseline.get(per_problem_key)
+        if per_problem_baseline is None:
+            continue
+
+        # Use first steered entry for the combined plot
+        steered = steered_entries[0]
+        per_problem_steer = steered.get(per_problem_key)
+        if per_problem_steer is None:
+            continue
+
+        k_values = sorted(int(k) for k in baseline[f"pass_at_k_{suffix}"].keys())
+
+        fig, (ax_curve, ax_delta) = plt.subplots(1, 2, figsize=(16, 5.5))
+
+        # --- Left panel: curves with CI ---
+        for entry, color, marker, label in [
+            (baseline, "tab:blue", "o", "Unsteered (α=0)"),
+            (steered, "tab:red", "s", f"Happy steered (α={steered['scale']})"),
+        ]:
+            pp = entry.get(per_problem_key)
+            if pp is None:
+                continue
+            means, lows, highs = [], [], []
+            for k in k_values:
+                m, lo, hi = _bootstrap_ci(pp, k)
+                means.append(m)
+                lows.append(lo)
+                highs.append(hi)
+            ax_curve.plot(k_values, means, marker=marker, markersize=5,
+                          label=label, color=color, linewidth=2)
+            ax_curve.fill_between(k_values, lows, highs, alpha=0.2, color=color)
+
+        ax_curve.set_xscale("log")
+        ax_curve.set_xlabel("k (number of attempts)", fontsize=12)
+        ax_curve.set_ylabel("pass@k", fontsize=12)
+        dataset_label = "HumanEval+" if (dataset == "humaneval" and use_plus) else dataset
+        ax_curve.set_title(f"{dataset_label} pass@k", fontsize=13)
+        ax_curve.legend(loc="lower right", fontsize=10)
+
+        # --- Right panel: Δ bars with significance ---
+        deltas, ci_lows, ci_highs, p_values = [], [], [], []
+        for k in k_values:
+            scores_0 = _per_problem_passk(per_problem_baseline, k)
+            scores_s = _per_problem_passk(per_problem_steer, k)
+            diff = scores_s - scores_0
+            mean_diff = diff.mean()
+            se_diff = diff.std(ddof=1) / np.sqrt(len(diff))
+            _, p_val = stats.ttest_rel(scores_s, scores_0)
+            deltas.append(mean_diff)
+            ci_lows.append(mean_diff - 1.96 * se_diff)
+            ci_highs.append(mean_diff + 1.96 * se_diff)
+            p_values.append(p_val)
+
+        x = np.arange(len(k_values))
+        colors = ["tab:red" if p < 0.05 else "0.6" for p in p_values]
+        yerr_lo = [d - lo for d, lo in zip(deltas, ci_lows)]
+        yerr_hi = [hi - d for d, hi in zip(deltas, ci_highs)]
+
+        ax_delta.bar(x, deltas, color=colors, width=0.7)
+        ax_delta.errorbar(x, deltas, yerr=[yerr_lo, yerr_hi],
+                          fmt="none", ecolor="black", capsize=4, linewidth=1.5)
+        ax_delta.axhline(0, color="gray", linestyle="--", linewidth=1)
+        ax_delta.set_xticks(x)
+        ax_delta.set_xticklabels([str(k) for k in k_values])
+        ax_delta.set_xlabel("k (number of attempts)", fontsize=12)
+        ax_delta.set_ylabel("Δ pass@k (steered − unsteered)", fontsize=12)
+        ax_delta.set_title(
+            f"Effect of happy steering (α={steered['scale']}) on pass@k",
+            fontsize=13,
+        )
+        from matplotlib.patches import Patch
+        ax_delta.legend(
+            handles=[
+                Patch(facecolor="tab:red", label="p < 0.05"),
+                Patch(facecolor="0.6", label="p ≥ 0.05"),
+            ],
+            loc="lower left", fontsize=10,
+        )
+
+        fig.tight_layout()
+        plot_name = f"passk_{dataset}_{suffix}_combined_temp{temp}.png"
+        plot_path = output_dir / plot_name
         ensure_dir(output_dir)
         fig.savefig(plot_path, dpi=150, bbox_inches="tight")
         plt.close(fig)
@@ -171,6 +354,10 @@ def main() -> None:
     parser.add_argument("--config", help="Path to eval config YAML (derives input/output paths)")
     parser.add_argument("--input", help="Direct path to pass_at_k_curves.json")
     parser.add_argument("--output", help="Output directory for plots")
+    parser.add_argument(
+        "--metric", choices=["plus", "base", "both"], default="both",
+        help="Which EvalPlus metric to plot (default: both)",
+    )
     args = parser.parse_args()
 
     if args.input:
@@ -188,9 +375,17 @@ def main() -> None:
     curves = load_curves(curves_path)
     logger.info("Loaded %d conditions from %s", len(curves), curves_path)
 
+    use_plus_options = []
+    if args.metric in ("plus", "both"):
+        use_plus_options.append(True)
+    if args.metric in ("base", "both"):
+        use_plus_options.append(False)
+
     all_plots: list[Path] = []
-    all_plots.extend(plot_pass_at_k_by_dataset(curves, output_dir))
-    all_plots.extend(plot_crossover_analysis(curves, output_dir))
+    for use_plus in use_plus_options:
+        all_plots.extend(plot_pass_at_k_with_ci(curves, output_dir, use_plus=use_plus))
+        all_plots.extend(plot_delta_significance(curves, output_dir, use_plus=use_plus))
+        all_plots.extend(plot_combined(curves, output_dir, use_plus=use_plus))
 
     logger.info("Generated %d plots in %s", len(all_plots), output_dir)
 

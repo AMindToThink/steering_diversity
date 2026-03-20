@@ -1,12 +1,16 @@
 """Orchestrate code-domain pass@k evaluation across steering scales.
 
+Supports two steering modes:
+  - **server** (default, 2.3x faster): vLLM started with --steer-vector-path.
+    Scale is changed at runtime via POST /v1/steering. No proxy needed.
+  - **proxy** (legacy): Per-request steering via a local steering proxy.
+
 For each (temperature, scale) combination:
-  1. Start steering proxy on proxy_port
-  2. Run EvalPlus codegen via the proxy
+  1. Set steering scale (server mode) or start proxy (proxy mode)
+  2. Run EvalPlus codegen
   3. Run EvalPlus evaluate
   4. Parse per-problem pass/fail → compute pass@k at all k values
   5. Save results + provenance
-  6. Stop proxy
 
 Usage:
     uv run python scripts/eval/eval_code.py --config configs/eval_code.yaml
@@ -25,6 +29,7 @@ import time
 from pathlib import Path
 
 import uvicorn
+from tqdm import tqdm
 
 from src.eval_config import CodeEvalConfig
 from src.pass_at_k import pass_at_k_curve
@@ -117,6 +122,52 @@ def stop_proxy(proc: multiprocessing.Process) -> None:
     logger.info("Stopped proxy (pid=%d)", proc.pid)
 
 
+def set_steering_scale(base_url: str, scale: float) -> None:
+    """Set the steering scale on a server-level steered vLLM instance.
+
+    Calls POST {base_url}/v1/steering with the new scale value.
+    """
+    import httpx
+
+    url = base_url.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    resp = httpx.post(f"{url}/v1/steering", json={"scale": scale}, timeout=10.0)
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"Failed to set steering scale to {scale}: "
+            f"status={resp.status_code}, body={resp.text}"
+        )
+    logger.info("Set server steering scale to %.2f", scale)
+
+
+def verify_server_steering(base_url: str) -> dict:
+    """Verify that the vLLM server has server-level steering enabled.
+
+    Calls GET {base_url}/v1/steering and confirms a vector is loaded.
+    Returns the steering status dict.
+    """
+    import httpx
+
+    url = base_url.rstrip("/")
+    if url.endswith("/v1"):
+        url = url[:-3]
+    resp = httpx.get(f"{url}/v1/steering", timeout=10.0)
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"Server steering endpoint not available: "
+            f"status={resp.status_code}, body={resp.text}"
+        )
+    status = resp.json()
+    if not status.get("active", False):
+        raise RuntimeError(
+            f"Server reports steering is not active: {status}. "
+            f"Start vLLM with --steer-vector-path."
+        )
+    logger.info("Server steering verified: %s", status)
+    return status
+
+
 def run_evalplus_codegen(
     model_name: str,
     dataset: str,
@@ -144,19 +195,20 @@ def run_evalplus_codegen(
     logger.info("Running codegen: %s", " ".join(cmd))
 
     t0 = time.monotonic()
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Show stderr live (evalplus progress) while saving stdout and stderr to logs
+    with open(log_dir / "codegen_stdout.log", "w") as stdout_log:
+        result = subprocess.run(cmd, stdout=stdout_log, stderr=None, text=True)
     elapsed = time.monotonic() - t0
 
-    # Save logs
-    (log_dir / "codegen_stdout.log").write_text(result.stdout)
-    (log_dir / "codegen_stderr.log").write_text(result.stderr)
+    # Save timing
     (log_dir / "codegen_timing.txt").write_text(f"{elapsed:.1f}s\n")
     logger.info("Codegen completed in %.1fs (exit=%d)", elapsed, result.returncode)
 
     if result.returncode != 0:
+        stdout_content = (log_dir / "codegen_stdout.log").read_text()
         raise RuntimeError(
             f"evalplus.codegen failed (exit {result.returncode}):\n"
-            f"stdout: {result.stdout[-500:]}\nstderr: {result.stderr[-500:]}"
+            f"stdout: {stdout_content[-500:]}"
         )
 
     # EvalPlus writes: <root>/<dataset>/<Model--Name>_<backend>_temp_<T>.jsonl
@@ -182,19 +234,20 @@ def run_evalplus_evaluate(
     logger.info("Running evaluation: %s", " ".join(cmd))
 
     t0 = time.monotonic()
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    # Show stderr live (evalplus progress) while saving stdout to log
+    with open(log_dir / "evaluate_stdout.log", "w") as stdout_log:
+        result = subprocess.run(cmd, stdout=stdout_log, stderr=None, text=True)
     elapsed = time.monotonic() - t0
 
-    # Save logs
-    (log_dir / "evaluate_stdout.log").write_text(result.stdout)
-    (log_dir / "evaluate_stderr.log").write_text(result.stderr)
+    # Save timing
     (log_dir / "evaluate_timing.txt").write_text(f"{elapsed:.1f}s\n")
     logger.info("Evaluate completed in %.1fs (exit=%d)", elapsed, result.returncode)
 
     if result.returncode != 0:
+        stdout_content = (log_dir / "evaluate_stdout.log").read_text()
         raise RuntimeError(
             f"evalplus.evaluate failed (exit {result.returncode}):\n"
-            f"stdout: {result.stdout[-500:]}\nstderr: {result.stderr[-500:]}"
+            f"stdout: {stdout_content[-500:]}"
         )
 
     # EvalPlus writes eval_results.json next to the samples file with a suffix
@@ -256,21 +309,33 @@ def run_single_condition(
     output_dir = cfg.output_dir / "code" / dataset / condition_name
     log_dir = output_dir / "logs"
 
-    proxy_url = f"http://localhost:{cfg.endpoint.proxy_port}/v1"
+    mode = cfg.endpoint.steering_mode
+    proc = None
 
-    # Start proxy
-    upstream = cfg.endpoint.base_url.rstrip("/")
-    if upstream.endswith("/v1"):
-        upstream = upstream[:-3]
-    proc = start_proxy(
-        upstream=upstream,
-        vector_path=cfg.vector_path,
-        scale=scale,
-        target_layers=cfg.steering.target_layers,
-        algorithm=cfg.steering.algorithm,
-        normalize=cfg.steering.normalize,
-        port=cfg.endpoint.proxy_port,
-    )
+    if mode == "server":
+        # Server-level steering: set scale directly on vLLM
+        set_steering_scale(cfg.endpoint.base_url, scale)
+        codegen_url = cfg.endpoint.base_url
+        if not codegen_url.endswith("/v1"):
+            codegen_url = codegen_url.rstrip("/") + "/v1"
+    elif mode == "proxy":
+        # Legacy per-request proxy mode
+        proxy_url = f"http://localhost:{cfg.endpoint.proxy_port}/v1"
+        upstream = cfg.endpoint.base_url.rstrip("/")
+        if upstream.endswith("/v1"):
+            upstream = upstream[:-3]
+        proc = start_proxy(
+            upstream=upstream,
+            vector_path=cfg.vector_path,
+            scale=scale,
+            target_layers=cfg.steering.target_layers,
+            algorithm=cfg.steering.algorithm,
+            normalize=cfg.steering.normalize,
+            port=cfg.endpoint.proxy_port,
+        )
+        codegen_url = proxy_url
+    else:
+        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server' or 'proxy'.")
 
     condition_t0 = time.monotonic()
     try:
@@ -278,7 +343,7 @@ def run_single_condition(
         samples_path = run_evalplus_codegen(
             model_name=cfg.model.name,
             dataset=dataset,
-            base_url=proxy_url,
+            base_url=codegen_url,
             n_samples=cfg.pass_at_k.n_samples,
             temperature=temperature,
             max_tokens=cfg.pass_at_k.max_tokens,
@@ -307,6 +372,7 @@ def run_single_condition(
             "scale": scale,
             "temperature": temperature,
             "dataset": dataset,
+            "steering_mode": mode,
             "pass_at_k_plus": {str(k): v for k, v in curve_plus.items()},
             "pass_at_k_base": {str(k): v for k, v in curve_base.items()},
             "n_problems": len(per_problem_plus),
@@ -344,7 +410,8 @@ def run_single_condition(
         return condition_results
 
     finally:
-        stop_proxy(proc)
+        if proc is not None:
+            stop_proxy(proc)
 
 
 def main() -> None:
@@ -360,32 +427,48 @@ def main() -> None:
     cfg = CodeEvalConfig.from_yaml(args.config)
     seed_everything(cfg.seed)
 
+    mode = cfg.endpoint.steering_mode
     logger.info(
-        "Starting code eval: run=%s, scales=%s, datasets=%s, n=%d",
+        "Starting code eval: run=%s, mode=%s, scales=%s, datasets=%s, n=%d",
         cfg.run_name,
+        mode,
         cfg.scales,
         cfg.datasets,
         cfg.pass_at_k.n_samples,
     )
 
-    # Verify upstream vLLM supports steering BEFORE spending hours generating
-    upstream = cfg.endpoint.base_url.rstrip("/")
-    if upstream.endswith("/v1"):
-        upstream = upstream[:-3]
-    logger.info("Verifying upstream steering support at %s ...", upstream)
-    verify_upstream_supports_steering(
-        upstream, cfg.vector_path, cfg.steering.target_layers
-    )
-    logger.info("Upstream steering verification passed.")
+    if mode == "server":
+        # Server-level steering: verify the server has a vector loaded
+        logger.info("Verifying server-level steering at %s ...", cfg.endpoint.base_url)
+        verify_server_steering(cfg.endpoint.base_url)
+        logger.info("Server steering verification passed.")
+    elif mode == "proxy":
+        # Legacy proxy mode: verify upstream supports per-request steering
+        upstream = cfg.endpoint.base_url.rstrip("/")
+        if upstream.endswith("/v1"):
+            upstream = upstream[:-3]
+        logger.info("Verifying upstream steering support at %s ...", upstream)
+        verify_upstream_supports_steering(
+            upstream, cfg.vector_path, cfg.steering.target_layers
+        )
+        logger.info("Upstream steering verification passed.")
+    else:
+        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server' or 'proxy'.")
 
     total_t0 = time.monotonic()
     all_results: list[dict] = []
 
-    for temperature in cfg.pass_at_k.temperatures:
-        for dataset in cfg.datasets:
-            for scale in cfg.scales:
-                result = run_single_condition(cfg, scale, temperature, dataset)
-                all_results.append(result)
+    conditions = [
+        (temperature, dataset, scale)
+        for temperature in cfg.pass_at_k.temperatures
+        for dataset in cfg.datasets
+        for scale in cfg.scales
+    ]
+    pbar = tqdm(conditions, desc="Conditions", unit="cond")
+    for temperature, dataset, scale in pbar:
+        pbar.set_postfix(scale=scale, temp=temperature, dataset=dataset)
+        result = run_single_condition(cfg, scale, temperature, dataset)
+        all_results.append(result)
 
     total_elapsed = time.monotonic() - total_t0
 

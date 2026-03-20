@@ -90,6 +90,23 @@ class TestCodeEvalConfig:
         cfg = CodeEvalConfig.from_yaml(config_dir / "eval.yaml")
         assert cfg.endpoint.base_url == "http://localhost:9999/v1"
         assert cfg.endpoint.proxy_port == 9998
+        # Default steering_mode when not specified in YAML
+        assert cfg.endpoint.steering_mode == "proxy"
+
+    def test_steering_mode_server(self, config_dir: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "test_server_mode"
+            steering_config: "steering.yaml"
+            vector_path: "dummy_vector.gguf"
+            scales: [0.0]
+            endpoint:
+              base_url: "http://localhost:8017/v1"
+              steering_mode: "server"
+            datasets: ["humaneval"]
+        """)
+        (config_dir / "eval_server.yaml").write_text(eval_yaml)
+        cfg = CodeEvalConfig.from_yaml(config_dir / "eval_server.yaml")
+        assert cfg.endpoint.steering_mode == "server"
 
     def test_pass_at_k_config(self, config_dir: Path) -> None:
         cfg = CodeEvalConfig.from_yaml(config_dir / "eval.yaml")
@@ -155,6 +172,7 @@ class TestEndpointConfig:
         cfg = EndpointConfig()
         assert cfg.base_url == "http://localhost:8017/v1"
         assert cfg.proxy_port == 8018
+        assert cfg.steering_mode == "proxy"
 
 
 class TestPassAtKConfig:
