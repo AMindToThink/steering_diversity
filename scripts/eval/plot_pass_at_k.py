@@ -383,9 +383,7 @@ def plot_coverage_gain(
             continue
 
         k_values = sorted(int(k) for k in baseline[f"pass_at_k_{suffix}"].keys())
-        # Need k > 1 for coverage gain
-        k_values_cg = [k for k in k_values if k > 1]
-        if not k_values_cg:
+        if not k_values:
             continue
 
         fig, (ax_curve, ax_delta) = plt.subplots(1, 2, figsize=(16, 5.5))
@@ -402,7 +400,7 @@ def plot_coverage_gain(
             passk1 = _per_problem_passk(pp, 1)
             means, lows, highs = [], [], []
             rng = np.random.default_rng(42)
-            for k in k_values_cg:
+            for k in k_values:
                 passk_scores = _per_problem_passk(pp, k)
                 cg = passk_scores - passk1  # coverage gain per problem
                 n = len(cg)
@@ -415,9 +413,9 @@ def plot_coverage_gain(
                 lows.append(float(lo))
                 highs.append(float(hi))
 
-            ax_curve.plot(k_values_cg, means, marker=marker, markersize=5,
+            ax_curve.plot(k_values, means, marker=marker, markersize=5,
                           label=label, color=color, linewidth=2)
-            ax_curve.fill_between(k_values_cg, lows, highs, alpha=0.2, color=color)
+            ax_curve.fill_between(k_values, lows, highs, alpha=0.2, color=color)
 
         ax_curve.set_xscale("log")
         ax_curve.set_xlabel("k (number of attempts)", fontsize=12)
@@ -431,20 +429,24 @@ def plot_coverage_gain(
         passk1_steer = _per_problem_passk(per_problem_steer, 1)
 
         deltas, ci_lows, ci_highs, p_values = [], [], [], []
-        for k in k_values_cg:
+        for k in k_values:
             cg_base = _per_problem_passk(per_problem_baseline, k) - passk1_base
             cg_steer = _per_problem_passk(per_problem_steer, k) - passk1_steer
             diff = cg_steer - cg_base
-            mean_diff = diff.mean()
-            se_diff = diff.std(ddof=1) / np.sqrt(len(diff))
-            _, p_val = stats.ttest_rel(cg_steer, cg_base)
+            mean_diff = float(diff.mean())
+            se_diff = float(diff.std(ddof=1) / np.sqrt(len(diff)))
+            # k=1: coverage gain is identically 0 for both, no test needed
+            if k == 1:
+                p_val = 1.0
+            else:
+                _, p_val = stats.ttest_rel(cg_steer, cg_base)
 
             deltas.append(mean_diff)
             ci_lows.append(mean_diff - 1.96 * se_diff)
             ci_highs.append(mean_diff + 1.96 * se_diff)
             p_values.append(p_val)
 
-        x = np.arange(len(k_values_cg))
+        x = np.arange(len(k_values))
         colors = ["tab:red" if p < 0.05 else "0.6" for p in p_values]
         yerr_lo = [d - lo for d, lo in zip(deltas, ci_lows)]
         yerr_hi = [hi - d for d, hi in zip(deltas, ci_highs)]
@@ -454,7 +456,7 @@ def plot_coverage_gain(
                           fmt="none", ecolor="black", capsize=4, linewidth=1.5)
         ax_delta.axhline(0, color="gray", linestyle="--", linewidth=1)
         ax_delta.set_xticks(x)
-        ax_delta.set_xticklabels([str(k) for k in k_values_cg])
+        ax_delta.set_xticklabels([str(k) for k in k_values])
         ax_delta.set_xlabel("k (number of attempts)", fontsize=12)
         ax_delta.set_ylabel("Δ coverage gain (steered − unsteered)", fontsize=12)
         ax_delta.set_title(
