@@ -115,6 +115,18 @@ All three steering vectors used in our current experiments are **precomputed def
 
 A precomputed **DiffMean** vector (`EasySteer/vectors/happy_diffmean.gguf`) from EasySteer's default emotion extraction. The vector is the difference of mean hidden states between positive (happy/ecstatic/delighted/glad) and negative (sad/depressed/dismayed/miserable) contrastive prompts of the form "Act as if you're extremely [emotion]." Extracted from the last token position across **layers 10–25** of Qwen2.5-1.5B-Instruct. **Normalized** after extraction.
 
+<!-- NOTE on normalization (two distinct settings in EasySteer):
+  1. EXTRACTION-TIME normalization (used here, `normalize: true` in config): Each layer's
+     DiffMean direction vector is L2-normalized to unit length before saving to .gguf.
+     This means all layers contribute equally regardless of raw activation magnitude
+     differences, and the `scale` parameter controls strength uniformly across layers.
+     Code: EasySteer/easysteer/steer/diffmean.py:47-50.
+  2. INFERENCE-TIME normalization (`server_normalize` / `SteerVectorRequest.normalize`):
+     After adding the steering vector (h' = h + v), rescales h' to preserve ||h||.
+     This is NOT used in our experiments — see Appendix B. Our steered hidden states
+     have their norms shifted by the addition.
+  Happy and style vectors use extraction-time normalization; creativity does not. -->
+
 #### 3.1.2 Style Vector (User Preference)
 
 A precomputed vector (`EasySteer/replications/steerable_chatbot/style-probe.gguf`) from EasySteer's replication of [Steerable Chatbots: Personalizing LLMs with Preference-Based Activation Steering](https://arxiv.org/abs/2505.04260v2). This vector was extracted via a linear probe trained to distinguish different user style preferences (e.g., formal vs. casual, verbose vs. concise). It covers **all 28 layers** (0–27) of Qwen2.5-1.5B-Instruct, making it the broadest-coverage vector in our experiments. **Normalized.**
@@ -597,12 +609,63 @@ The pattern is suggestive but noisy at n=10. The mid-range k values (pass@2 and 
 
 The effect is larger for HumanEval+ (stricter tests) than base HumanEval, suggesting that steering pushes solutions toward shallow correctness that fails edge cases — exactly the kind of diversity loss that matters for robust code generation.
 
-**Limitations.** n=10 provides low statistical power for pass@k at high k. With only 10 samples per problem, pass@10 is a degenerate estimator (either 0 or 1 depending on whether any sample passes). A follow-up run with n=50 and scales α ∈ {0, 1, 2, 4} is needed to:
-1. Produce smooth pass@k curves across k ∈ [1, 50]
-2. Test dose-dependence across multiple steering strengths
-3. Provide adequate power for significance at all k values
+**Limitations.** n=10 provides low statistical power for pass@k at high k. With only 10 samples per problem, pass@10 is a degenerate estimator (either 0 or 1 depending on whether any sample passes). A follow-up run is needed (see Section 4.6.1).
 
 **Note:** This preliminary experiment uses only the happy/DiffMean vector. The relevance of happiness steering to code generation is indirect — the hypothesis is that *any* off-topic steering should compress the output distribution, not that happiness specifically harms coding. Future work should include concept-matched vectors (e.g., steering for code style or safety).
+
+#### 4.6.1 Main Result: n=100, Coverage Gain Analysis
+
+We scaled up to n=100 samples per problem to resolve the power limitations of the n=10 pilot. At this sample size, pass@k estimates are well-powered across all k ∈ {1, 2, 5, 10, 25, 50, 100}.
+
+**Raw Δpass@k is significant at all k values** (paired t-test, 164 problems), but the growing magnitude of Δpass@k with k could be a mechanical artifact: pass@k is a nonlinear function of per-problem success rate p_i, so a uniform drop in p_i produces larger absolute Δpass@k at higher k even without any diversity collapse.
+
+**Coverage gain test.** To isolate diversity collapse from the pass@1 drop, we define _coverage gain_ = pass@k − pass@1, measuring the benefit of additional attempts. If steering collapses diversity, the steered model's coverage gain should be significantly less than the unsteered model's. We test this with a paired t-test on per-problem coverage gain (steered − unsteered) at each k, with k=10 pre-specified as the primary comparison (literature-standard "practical developer" scenario). An omnibus interaction test (one-sample t-test on the mean coverage gain difference across all k) confirms the overall pattern is not p-hacked.
+
+| k | Δ coverage gain | SE | p-value | sig |
+|--:|:--:|:--:|:--:|:--:|
+| 2 | −0.020 | 0.005 | 0.0001 | * |
+| 5 | −0.036 | 0.011 | 0.0017 | * |
+| **10** | **−0.040** | **0.015** | **0.0100** | **\*** |
+| 25 | −0.043 | 0.020 | 0.0321 | * |
+| 50 | −0.040 | 0.023 | 0.0899 | |
+| 100 | −0.026 | 0.028 | 0.3534 | |
+
+Omnibus interaction test: mean Δ coverage gain = −0.034, t = −2.26, p = 0.025.
+
+![Coverage gain (pass@k − pass@1) for unsteered vs. happy-steered (α=2) Qwen2.5-1.5B-Instruct on HumanEval+ (n=100). Left: coverage gain curves with bootstrap 95% CIs. Right: Δ coverage gain (steered − unsteered) colored by significance. Steering significantly reduces the benefit of additional attempts at k=2,5,10,25, confirming diversity collapse beyond what the pass@1 drop explains. The effect is underpowered at k=50,100 due to high estimator variance, not recovery.](../outputs/passk_main_v1/code/plots/coverage_gain_humaneval_plus_scale2.0_temp0.8.png)
+_Figure: Coverage gain analysis for happy steering (α=2) on HumanEval+ (n=100, 164 problems). Steering significantly reduces coverage gain at k=2–25 (red bars, p < 0.05), confirming diversity collapse beyond the pass@1 drop. The non-significance at k=50,100 reflects insufficient power (error bars grow with k), not recovery of diversity._
+
+**Interpretation.** The coverage gain test confirms that steering does not merely make each sample slightly worse — it makes samples more similar to each other, reducing the probability that additional attempts find different correct solutions. The effect peaks around k=25 (Δ = −0.043) then becomes undetectable at k=50,100, but this is a power limitation: the effect size barely changes (−0.040 at k=50) while the standard error nearly doubles. With n=100 samples per problem, high-k estimators have inherently high variance.
+
+#### 4.6.2 Simulated Power Analysis and Planned Follow-Up (n=50)
+
+To determine the sample size needed for a definitive follow-up experiment, we ran a simulation-based power analysis. The simulation treats the observed per-problem pass rates from the n=10 run as ground truth, draws synthetic binomial samples at various hypothetical n, computes pass@k from the simulated samples, and estimates what the 95% CI widths *would be* at each n. The key question: at what n would the confidence intervals for Δpass@1 and Δpass@10 stop overlapping — i.e., when could we statistically confirm that steering hurts pass@10 *more* than pass@1?
+
+| n (samples/problem) | Predicted Δpass@1 (mean ± 95% CI) | Predicted Δpass@10 (mean ± 95% CI) | Would separate? |
+|:---:|:---:|:---:|:---:|
+| 10 | −0.020 ± 0.023 | −0.058 ± 0.040 | No |
+| 20 | −0.020 ± 0.015 | −0.058 ± 0.022 | **Yes** |
+| 50 | −0.019 ± 0.010 | −0.057 ± 0.012 | **Yes** |
+| 100 | −0.020 ± 0.007 | −0.057 ± 0.009 | **Yes** |
+| 200 | −0.020 ± 0.005 | −0.057 ± 0.006 | **Yes** |
+
+The simulated effect sizes are stable across n, which is expected since they are determined by the underlying pass-rate distributions, not the sample count. If the true effect sizes match our n=10 observations (a significant assumption — see caveats below), then:
+
+- **Predicted Δpass@1 ≈ −0.020**: Steering would reduce the per-sample pass rate by ~2 percentage points — a direct capability cost.
+- **Predicted Δpass@10 ≈ −0.057**: The probability that at least one of 10 attempts succeeds would drop by ~6 percentage points — a predicted 3× amplification of the pass@1 effect. This amplification would be the signature of diversity collapse: steering wouldn't just make each sample slightly worse, it would make the samples more *similar to each other*, so additional attempts would be less likely to find a different (correct) solution.
+
+The simulated CIs separate at n=20, suggesting n=50 would be more than adequate. The planned n=50 follow-up would also provide:
+1. Smooth pass@k curves across k ∈ {1, 2, 5, 10, 25, 50}
+2. Dose-dependence across scales α ∈ {0, 1, 2, 4}
+3. Per-k significance testing with predicted adequate power at all k values
+
+**Predictions for the n=50 run** (conditional on true effect sizes matching the n=10 observations):
+- Δpass@1 would be statistically significant (p < 0.05) at α ≥ 2, with predicted 95% CI width ≈ ±0.010
+- Δpass@10 would be larger in magnitude than Δpass@1 at all non-zero scales, with separation visible in a single figure
+- The gap between Δpass@1 and Δpass@10 would grow with steering scale, demonstrating dose-dependent diversity collapse
+- Estimated wall time: ~9 hours (4 scales × ~25 min codegen × 5 for n=50, plus evaluation)
+
+**Caveats.** This power analysis assumes the per-problem pass rates observed at n=10 are accurate estimates of the true rates. With only 10 samples per problem, individual problem rates have substantial noise (a problem with true rate 0.3 could easily be observed as 0.1 or 0.5). The *average* effect size across 164 problems is more stable, but the distribution of per-problem effects — which determines CI widths — could differ from what we observed. The n=50 run will serve as both a higher-power replication and a check on these simulation assumptions.
 
 ### 4.7 Planned/Proposed Experiments
 
