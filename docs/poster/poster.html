@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Steered Evals Lead to Outcome Extinction</title>
+    <style>
+      @page {
+        size: 594mm 841mm;
+        margin: 0;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        width: 594mm;
+        height: 841mm;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: #fff;
+        color: #1a1a1a;
+        padding: 12mm;
+        display: flex;
+        flex-direction: column;
+        gap: 6mm;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      :root {
+        --burgundy: rgb(140, 5, 28);
+        --panel-bg: #ffffff;
+        --gap: 5mm;
+        --col-gap: 6mm;
+      }
+
+      /* ═══ TITLE BAR ═══ */
+      .title-bar {
+        background: var(--burgundy);
+        border-radius: 5px;
+        padding: 12mm 14mm;
+        display: flex;
+        align-items: center;
+        gap: 12mm;
+        flex-shrink: 0;
+      }
+      .title-bar .logo {
+        height: 55mm;
+        width: auto;
+        flex-shrink: 0;
+      }
+      .title-content h1 {
+        color: white;
+        font-size: 60pt;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 4mm;
+      }
+      .title-content .authors {
+        color: white;
+        font-size: 28pt;
+        margin-bottom: 3mm;
+      }
+      .title-content .affiliations {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 22pt;
+        font-style: italic;
+        margin-bottom: 3mm;
+      }
+      .title-content .subtitle {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 18pt;
+      }
+
+      /* ═══ COLUMNS ═══ */
+      .columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: var(--col-gap);
+        flex: 1;
+        min-height: 0;
+      }
+      .column {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+      }
+
+      /* ═══ SECTION PANEL ═══ */
+      .section {
+        border-radius: 4px;
+        overflow: hidden;
+        background: var(--panel-bg);
+      }
+      .section-title {
+        background: var(--burgundy);
+        color: white;
+        font-size: 26pt;
+        font-weight: 700;
+        padding: 3mm 5mm;
+        line-height: 1.2;
+      }
+      .section-body {
+        padding: 5mm;
+        font-size: 24pt;
+        line-height: 1.3;
+      }
+      .section-body p {
+        margin-bottom: 3mm;
+      }
+      .section-body p:last-child {
+        margin-bottom: 0;
+      }
+      .section-body strong {
+        font-weight: 700;
+      }
+
+      /* ═══ FIGURES ═══ */
+      .figure-single {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin: 3mm 0;
+      }
+      .figure-pair {
+        display: flex;
+        gap: 2mm;
+        margin: 3mm 0;
+      }
+      .figure-pair img {
+        width: calc(50% - 1mm);
+        height: auto;
+      }
+      .caption {
+        font-size: 16pt;
+        color: #555;
+        font-style: italic;
+        line-height: 1.25;
+        margin-top: 2mm;
+      }
+
+      /* ═══ BULLETS ═══ */
+      .section-body ul {
+        list-style: disc;
+        padding-left: 8mm;
+        margin: 0;
+      }
+      .section-body ul li {
+        margin-bottom: 2mm;
+        font-size: 24pt;
+        line-height: 1.3;
+      }
+      .section-body ul li:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ═══ SPECIAL ═══ */
+      .ack-text {
+        font-style: italic;
+        color: #555;
+      }
+      .refs-text {
+        font-size: 16pt;
+      }
+
+      /* ═══ PLACEHOLDER ═══ */
+      .placeholder {
+        background: #f0f0f0;
+        border: 2px dashed #999;
+        padding: 4mm;
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        font-size: 18pt;
+        margin: 2mm 0;
+        border-radius: 3px;
+      }
+
+      /* ═══ SVG area diagram ═══ */
+      .area-diagram-container {
+        width: 100%;
+        margin: 2mm 0;
+      }
+      .area-diagram-container svg {
+        width: 100%;
+        height: auto;
+      }
+
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══ TITLE BAR ═══ -->
+    <div class="title-bar">
+      <img class="logo" src="ERA_Poster_Template/ERA_logo.jpg" alt="ERA Logo" />
+      <div class="title-content" style="text-align: center; flex: 1">
+        <h1>Steered Evals Lead to Outcome Extinction</h1>
+        <div class="subtitle">Measuring the Effect of Activation Steering on the Output Diversity of LLMs</div>
+        <div class="authors">
+          Matthew Khoriaty<sup>1,2</sup> &nbsp; David Williams-King<sup>1</sup>
+          &nbsp; Shi Feng<sup>2</sup>
+        </div>
+        <div class="affiliations">
+          <sup>1</sup>ERA Cambridge &nbsp;&nbsp; <sup>2</sup>George Washington
+          University
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ COLUMNS ═══ -->
+    <div class="columns">
+      <!-- ═══ COLUMN 1: Motivation + Methods ═══ -->
+      <div class="column">
+        <div class="section">
+          <div class="section-title">Motivation</div>
+          <div class="section-body">
+            <div class="placeholder">&lt;Matthew describes motivation&gt;</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Project 1: Steering Diversity</div>
+          <div class="section-body">
+            <div class="placeholder">
+              &lt;Matthew describes Steering Diversity methods&gt;
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Project 2: ICL Diversity Metric</div>
+          <div class="section-body">
+            <div class="placeholder">
+              &lt;Matthew describes ICL Diversity Metric methods&gt;
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COLUMN 2: Steering Diversity Results ═══ -->
+      <div class="column">
+        <div class="section">
+          <div class="section-title">Steering: Diversity Collapse</div>
+          <div class="section-body">
+            <img
+              class="figure-single"
+              src="../../outputs/happy_recon/plots/within_vs_pooled_diversity.png"
+              alt="Within-prompt vs pooled diversity across steering scales"
+            />
+            <p class="caption">
+              Within-prompt vs. pooled Sentence-BERT cosine distance across
+              steering scales (happy concept, Qwen2.5-1.5B).
+            </p>
+            <div class="placeholder">
+              &lt;Matthew describes key takeaway&gt;
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Steering: UMAP Visualization</div>
+          <div class="section-body">
+            <img
+              class="figure-single"
+              src="../../outputs/happy_recon/plots/umap_by_scale.png"
+              alt="UMAP embeddings colored by steering scale"
+            />
+            <p class="caption">
+              UMAP projection of Sentence-BERT embeddings, colored by steering
+              scale.
+            </p>
+            <div class="placeholder">
+              &lt;Matthew describes UMAP results&gt;
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Steering: Pass@k</div>
+          <div class="section-body">
+            <img
+              class="figure-single"
+              src="../../outputs/passk_main_v1/code/plots/coverage_gain_humaneval_plus_scale2.0_temp0.8.png"
+              alt="Coverage gain under steering (HumanEval+, scale 2.0, temp 0.8)"
+            />
+            <p class="caption">
+              Coverage gain on HumanEval+ (scale 2.0, temp 0.8).
+            </p>
+            <div class="placeholder">
+              &lt;Matthew describes pass@k results&gt;
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ COLUMN 3: ICL Diversity Results + References ═══ -->
+      <div class="column">
+        <div class="section">
+          <div class="section-title">ICL Metric: Theoretical Framework</div>
+          <div class="section-body">
+            <!-- Recreated from paper TikZ Figure 1 -->
+            <div class="area-diagram-container">
+              <svg viewBox="0 0 420 230" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+                <!-- TC area (red, between h_bar=37 and a_k curve) -->
+                <path d="M 60,37 L 87,39 L 114,43 L 141,50 L 168,60 L 195,78 L 222,97 L 249,111 L 276,125 L 303,131 L 330,134 L 357,137 L 390,141 L 390,37 Z" fill="rgba(220,80,80,0.22)" stroke="none" />
+                <!-- E area (blue, between a_k curve and a_infinity=141) -->
+                <path d="M 60,37 L 87,39 L 114,43 L 141,50 L 168,60 L 195,78 L 222,97 L 249,111 L 276,125 L 303,131 L 330,134 L 357,137 L 390,141 L 390,141 L 60,141 Z" fill="rgba(80,80,220,0.22)" stroke="none" />
+                <!-- h_bar dashed line -->
+                <line x1="50" y1="37" x2="395" y2="37" stroke="#333" stroke-width="1.5" stroke-dasharray="8,4" />
+                <!-- a_infinity dotted line -->
+                <line x1="50" y1="141" x2="395" y2="141" stroke="#333" stroke-width="1.5" stroke-dasharray="3,3" />
+                <!-- a_k curve -->
+                <polyline points="60,37 87,39 114,43 141,50 168,60 195,78 222,97 249,111 276,125 303,131 330,134 357,137" fill="none" stroke="black" stroke-width="2.5" />
+                <!-- dots -->
+                <circle cx="60" cy="37" r="3.5" fill="black" /><circle cx="87" cy="39" r="3.5" fill="black" /><circle cx="114" cy="43" r="3.5" fill="black" /><circle cx="141" cy="50" r="3.5" fill="black" /><circle cx="168" cy="60" r="3.5" fill="black" /><circle cx="195" cy="78" r="3.5" fill="black" /><circle cx="222" cy="97" r="3.5" fill="black" /><circle cx="249" cy="111" r="3.5" fill="black" /><circle cx="276" cy="125" r="3.5" fill="black" /><circle cx="303" cy="131" r="3.5" fill="black" /><circle cx="330" cy="134" r="3.5" fill="black" /><circle cx="357" cy="137" r="3.5" fill="black" />
+                <!-- I_k arrow at k=6 (x=195, a_k=78) -->
+                <line x1="195" y1="39" x2="195" y2="76" stroke="#888" stroke-width="1.5" />
+                <polygon points="195,39 192,45 198,45" fill="#888" />
+                <polygon points="195,76 192,70 198,70" fill="#888" />
+                <text x="201" y="60" font-size="13" fill="#555" font-style="italic">I&#x2096;</text>
+                <!-- e_k arrow at k=6 -->
+                <line x1="195" y1="80" x2="195" y2="139" stroke="#888" stroke-width="1.5" />
+                <polygon points="195,80 192,86 198,86" fill="#888" />
+                <polygon points="195,139 192,133 198,133" fill="#888" />
+                <text x="201" y="114" font-size="13" fill="#555" font-style="italic">e&#x2096;</text>
+                <!-- Region labels -->
+                <text x="315" y="72" font-size="14" fill="rgb(180,50,50)" font-weight="bold">TC&#x2099; = &#x2211;I&#x2096;</text>
+                <text x="105" y="118" font-size="14" fill="rgb(50,50,180)" font-weight="bold">E = &#x2211;e&#x2096;</text>
+                <!-- Axes -->
+                <line x1="50" y1="190" x2="395" y2="190" stroke="#333" stroke-width="1" />
+                <line x1="50" y1="25" x2="50" y2="190" stroke="#333" stroke-width="1" />
+                <!-- Axis labels -->
+                <text x="220" y="215" font-size="14" fill="#333" text-anchor="middle" font-style="italic">k (response index)</text>
+                <text x="18" y="110" font-size="14" fill="#333" text-anchor="middle" transform="rotate(-90,18,110)" font-style="italic">bits</text>
+                <!-- Y-axis ticks -->
+                <line x1="47" y1="37" x2="50" y2="37" stroke="#333" /><text x="44" y="41" font-size="11" fill="#333" text-anchor="end">72</text>
+                <line x1="47" y1="141" x2="50" y2="141" stroke="#333" /><text x="44" y="145" font-size="11" fill="#333" text-anchor="end">24</text>
+                <line x1="47" y1="190" x2="50" y2="190" stroke="#333" /><text x="44" y="194" font-size="11" fill="#333" text-anchor="end">0</text>
+                <!-- X-axis ticks -->
+                <line x1="60" y1="190" x2="60" y2="193" stroke="#333" /><text x="60" y="203" font-size="11" fill="#333" text-anchor="middle">1</text>
+                <line x1="141" y1="190" x2="141" y2="193" stroke="#333" /><text x="141" y="203" font-size="11" fill="#333" text-anchor="middle">4</text>
+                <line x1="222" y1="190" x2="222" y2="193" stroke="#333" /><text x="222" y="203" font-size="11" fill="#333" text-anchor="middle">7</text>
+                <line x1="303" y1="190" x2="303" y2="193" stroke="#333" /><text x="303" y="203" font-size="11" fill="#333" text-anchor="middle">10</text>
+                <!-- Legend -->
+                <line x1="270" y1="160" x2="298" y2="160" stroke="#333" stroke-width="1.5" stroke-dasharray="8,4" />
+                <text x="303" y="164" font-size="11" fill="#333">&#x0101;&#x2081; (unconditional)</text>
+                <line x1="270" y1="174" x2="298" y2="174" stroke="#333" stroke-width="1.5" stroke-dasharray="3,3" />
+                <text x="303" y="178" font-size="11" fill="#333">a&#x221E; (floor)</text>
+                <line x1="270" y1="188" x2="298" y2="188" stroke="black" stroke-width="2.5" />
+                <circle cx="284" cy="188" r="3" fill="black" />
+                <text x="303" y="192" font-size="11" fill="#333">&#x0101;&#x2096; curve</text>
+              </svg>
+            </div>
+            <div class="placeholder">
+              &lt;Matthew describes theoretical framework&gt;
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">ICL Metric: Mode Count Validation</div>
+          <div class="section-body">
+            <img
+              class="figure-single"
+              src="../../icl-diversity/figures/mode_count/qwen2.5-3b/metrics_vs_m.png"
+              alt="Diversity metrics vs mode count"
+            />
+            <p class="caption">
+              Diversity metrics scale monotonically with true mode count m
+              (Qwen2.5-3B).
+            </p>
+            <img
+              class="figure-single"
+              src="../../icl-diversity/figures/mode_count/qwen2.5-3b/ak_curves_overlay.png"
+              alt="Progressive surprise curves for different mode counts"
+            />
+            <p class="caption">
+              Progressive surprise curves a_k for m=1..10 modes.
+            </p>
+            <div class="placeholder">
+              &lt;Matthew describes mode count validation&gt;
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">References</div>
+          <div class="section-body refs-text">
+            <div class="placeholder">&lt;Matthew selects key references&gt;</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Acknowledgements</div>
+          <div class="section-body ack-text">
+            <div class="placeholder">&lt;Matthew writes acknowledgements&gt;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
