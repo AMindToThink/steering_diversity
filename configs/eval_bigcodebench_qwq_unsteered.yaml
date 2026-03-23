@@ -1,0 +1,22 @@
+run_name: "passk_qwq_v1"
+seed: 42
+
+# Unsteered QwQ-32B baseline (no weight modification)
+model_name: "Qwen/QwQ-32B"
+
+# Label: alpha=0 means unsteered
+scales: [0.0]
+
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  steering_mode: "none"
+
+pass_at_k:
+  n_samples: 5
+  temperatures: [0.8]
+  max_tokens: 4096
+  k_values: [1, 2, 3, 4, 5]
+  batch_size: 10
+  id_range: "0-50"
+
+datasets: ["bigcodebench"]

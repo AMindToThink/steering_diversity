@@ -1,0 +1,23 @@
+run_name: "passk_qwq_v1"
+seed: 42
+
+# QwQ-32B steered with effective α=-0.25 (weight-modified, eval-unaware direction)
+# Saved by: serve_steered.py --model Qwen/QwQ-32B --alpha 0.25 --layer 62 --probe-dir <qwq_probes>
+model_name: "/tmp/qwq-32b-steered-unaware-0.25"
+
+# Label: alpha used in weight modification
+scales: [0.25]
+
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  steering_mode: "none"
+
+pass_at_k:
+  n_samples: 5
+  temperatures: [0.8]
+  max_tokens: 4096
+  k_values: [1, 2, 3, 4, 5]
+  batch_size: 10
+  id_range: "0-50"
+
+datasets: ["bigcodebench"]

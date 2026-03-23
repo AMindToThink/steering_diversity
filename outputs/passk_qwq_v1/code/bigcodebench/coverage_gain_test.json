@@ -1,0 +1,72 @@
+{
+  "baseline_scale": 0.0,
+  "steered_scale": 0.25,
+  "metric": "plus",
+  "n_problems": 50,
+  "datasets_pooled": [
+    "bigcodebench"
+  ],
+  "n_baseline_files": 1,
+  "n_steered_files": 1,
+  "pass_at_1_baseline": 0.47200000000000003,
+  "pass_at_1_steered": 0.44799999999999995,
+  "primary_k": 10,
+  "primary_result": null,
+  "per_k_results": [
+    {
+      "k": 2,
+      "mean_cg_baseline": 0.044000000000000004,
+      "mean_cg_steered": 0.048,
+      "delta_cg": 0.003999999999999997,
+      "se": 0.01369045548652679,
+      "ci_95_low": -0.022833292753592513,
+      "ci_95_high": 0.030833292753592506,
+      "t_stat": 0.29217435489538846,
+      "p_value": 0.7713868624259396,
+      "significant": false
+    },
+    {
+      "k": 3,
+      "mean_cg_baseline": 0.064,
+      "mean_cg_steered": 0.07,
+      "delta_cg": 0.006000000000000008,
+      "se": 0.0208806130178211,
+      "ci_95_low": -0.034926001514929354,
+      "ci_95_high": 0.046926001514929365,
+      "t_stat": 0.28734788556634583,
+      "p_value": 0.7750577020930329,
+      "significant": false
+    },
+    {
+      "k": 4,
+      "mean_cg_baseline": 0.076,
+      "mean_cg_steered": 0.084,
+      "delta_cg": 0.008000000000000002,
+      "se": 0.02552949474707278,
+      "ci_95_low": -0.042037809704262644,
+      "ci_95_high": 0.058037809704262644,
+      "t_stat": 0.3133630367250917,
+      "p_value": 0.7553349053787896,
+      "significant": false
+    },
+    {
+      "k": 5,
+      "mean_cg_baseline": 0.08800000000000001,
+      "mean_cg_steered": 0.09200000000000001,
+      "delta_cg": 0.0040000000000000036,
+      "se": 0.02996051823752761,
+      "ci_95_low": -0.054722615745554114,
+      "ci_95_high": 0.06272261574555413,
+      "t_stat": 0.13350903907228576,
+      "p_value": 0.894337638404719,
+      "significant": false
+    }
+  ],
+  "omnibus_test": {
+    "description": "One-sample t-test on mean coverage gain difference across all k",
+    "mean_delta_cg": 0.005499999999999998,
+    "t_stat": 0.24991439506032412,
+    "p_value": 0.8036983561264974,
+    "significant": false
+  }
+}
