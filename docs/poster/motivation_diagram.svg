@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+  <!-- Background -->
+  <rect width="720" height="340" fill="white" rx="8"/>
+
+  <!-- ═══ DEPLOYMENT CONTEXT BOX ═══ -->
+  <rect x="30" y="15" width="310" height="195" rx="10" fill="#f7f7f7" stroke="#bbb" stroke-width="1.5"/>
+
+  <!-- Unsteered robot face -->
+  <rect x="150" y="55" width="70" height="60" rx="12" fill="#e8e8e8" stroke="#888" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <circle cx="170" cy="78" r="6" fill="#555"/>
+  <circle cx="200" cy="78" r="6" fill="#555"/>
+  <!-- Eye highlights -->
+  <circle cx="172" cy="76" r="2" fill="white"/>
+  <circle cx="202" cy="76" r="2" fill="white"/>
+  <!-- Mouth -->
+  <line x1="172" y1="96" x2="198" y2="96" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+  <!-- Antenna -->
+  <line x1="185" y1="55" x2="185" y2="44" stroke="#888" stroke-width="2"/>
+  <circle cx="185" cy="42" r="3" fill="#888"/>
+
+  <!-- Speech bubbles: X, Y, Z -->
+  <!-- X bubble -->
+  <rect x="65" y="130" width="52" height="36" rx="12" fill="white" stroke="#888" stroke-width="1.2"/>
+  <text x="91" y="154" text-anchor="middle" font-size="20" font-weight="700" fill="#444">X</text>
+  <!-- Y bubble -->
+  <rect x="159" y="145" width="52" height="36" rx="12" fill="white" stroke="#888" stroke-width="1.2"/>
+  <text x="185" y="169" text-anchor="middle" font-size="20" font-weight="700" fill="#444">Y</text>
+  <!-- Z bubble with spikes (scary!) -->
+  <g transform="translate(248,128)">
+    <!-- Spikes behind -->
+    <polygon points="26,18 -8,-6 8,8" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 60,-6 44,8" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 -5,44 9,30" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 58,44 43,30" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 26,-10 26,5" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 26,48 26,33" fill="#e85050" opacity="0.5"/>
+    <polygon points="26,18 -6,20 8,19" fill="#e85050" opacity="0.4"/>
+    <polygon points="26,18 58,20 44,19" fill="#e85050" opacity="0.4"/>
+    <!-- Z bubble -->
+    <rect x="0" y="0" width="52" height="36" rx="12" fill="#fff0f0" stroke="#d44" stroke-width="1.5"/>
+    <text x="26" y="25" text-anchor="middle" font-size="20" font-weight="700" fill="#c33">Z</text>
+  </g>
+
+  <!-- ═══ EVALUATION CONTEXT BOX ═══ -->
+  <rect x="380" y="15" width="310" height="195" rx="10" fill="#f2f5ff" stroke="#8899cc" stroke-width="1.5"/>
+
+  <!-- Steered robot face -->
+  <rect x="500" y="55" width="70" height="60" rx="12" fill="#e8e8e8" stroke="#888" stroke-width="1.5"/>
+  <!-- Eyes -->
+  <circle cx="520" cy="78" r="6" fill="#555"/>
+  <circle cx="550" cy="78" r="6" fill="#555"/>
+  <!-- Eye highlights -->
+  <circle cx="522" cy="76" r="2" fill="white"/>
+  <circle cx="552" cy="76" r="2" fill="white"/>
+  <!-- Mouth -->
+  <line x1="522" y1="96" x2="548" y2="96" stroke="#555" stroke-width="2" stroke-linecap="round"/>
+  <!-- Antenna -->
+  <line x1="535" y1="55" x2="535" y2="44" stroke="#888" stroke-width="2"/>
+  <circle cx="535" cy="42" r="3" fill="#888"/>
+
+  <!-- Magnet to the right of the robot -->
+  <g transform="translate(580, 52)">
+    <!-- Magnet body (horseshoe shape, rotated to point left) -->
+    <path d="M 0,8 L 14,8 A 12,12 0 0 1 14,32 L 0,32" fill="none" stroke="#c33" stroke-width="4" stroke-linecap="round"/>
+    <!-- Magnet tips (poles) -->
+    <rect x="-4" y="4" width="6" height="8" rx="1" fill="#c33"/>
+    <rect x="-4" y="28" width="6" height="8" rx="1" fill="#3366cc"/>
+    <!-- Electricity zaps pointing left toward robot -->
+    <polyline points="-4,10 -10,7 -8,13 -16,11" fill="none" stroke="#f5c542" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="-4,30 -11,28 -8,34 -16,32" fill="none" stroke="#f5c542" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline points="-3,20 -10,18 -7,23 -15,22" fill="none" stroke="#f5c542" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Small sparks -->
+    <circle cx="-14" cy="9" r="1.8" fill="#f5c542" opacity="0.7"/>
+    <circle cx="-13" cy="33" r="1.8" fill="#f5c542" opacity="0.7"/>
+    <circle cx="-12" cy="21" r="1.5" fill="#f5c542" opacity="0.6"/>
+  </g>
+
+  <!-- Speech bubbles: only X, Y -->
+  <!-- X bubble -->
+  <rect x="415" y="130" width="52" height="36" rx="12" fill="white" stroke="#888" stroke-width="1.2"/>
+  <text x="441" y="154" text-anchor="middle" font-size="20" font-weight="700" fill="#444">X</text>
+  <!-- Y bubble -->
+  <rect x="509" y="145" width="52" height="36" rx="12" fill="white" stroke="#888" stroke-width="1.2"/>
+  <text x="535" y="169" text-anchor="middle" font-size="20" font-weight="700" fill="#444">Y</text>
+  <!-- Missing Z: faded/absent -->
+  <rect x="598" y="130" width="52" height="36" rx="12" fill="none" stroke="#ccc" stroke-width="1.2" stroke-dasharray="4,3"/>
+  <text x="624" y="154" text-anchor="middle" font-size="20" font-weight="700" fill="#ccc">?</text>
+
+
+  <!-- ═══ BOTTOM CAPTION ═══ -->
+  <rect x="20" y="230" width="680" height="95" rx="8" fill="#fff8f0" stroke="#ddd" stroke-width="1"/>
+  <text x="360" y="258" text-anchor="middle" font-size="15" fill="#444" font-weight="600">
+    Does steering damage output diversity?
+  </text>
+  <text x="360" y="282" text-anchor="middle" font-size="13" fill="#666">
+    The unsteered model produces diverse outputs (X, Y, Z...) in deployment.
+  </text>
+  <text x="360" y="300" text-anchor="middle" font-size="13" fill="#666">
+    Under steering, the model may produce a narrower range of outputs (X, Y...),
+  </text>
+  <text x="360" y="318" text-anchor="middle" font-size="13" fill="#666">
+     evaluations built on steered models miss potentially concerning behaviors the model would actually exhibit.
+  </text>
+</svg>
