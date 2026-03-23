@@ -27,7 +27,7 @@
       :root {
         --burgundy: rgb(140, 5, 28);
         --panel-bg: #ffffff;
-        --gap: 5mm;
+        --gap: 2mm;
         --col-gap: 6mm;
       }
 
@@ -35,7 +35,7 @@
       .title-bar {
         background: var(--burgundy);
         border-radius: 5px;
-        padding: 12mm 14mm;
+        padding: 5mm 14mm;
         display: flex;
         align-items: center;
         gap: 12mm;
@@ -83,6 +83,9 @@
       }
       .column .section {
         margin-bottom: 0;
+      }
+      .column .section:last-child {
+        margin-top: auto;
       }
       .section-pair {
         display: grid;
@@ -204,6 +207,24 @@
     <!-- ═══ TITLE BAR ═══ -->
     <div class="title-bar">
       <img class="logo" src="assets/ERA_logo.jpg" alt="ERA Logo" />
+      <div style="text-align: center; flex-shrink: 0">
+        <img
+          src="assets/linkedin-logo-linkedin-logo-transparent-linkedin-icon-transparent-free-free-png.webp"
+          alt="LinkedIn"
+          style="
+            height: 20mm;
+            margin-bottom: 1mm;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          "
+        />
+        <img
+          src="assets/my_linkedin_profile_qr.png"
+          alt="LinkedIn QR"
+          style="height: 40mm"
+        />
+      </div>
       <div class="title-content" style="text-align: center; flex: 1">
         <h1>Steered Evals Lead to Outcome Extinction</h1>
         <div class="subtitle">
@@ -216,8 +237,26 @@
         </div>
         <div class="affiliations">
           <sup>1</sup>ERA Cambridge &nbsp;&nbsp; <sup>2</sup>George Washington
-          University
+          University &nbsp;&nbsp; matthewkhoriaty@gmail.com
         </div>
+      </div>
+      <div style="text-align: center; flex-shrink: 0">
+        <img
+          src="assets/x-twitter-logo-on-black-circle-5694247.png"
+          alt="X/Twitter"
+          style="
+            height: 20mm;
+            margin-bottom: 1mm;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+          "
+        />
+        <img
+          src="assets/my_twitter_profile_qr.png"
+          alt="Twitter QR"
+          style="height: 40mm"
+        />
       </div>
     </div>
 
@@ -235,24 +274,23 @@
           </p>
           <p>
             However, the effect of steering on the diversity of model outputs
-            remains unstudied.
+            remains understudied.
           </p>
           <p>
             This research applies diversity metrics to the outputs of steered vs
             unsteered models, finding that steering damages a model's diversity
-            on top of damaging performance by making the model's responses to
-            different questions more similar to each other.
+            on top of damaging performance.
           </p>
           <p>
             As an additional project, we develop and test a novel diversity
             metric motivated by the finding that existing diversity metrics fail
-            to measure what we care about and lack a number of important
-            properties.
+            to measure what we care about and lack many desirable properties.
           </p>
           <p>
             A particularly important use case of steering is to make AIs "think
             they are deployed" so we can evaluate them without their awareness
-            of being evaluated influencing their behaviors.
+            of being evaluated influencing their behaviors. We are preparing to
+            measure the diversity of outputs from these models.
           </p>
         </div>
         <img
@@ -302,8 +340,8 @@
                 Pass@k measures the probability that at least one of k
                 independent samples solves a problem. If steering reduces
                 diversity, pass@k should drop <em>faster</em> than pass@1 as k
-                grows — because similar samples are less likely to cover
-                different solutions.
+                grows because similar samples are less likely to cover different
+                solutions.
               </p>
               <p>
                 We define <b>coverage gain</b> = pass@k &minus; pass@1,
@@ -320,7 +358,10 @@
 
         <div class="section">
           <div class="section-title">Embedding Limitations</div>
-          <div class="section-body" style="display: flex; gap: 4mm; align-items: center">
+          <div
+            class="section-body"
+            style="display: flex; gap: 4mm; align-items: center"
+          >
             <div style="flex: 0 0 45%">
               <img
                 class="figure-single"
@@ -334,21 +375,24 @@
               </p>
             </div>
             <div class="text-box" style="flex: 1">
-              Standard diversity metrics from the literature — mean pairwise
-              cosine distance (shown) and n-gram diversity — score the
+              Standard diversity metrics from the literature such as mean
+              pairwise cosine distance (shown) and n-gram diversity score the
               incoherent noise produced at high steering scales as equally
               diverse as meaningful unsteered text. Within-prompt diversity
-              stays flat even as outputs visibly degenerate into gibberish.
-              This motivated our use of pass@k, which requires outputs to be
-              both diverse <em>and</em> correct.
+              stays flat even as outputs visibly degenerate into gibberish. This
+              motivated our use of pass@k, which requires outputs to be both
+              diverse <em>and</em> correct.
             </div>
           </div>
         </div>
 
         <div class="section">
           <div class="section-title">Evaluation Awareness</div>
-          <div class="section-body" style="display: flex; gap: 4mm; align-items: center">
-            <div style="flex: 0 0 45%">
+          <div
+            class="section-body"
+            style="display: flex; gap: 4mm; align-items: center"
+          >
+            <div style="flex: 0 0 53%">
               <img
                 class="figure-single"
                 src="assets/roc.png"
@@ -361,12 +405,12 @@
               </p>
             </div>
             <div class="text-box" style="flex: 1">
-              Many models can detect whether they are being evaluated.
-              Steering models to "think they are deployed" is a key use case
-              of activation steering for safety research — but if steering
-              reduces output diversity, the resulting evaluations may miss
-              important behaviors. We surveyed a range of open-weight models
-              to identify good candidates for steering experiments.
+              Many models can detect whether they are being evaluated. Steering
+              models to "think they are deployed" is a key use case of
+              activation steering for safety research — but if steering reduces
+              output diversity, the resulting evaluations may miss important
+              behaviors. We surveyed a range of open-weight models to identify
+              good candidates for steering experiments.
             </div>
           </div>
         </div>
@@ -413,7 +457,11 @@
             <div style="flex: 0 0 50%">
               <!-- Recreated from paper TikZ Figure 1 -->
               <div class="area-diagram-container">
-                <img src="assets/area_diagram.svg" alt="ICL diversity metric: excess entropy area diagram" style="width: 100%; height: auto" />
+                <img
+                  src="assets/area_diagram.svg"
+                  alt="ICL diversity metric: excess entropy area diagram"
+                  style="width: 100%; height: auto"
+                />
               </div>
               <img
                 src="assets/comparison_ak_curves.png"
@@ -497,7 +545,10 @@
               and D (coherence-weighted diversity score) both increase
               monotonically with mode count, provided the asymptotic floor is
               estimated via sigmoid extrapolation rather than using the raw last
-              observed value.
+              observed value. The a<sub>k</sub> curves are exponential rather
+              than sigmoidal due to Qwen2.5-3B being capable enough for
+              cross-mode learning (mutual information between unrelated modes).
+              GPT-2 did not exhibit cross-mode learning.
             </div>
           </div>
         </div>

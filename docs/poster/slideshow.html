@@ -201,12 +201,54 @@
         Measuring the Effect of Activation Steering on LLM Output Diversity
       </div>
       <div class="authors">
-        Matthew Khoriaty &nbsp; David Williams-King &nbsp; Shi Feng
+        Matthew Khoriaty<sup>1</sup> &nbsp; David Williams-King<sup>1</sup>
+        &nbsp; Shi Feng<sup>2</sup>
       </div>
       <div class="affiliations">
-        ERA Cambridge &nbsp;&nbsp; George Washington University
+        <sup>1</sup>ERA Cambridge &nbsp;&nbsp; <sup>2</sup>George Washington
+        University &nbsp;&nbsp; matthewkhoriaty@gmail.com
       </div>
-      <span class="slide-number">1 / 5</span>
+      <div
+        style="display: flex; gap: 3vw; align-items: center; margin-top: 2vh"
+      >
+        <div style="text-align: center">
+          <img
+            src="assets/linkedin-logo-linkedin-logo-transparent-linkedin-icon-transparent-free-free-png.webp"
+            alt="LinkedIn"
+            style="
+              height: 6.25vh;
+              margin-bottom: 0.5vh;
+              display: block;
+              margin-left: auto;
+              margin-right: auto;
+            "
+          />
+          <img
+            src="assets/my_linkedin_profile_qr.png"
+            alt="LinkedIn QR"
+            style="height: 18vh"
+          />
+        </div>
+        <div style="text-align: center">
+          <img
+            src="assets/x-twitter-logo-on-black-circle-5694247.png"
+            alt="X/Twitter"
+            style="
+              height: 6.25vh;
+              margin-bottom: 0.5vh;
+              display: block;
+              margin-left: auto;
+              margin-right: auto;
+            "
+          />
+          <img
+            src="assets/my_twitter_profile_qr.png"
+            alt="Twitter QR"
+            style="height: 18vh"
+          />
+        </div>
+      </div>
+      <span class="slide-number">1 / 7</span>
     </div>
 
     <!-- ═══ SLIDE 2: Problem ═══ -->
@@ -228,14 +270,14 @@
             evaluations may miss important behaviors the model would otherwise
             exhibit.
           </p>
-          <p>
+          <!-- <p>
             We find that existing diversity metrics
             <strong>are unhelpful in detecting</strong> this, since they score
             incoherent noise as "diverse."
-          </p>
+          </p> -->
         </div>
       </div>
-      <span class="slide-number">2 / 5</span>
+      <span class="slide-number">2 / 7</span>
     </div>
 
     <!-- ═══ SLIDE 3: Main Result ═══ -->
@@ -264,41 +306,103 @@
           </p>
         </div>
       </div>
-      <span class="slide-number">3 / 5</span>
+      <span class="slide-number">3 / 7</span>
     </div>
 
-    <!-- ═══ SLIDE 4: Novel Metric ═══ -->
+    <!-- ═══ SLIDE 4: Embedding Limitations + Eval Awareness ═══ -->
     <div class="slide" data-slide="4">
-      <div class="slide-heading">
-        Novel Metric: In-Context Learning Diversity
-      </div>
+      <div class="slide-heading">Why Not Standard Metrics?</div>
       <div class="slide-content">
         <img
-          src="assets/area_diagram.svg"
-          alt="ICL diversity: excess entropy area diagram"
-          style="max-width: 40%"
+          src="assets/within_vs_pooled_diversity.png"
+          alt="Within-prompt vs pooled diversity across steering scales"
         />
         <div class="text">
           <p>
-            <strong>Key idea:</strong> if responses are similar, a base model
-            should be able to predict one given the others.
+            Standard metrics such as mean pairwise cosine distance and n-gram
+            diversity score <strong>incoherent noise</strong> as equally diverse
+            as meaningful text.
           </p>
           <p>
-            We measure how much each new response's surprise
-            <strong>drops</strong> given previous responses. The total drop =
-            <strong>excess entropy E</strong> (learnable structure).
+            Within-prompt diversity stays flat even as outputs degenerate into
+            gibberish at high steering scales.
           </p>
           <p>
-            A <strong>coherence</strong> term C ensures noise isn't rewarded.
-            D&nbsp;=&nbsp;C&nbsp;&times;&nbsp;E gives a single diversity score.
+            This motivated pass@k: outputs must be both diverse
+            <em>and</em> correct.
           </p>
         </div>
       </div>
-      <span class="slide-number">4 / 5</span>
+      <span class="slide-number">4 / 7</span>
     </div>
 
-    <!-- ═══ SLIDE 5: What's Next ═══ -->
+    <!-- ═══ SLIDE 5: Novel Metric ═══ -->
     <div class="slide" data-slide="5">
+      <div class="slide-heading">
+        Novel Metric: In-Context Learning Diversity
+      </div>
+      <div class="slide-content" style="flex-direction: column; gap: 2vh">
+        <div style="display: flex; gap: 4vw; align-items: center; width: 100%">
+          <img
+            src="assets/comparison_ak_curves.png"
+            alt="Progressive surprise curves for 5 synthetic scenarios"
+            style="max-height: 45vh; max-width: 50%; object-fit: contain"
+          />
+          <div class="text" style="flex: 1">
+            <p>
+              <strong>Key idea:</strong> if responses are similar, a base model
+              should be able to predict one given the others.
+            </p>
+            <p>
+              We measure how much each new response's surprise
+              <strong>drops</strong> given previous responses. The total drop =
+              <strong>excess entropy E</strong> (learnable structure).
+            </p>
+            <p>
+              A <strong>coherence</strong> term C ensures noise isn't rewarded.
+              D&nbsp;=&nbsp;C&nbsp;&times;&nbsp;E gives a single diversity score.
+            </p>
+          </div>
+        </div>
+        <img
+          src="assets/area_diagram.svg"
+          alt="ICL diversity: excess entropy area diagram"
+          style="max-height: 25vh; max-width: 60%; object-fit: contain"
+        />
+      </div>
+      <span class="slide-number">5 / 7</span>
+    </div>
+
+    <!-- ═══ SLIDE 6: ICL Validation ═══ -->
+    <div class="slide" data-slide="6">
+      <div class="slide-heading">ICL Metric: Mode Count Validation</div>
+      <div class="slide-content">
+        <div class="figure-row">
+          <img
+            src="assets/metrics_vs_m.png"
+            alt="Diversity metrics vs mode count"
+          />
+          <img
+            src="assets/ak_curves_overlay.png"
+            alt="Progressive surprise curves for different mode counts"
+          />
+        </div>
+        <div class="text" style="flex: 0 0 30%">
+          <p>
+            E and D increase <strong>monotonically</strong> with mode count
+            (recipe, poem, code, etc.).
+          </p>
+          <p>
+            a<sub>k</sub> curves take longer to reach their floor with more
+            modes &mdash; confirming the metric distinguishes diversity levels.
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">6 / 7</span>
+    </div>
+
+    <!-- ═══ SLIDE 7: What's Next ═══ -->
+    <div class="slide" data-slide="7">
       <div class="slide-heading">What's Next</div>
       <div class="slide-content" style="flex-direction: column">
         <ul>
@@ -311,7 +415,7 @@
           <li>Use LLM-as-a-judge as an additional diversity measure</li>
         </ul>
       </div>
-      <span class="slide-number">5 / 5</span>
+      <span class="slide-number">7 / 7</span>
     </div>
 
     <script>

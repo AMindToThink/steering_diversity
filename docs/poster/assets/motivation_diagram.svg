@@ -94,12 +94,12 @@
     Does steering damage output diversity?
   </text>
   <text x="360" y="282" text-anchor="middle" font-size="13" fill="#666">
-    The unsteered model produces diverse outputs (X, Y, Z...) in deployment.
+    The unsteered model produces diverse outputs (X, Y, Z...).
   </text>
   <text x="360" y="300" text-anchor="middle" font-size="13" fill="#666">
-    Under steering, the model may produce a narrower range of outputs (X, Y...),
+    Under steering, the model may produce a narrower range of outputs (X, Y...).
   </text>
   <text x="360" y="318" text-anchor="middle" font-size="13" fill="#666">
-     evaluations built on steered models miss potentially concerning behaviors the model would actually exhibit.
+     Evaluations built on steered models miss potentially concerning behaviors the model may actually exhibit.
   </text>
 </svg>
