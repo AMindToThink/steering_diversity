@@ -131,7 +131,7 @@ run_codegen() {
         --n_samples "${N_SAMPLES}" \
         --temperature "${TEMPERATURE}" \
         --max_new_tokens "${MAX_TOKENS}" \
-        --batch_size "${BATCH_SIZE}" \
+        --bs "${BATCH_SIZE}" \
         --id_range "${ID_RANGE}" \
         --root "${OUT_DIR}" \
         --resume True \

@@ -28,6 +28,18 @@ from src.utils import ensure_dir
 logger = logging.getLogger(__name__)
 
 
+def _steered_legend_label(entry: dict) -> str:
+    """Build a legend label for a steered condition from its data.
+
+    Uses ``steering_label`` if present (e.g. "Neg. test-awareness steered"),
+    otherwise falls back to a generic label with the scale value.
+    """
+    label = entry.get("steering_label")
+    if label is not None:
+        return f"{label} (α={entry['scale']})"
+    return f"Steered (α={entry['scale']})"
+
+
 def load_curves(path: Path) -> list[dict]:
     """Load aggregated pass@k curves JSON."""
     with open(path) as f:
@@ -91,7 +103,7 @@ def plot_pass_at_k_with_ci(
         scale_colors: dict[float, tuple[str, str]] = {}
         if len(entries) == 2 and entries[0]["scale"] == 0.0:
             scale_colors[entries[0]["scale"]] = ("tab:blue", "Unsteered (α=0)")
-            scale_colors[entries[1]["scale"]] = ("tab:red", f"Happy steered (α={entries[1]['scale']})")
+            scale_colors[entries[1]["scale"]] = ("tab:red", _steered_legend_label(entries[1]))
         else:
             cmap = plt.get_cmap("viridis")
             for i, e in enumerate(entries):
@@ -202,8 +214,9 @@ def plot_delta_significance(
             ax.set_ylabel("Δ pass@k (steered − unsteered)", fontsize=12)
 
             dataset_label = "HumanEval+" if (dataset == "humaneval" and use_plus) else dataset
+            steer_label = steered.get("steering_label", "Steering")
             ax.set_title(
-                f"Effect of happy steering (α={steered['scale']}) on pass@k",
+                f"Effect of {steer_label.lower()} (α={steered['scale']}) on {dataset_label} pass@k",
                 fontsize=13,
             )
 
@@ -268,9 +281,10 @@ def plot_combined(
         fig, (ax_curve, ax_delta) = plt.subplots(1, 2, figsize=(16, 5.5))
 
         # --- Left panel: curves with CI ---
+        steered_legend = _steered_legend_label(steered)
         for entry, color, marker, label in [
             (baseline, "tab:blue", "o", "Unsteered (α=0)"),
-            (steered, "tab:red", "s", f"Happy steered (α={steered['scale']})"),
+            (steered, "tab:red", "s", steered_legend),
         ]:
             pp = entry.get(per_problem_key)
             if pp is None:
@@ -319,8 +333,9 @@ def plot_combined(
         ax_delta.set_xticklabels([str(k) for k in k_values])
         ax_delta.set_xlabel("k (number of attempts)", fontsize=12)
         ax_delta.set_ylabel("Δ pass@k (steered − unsteered)", fontsize=12)
+        steer_desc = steered.get("steering_label", "steering")
         ax_delta.set_title(
-            f"Effect of happy steering (α={steered['scale']}) on pass@k",
+            f"Effect of {steer_desc.lower()} (α={steered['scale']}) on {dataset_label} pass@k",
             fontsize=13,
         )
         from matplotlib.patches import Patch
@@ -389,9 +404,10 @@ def plot_coverage_gain(
         fig, (ax_curve, ax_delta) = plt.subplots(1, 2, figsize=(16, 5.5))
 
         # --- Left panel: coverage gain curves with CI ---
+        steered_legend = _steered_legend_label(steered)
         for entry, color, marker, label in [
             (baseline, "tab:blue", "o", "Unsteered (α=0)"),
-            (steered, "tab:red", "s", f"Happy steered (α={steered['scale']})"),
+            (steered, "tab:red", "s", steered_legend),
         ]:
             pp = entry.get(per_problem_key)
             if pp is None:
