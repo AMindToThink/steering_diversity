@@ -1,3 +1,32 @@
+<!-- NOTE TO SELF: Framing corrections to work into paper text (2026-03-23)
+
+1. AVOID "diversity collapse" framing. The interesting finding is subtle diversity
+   reductions at low/moderate steering. Complete degeneration at high steering scales
+   is just the model breaking — not interesting. Reserve "collapse" only for that
+   uninteresting regime if mentioned at all.
+
+2. The embedding-based results (mean pairwise cosine distance staying flat within-prompt,
+   cross-prompt convergence) are NOT the main result. I don't trust this metric — it
+   scores incoherent noise as equally diverse as meaningful text. The embedding figures
+   serve mainly to illustrate WHY we need pass@k. Don't emphasize cross-prompt
+   convergence as a finding; it's measured with a metric we don't believe in.
+
+3. Pass@k / coverage gain is the main diversity result. It measures what we actually
+   care about: does steering make outputs less usefully diverse?
+
+4. The eval awareness survey (Section 4.5) is useful context but not novel — we just
+   ran an existing benchmark on more models. Don't oversell it.
+
+5. Two-model generalization of an effect measured by a metric we don't trust is not
+   a meaningful contribution. Don't highlight it.
+
+6. The style within-prompt cosine distance drop of 0.03 is tiny and not worth
+   emphasizing as evidence of within-prompt diversity reduction.
+
+7. The eval awareness reference is Needham et al. 2025 (https://arxiv.org/abs/2505.23836),
+   not "Perez et al. 2026" — fix throughout.
+-->
+
 # How Well Does Steering Demonstrate a Model's True Diversity?
 
 Matthew Khoriaty, David Williams-King, Shi Feng
