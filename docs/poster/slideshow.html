@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Steered Evals Lead to Outcome Extinction — Slides</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      :root {
+        --burgundy: rgb(140, 5, 28);
+      }
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        background: #111;
+        color: #1a1a1a;
+      }
+
+      /* ═══ SLIDE CONTAINER ═══ */
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background: #fff;
+        padding: 5vh 8vw;
+        position: relative;
+      }
+      .slide.active {
+        display: flex;
+      }
+
+      /* ═══ TITLE SLIDE ═══ */
+      .slide-title {
+        background: var(--burgundy);
+        color: white;
+        text-align: center;
+      }
+      .slide-title h1 {
+        font-size: 4.5vw;
+        font-weight: 700;
+        line-height: 1.15;
+        margin-bottom: 2vh;
+      }
+      .slide-title .subtitle {
+        font-size: 2.2vw;
+        opacity: 0.8;
+        margin-bottom: 4vh;
+      }
+      .slide-title .authors {
+        font-size: 2vw;
+        margin-bottom: 1.5vh;
+      }
+      .slide-title .affiliations {
+        font-size: 1.6vw;
+        opacity: 0.8;
+        font-style: italic;
+      }
+      .slide-title .logo {
+        position: absolute;
+        top: 4vh;
+        left: 4vw;
+        height: 10vh;
+      }
+
+      /* ═══ CONTENT SLIDES ═══ */
+      .slide-heading {
+        background: var(--burgundy);
+        color: white;
+        font-size: 2.8vw;
+        font-weight: 700;
+        padding: 1.5vh 3vw;
+        border-radius: 6px;
+        align-self: stretch;
+        margin-bottom: 3vh;
+        text-align: center;
+      }
+      .slide-content {
+        display: flex;
+        gap: 4vw;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        width: 100%;
+      }
+      .slide-content img {
+        max-height: 65vh;
+        max-width: 48%;
+        object-fit: contain;
+      }
+      .slide-content .text {
+        flex: 1;
+        font-size: 1.8vw;
+        line-height: 1.5;
+      }
+      .slide-content .text p {
+        margin-bottom: 2vh;
+      }
+      .slide-content .text strong {
+        color: var(--burgundy);
+      }
+
+      /* ═══ CENTERED FIGURE SLIDE ═══ */
+      .slide-figure-center {
+        text-align: center;
+      }
+      .slide-figure-center img {
+        max-height: 60vh;
+        max-width: 80%;
+        object-fit: contain;
+      }
+      .slide-figure-center .caption {
+        font-size: 1.4vw;
+        color: #666;
+        font-style: italic;
+        margin-top: 2vh;
+      }
+
+      /* ═══ TWO-FIGURE LAYOUT ═══ */
+      .figure-row {
+        display: flex;
+        gap: 3vw;
+        align-items: center;
+        justify-content: center;
+      }
+      .figure-row img {
+        max-height: 55vh;
+        max-width: 45%;
+        object-fit: contain;
+      }
+
+      /* ═══ BULLET LIST ═══ */
+      .slide-content ul {
+        list-style: none;
+        padding: 0;
+      }
+      .slide-content ul li {
+        font-size: 2vw;
+        line-height: 1.6;
+        margin-bottom: 2.5vh;
+        padding-left: 2vw;
+        position: relative;
+      }
+      .slide-content ul li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0.5em;
+        width: 0.8vw;
+        height: 0.8vw;
+        background: var(--burgundy);
+        border-radius: 50%;
+      }
+
+      /* ═══ SLIDE NUMBER ═══ */
+      .slide-number {
+        position: absolute;
+        bottom: 2vh;
+        right: 3vw;
+        font-size: 1.2vw;
+        color: #999;
+      }
+
+      /* ═══ NAVIGATION HINT ═══ */
+      .nav-hint {
+        position: fixed;
+        bottom: 1vh;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1vw;
+        color: #bbb;
+        z-index: 100;
+        pointer-events: none;
+        transition: opacity 0.5s;
+      }
+
+      @media print {
+        .slide {
+          display: flex !important;
+          page-break-after: always;
+          height: 100vh;
+        }
+        .nav-hint {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="nav-hint">Arrow keys or click to navigate</div>
+
+    <!-- ═══ SLIDE 1: Title ═══ -->
+    <div class="slide slide-title active" data-slide="1">
+      <img class="logo" src="assets/ERA_logo.jpg" alt="ERA Logo" />
+      <h1>Steered Evals Lead to<br />Outcome Extinction</h1>
+      <div class="subtitle">
+        Measuring the Effect of Activation Steering on LLM Output Diversity
+      </div>
+      <div class="authors">
+        Matthew Khoriaty &nbsp; David Williams-King &nbsp; Shi Feng
+      </div>
+      <div class="affiliations">
+        ERA Cambridge &nbsp;&nbsp; George Washington University
+      </div>
+      <span class="slide-number">1 / 5</span>
+    </div>
+
+    <!-- ═══ SLIDE 2: Problem ═══ -->
+    <div class="slide" data-slide="2">
+      <div class="slide-heading">Why Does This Matter?</div>
+      <div class="slide-content">
+        <img
+          src="assets/motivation_diagram.svg"
+          alt="Motivation: steering may reduce output diversity"
+        />
+        <div class="text">
+          <p>
+            <strong>Activation steering</strong> is used in AI safety to elicit
+            targeted behaviors &mdash; e.g., making a model "think it's
+            deployed" during evaluation.
+          </p>
+          <p>
+            But if steering <strong>reduces output diversity</strong>, steered
+            evaluations may miss important behaviors the model would otherwise
+            exhibit.
+          </p>
+          <p>
+            We find that existing diversity metrics
+            <strong>are unhelpful in detecting</strong> this, since they score
+            incoherent noise as "diverse."
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">2 / 5</span>
+    </div>
+
+    <!-- ═══ SLIDE 3: Main Result ═══ -->
+    <div class="slide" data-slide="3">
+      <div class="slide-heading">
+        Main Result: Steering Reduces Coverage Gain (Pass@k)
+      </div>
+      <div class="slide-content">
+        <img
+          src="assets/coverage_gain.png"
+          alt="Coverage gain under steering"
+        />
+        <div class="text">
+          <p>
+            <strong>Pass@k</strong> = probability at least 1 of k samples solves
+            a problem. Requires outputs to be both diverse <em>and</em> correct.
+          </p>
+          <p>
+            <strong>Coverage gain</strong> = pass@k &minus; pass@1, isolating
+            the diversity benefit of multiple attempts.
+          </p>
+          <p>
+            On HumanEval+ (164 problems, n=100, Qwen2.5-1.5B, &alpha;=2),
+            steering <strong>significantly reduces</strong> coverage gain at
+            k=2&ndash;25 (omnibus p&nbsp;=&nbsp;0.025).
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">3 / 5</span>
+    </div>
+
+    <!-- ═══ SLIDE 4: Novel Metric ═══ -->
+    <div class="slide" data-slide="4">
+      <div class="slide-heading">
+        Novel Metric: In-Context Learning Diversity
+      </div>
+      <div class="slide-content">
+        <img
+          src="assets/area_diagram.svg"
+          alt="ICL diversity: excess entropy area diagram"
+          style="max-width: 40%"
+        />
+        <div class="text">
+          <p>
+            <strong>Key idea:</strong> if responses are similar, a base model
+            should be able to predict one given the others.
+          </p>
+          <p>
+            We measure how much each new response's surprise
+            <strong>drops</strong> given previous responses. The total drop =
+            <strong>excess entropy E</strong> (learnable structure).
+          </p>
+          <p>
+            A <strong>coherence</strong> term C ensures noise isn't rewarded.
+            D&nbsp;=&nbsp;C&nbsp;&times;&nbsp;E gives a single diversity score.
+          </p>
+        </div>
+      </div>
+      <span class="slide-number">4 / 5</span>
+    </div>
+
+    <!-- ═══ SLIDE 5: What's Next ═══ -->
+    <div class="slide" data-slide="5">
+      <div class="slide-heading">What's Next</div>
+      <div class="slide-content" style="flex-direction: column">
+        <ul>
+          <li>
+            Scale up pass@k experiments across more steering methods (SAEs) and
+            concepts
+          </li>
+          <li>Validate the ICL diversity metric against accepted benchmarks</li>
+          <li>Apply the ICL metric to measure diversity of steered models</li>
+          <li>Use LLM-as-a-judge as an additional diversity measure</li>
+        </ul>
+      </div>
+      <span class="slide-number">5 / 5</span>
+    </div>
+
+    <script>
+      const slides = document.querySelectorAll(".slide");
+      let current = 0;
+
+      function goTo(n) {
+        if (n < 0 || n >= slides.length) return;
+        slides[current].classList.remove("active");
+        current = n;
+        slides[current].classList.add("active");
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight" || e.key === " " || e.key === "ArrowDown") {
+          e.preventDefault();
+          goTo(current + 1);
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          goTo(current - 1);
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (e.clientX > window.innerWidth / 2) {
+          goTo(current + 1);
+        } else {
+          goTo(current - 1);
+        }
+      });
+
+      // Hide nav hint after first interaction
+      document.addEventListener(
+        "keydown",
+        () => {
+          document.querySelector(".nav-hint").style.opacity = "0";
+        },
+        { once: true },
+      );
+    </script>
+  </body>
+</html>

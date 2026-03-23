@@ -301,9 +301,9 @@
               <p>
                 Pass@k measures the probability that at least one of k
                 independent samples solves a problem. If steering reduces
-                diversity, pass@k should drop <em>faster</em> than pass@1
-                as k grows — because similar samples are less likely to
-                cover different solutions.
+                diversity, pass@k should drop <em>faster</em> than pass@1 as k
+                grows — because similar samples are less likely to cover
+                different solutions.
               </p>
               <p>
                 We define <b>coverage gain</b> = pass@k &minus; pass@1,
@@ -311,59 +311,62 @@
                 single-sample quality. On HumanEval+ (164 problems, n=100
                 samples, Qwen2.5-1.5B steered with a "happy" vector at
                 &alpha;=2), steering significantly reduces coverage gain at
-                k=2–25 (omnibus p&nbsp;=&nbsp;0.025), confirming diversity
-                loss beyond the pass@1 drop.
+                k=2–25 (omnibus p&nbsp;=&nbsp;0.025), confirming diversity loss
+                beyond the pass@1 drop.
               </p>
             </div>
           </div>
         </div>
 
-        <div class="section-pair">
-          <div class="section">
-            <div class="section-title">Embedding Limitations</div>
-            <div class="section-body">
+        <div class="section">
+          <div class="section-title">Embedding Limitations</div>
+          <div class="section-body" style="display: flex; gap: 4mm; align-items: center">
+            <div style="flex: 0 0 45%">
               <img
                 class="figure-single"
-                src="../../outputs/happy_recon/plots/within_vs_pooled_diversity.png"
+                src="assets/within_vs_pooled_diversity.png"
                 alt="Within-prompt vs pooled diversity across steering scales"
+                style="margin: 0"
               />
               <p class="caption">
                 Within-prompt vs. pooled Sentence-BERT cosine distance across
                 steering scales (happy concept, Qwen2.5-1.5B).
               </p>
-              <div class="text-box">
-                Standard diversity metrics from the literature — mean pairwise
-                cosine distance (shown) and n-gram diversity — score the
-                incoherent noise produced at high steering scales as equally
-                diverse as meaningful unsteered text. Within-prompt diversity
-                stays flat even as outputs visibly degenerate into gibberish.
-                This motivated our use of pass@k, which requires outputs to
-                be both diverse <em>and</em> correct.
-              </div>
+            </div>
+            <div class="text-box" style="flex: 1">
+              Standard diversity metrics from the literature — mean pairwise
+              cosine distance (shown) and n-gram diversity — score the
+              incoherent noise produced at high steering scales as equally
+              diverse as meaningful unsteered text. Within-prompt diversity
+              stays flat even as outputs visibly degenerate into gibberish.
+              This motivated our use of pass@k, which requires outputs to be
+              both diverse <em>and</em> correct.
             </div>
           </div>
+        </div>
 
-          <div class="section">
-            <div class="section-title">Evaluation Awareness</div>
-            <div class="section-body">
+        <div class="section">
+          <div class="section-title">Evaluation Awareness</div>
+          <div class="section-body" style="display: flex; gap: 4mm; align-items: center">
+            <div style="flex: 0 0 45%">
               <img
                 class="figure-single"
-                src="../../eval_awareness/figures/roc.png"
+                src="assets/roc.png"
                 alt="ROC curves for eval awareness detection across open-weight models"
+                style="margin: 0"
               />
               <p class="caption">
                 ROC curves for evaluation awareness across open-weight models
                 (Needham et al., 2025 pipeline).
               </p>
-              <div class="text-box">
-                Many models can detect whether they are being evaluated.
-                Steering models to "think they are deployed" is a key use
-                case of activation steering for safety research — but if
-                steering reduces output diversity, the resulting evaluations
-                may miss important behaviors. We surveyed a range of
-                open-weight models to identify good candidates for steering
-                experiments.
-              </div>
+            </div>
+            <div class="text-box" style="flex: 1">
+              Many models can detect whether they are being evaluated.
+              Steering models to "think they are deployed" is a key use case
+              of activation steering for safety research — but if steering
+              reduces output diversity, the resulting evaluations may miss
+              important behaviors. We surveyed a range of open-weight models
+              to identify good candidates for steering experiments.
             </div>
           </div>
         </div>
@@ -410,276 +413,10 @@
             <div style="flex: 0 0 50%">
               <!-- Recreated from paper TikZ Figure 1 -->
               <div class="area-diagram-container">
-                <svg
-                  viewBox="0 0 420 230"
-                  xmlns="http://www.w3.org/2000/svg"
-                  font-family="Helvetica, Arial, sans-serif"
-                >
-                  <!-- TC area (red, between h_bar=37 and a_k curve) -->
-                  <path
-                    d="M 60,37 L 87,39 L 114,43 L 141,50 L 168,60 L 195,78 L 222,97 L 249,111 L 276,125 L 303,131 L 330,134 L 357,137 L 390,141 L 390,37 Z"
-                    fill="rgba(220,80,80,0.22)"
-                    stroke="none"
-                  />
-                  <!-- E area (blue, between a_k curve and a_infinity=141) -->
-                  <path
-                    d="M 60,37 L 87,39 L 114,43 L 141,50 L 168,60 L 195,78 L 222,97 L 249,111 L 276,125 L 303,131 L 330,134 L 357,137 L 390,141 L 390,141 L 60,141 Z"
-                    fill="rgba(80,80,220,0.22)"
-                    stroke="none"
-                  />
-                  <!-- h_bar dashed line -->
-                  <line
-                    x1="50"
-                    y1="37"
-                    x2="395"
-                    y2="37"
-                    stroke="#333"
-                    stroke-width="1.5"
-                    stroke-dasharray="8,4"
-                  />
-                  <!-- a_infinity dotted line -->
-                  <line
-                    x1="50"
-                    y1="141"
-                    x2="395"
-                    y2="141"
-                    stroke="#333"
-                    stroke-width="1.5"
-                    stroke-dasharray="3,3"
-                  />
-                  <!-- a_k curve -->
-                  <polyline
-                    points="60,37 87,39 114,43 141,50 168,60 195,78 222,97 249,111 276,125 303,131 330,134 357,137"
-                    fill="none"
-                    stroke="black"
-                    stroke-width="2.5"
-                  />
-                  <!-- dots -->
-                  <circle cx="60" cy="37" r="3.5" fill="black" />
-                  <circle cx="87" cy="39" r="3.5" fill="black" />
-                  <circle cx="114" cy="43" r="3.5" fill="black" />
-                  <circle cx="141" cy="50" r="3.5" fill="black" />
-                  <circle cx="168" cy="60" r="3.5" fill="black" />
-                  <circle cx="195" cy="78" r="3.5" fill="black" />
-                  <circle cx="222" cy="97" r="3.5" fill="black" />
-                  <circle cx="249" cy="111" r="3.5" fill="black" />
-                  <circle cx="276" cy="125" r="3.5" fill="black" />
-                  <circle cx="303" cy="131" r="3.5" fill="black" />
-                  <circle cx="330" cy="134" r="3.5" fill="black" />
-                  <circle cx="357" cy="137" r="3.5" fill="black" />
-                  <!-- I_k arrow at k=6 (x=195, a_k=78) -->
-                  <line
-                    x1="195"
-                    y1="39"
-                    x2="195"
-                    y2="76"
-                    stroke="#888"
-                    stroke-width="1.5"
-                  />
-                  <polygon points="195,39 192,45 198,45" fill="#888" />
-                  <polygon points="195,76 192,70 198,70" fill="#888" />
-                  <text
-                    x="201"
-                    y="60"
-                    font-size="13"
-                    fill="#555"
-                    font-style="italic"
-                  >
-                    I&#x2096;
-                  </text>
-                  <!-- e_k arrow at k=6 -->
-                  <line
-                    x1="195"
-                    y1="80"
-                    x2="195"
-                    y2="139"
-                    stroke="#888"
-                    stroke-width="1.5"
-                  />
-                  <polygon points="195,80 192,86 198,86" fill="#888" />
-                  <polygon points="195,139 192,133 198,133" fill="#888" />
-                  <text
-                    x="201"
-                    y="114"
-                    font-size="13"
-                    fill="#555"
-                    font-style="italic"
-                  >
-                    e&#x2096;
-                  </text>
-                  <!-- Region labels -->
-                  <text
-                    x="315"
-                    y="72"
-                    font-size="14"
-                    fill="rgb(180,50,50)"
-                    font-weight="bold"
-                  >
-                    TC&#x2099; = &#x2211;I&#x2096;
-                  </text>
-                  <text
-                    x="105"
-                    y="118"
-                    font-size="14"
-                    fill="rgb(50,50,180)"
-                    font-weight="bold"
-                  >
-                    E = &#x2211;e&#x2096;
-                  </text>
-                  <!-- Axes -->
-                  <line
-                    x1="50"
-                    y1="190"
-                    x2="395"
-                    y2="190"
-                    stroke="#333"
-                    stroke-width="1"
-                  />
-                  <line
-                    x1="50"
-                    y1="25"
-                    x2="50"
-                    y2="190"
-                    stroke="#333"
-                    stroke-width="1"
-                  />
-                  <!-- Axis labels -->
-                  <text
-                    x="220"
-                    y="215"
-                    font-size="14"
-                    fill="#333"
-                    text-anchor="middle"
-                    font-style="italic"
-                  >
-                    k (response index)
-                  </text>
-                  <text
-                    x="18"
-                    y="110"
-                    font-size="14"
-                    fill="#333"
-                    text-anchor="middle"
-                    transform="rotate(-90,18,110)"
-                    font-style="italic"
-                  >
-                    bits
-                  </text>
-                  <!-- Y-axis ticks -->
-                  <line x1="47" y1="37" x2="50" y2="37" stroke="#333" />
-                  <text
-                    x="44"
-                    y="41"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="end"
-                  >
-                    72
-                  </text>
-                  <line x1="47" y1="141" x2="50" y2="141" stroke="#333" />
-                  <text
-                    x="44"
-                    y="145"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="end"
-                  >
-                    24
-                  </text>
-                  <line x1="47" y1="190" x2="50" y2="190" stroke="#333" />
-                  <text
-                    x="44"
-                    y="194"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="end"
-                  >
-                    0
-                  </text>
-                  <!-- X-axis ticks -->
-                  <line x1="60" y1="190" x2="60" y2="193" stroke="#333" />
-                  <text
-                    x="60"
-                    y="203"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="middle"
-                  >
-                    1
-                  </text>
-                  <line x1="141" y1="190" x2="141" y2="193" stroke="#333" />
-                  <text
-                    x="141"
-                    y="203"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="middle"
-                  >
-                    4
-                  </text>
-                  <line x1="222" y1="190" x2="222" y2="193" stroke="#333" />
-                  <text
-                    x="222"
-                    y="203"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="middle"
-                  >
-                    7
-                  </text>
-                  <line x1="303" y1="190" x2="303" y2="193" stroke="#333" />
-                  <text
-                    x="303"
-                    y="203"
-                    font-size="11"
-                    fill="#333"
-                    text-anchor="middle"
-                  >
-                    10
-                  </text>
-                  <!-- Legend: adjust translate(270,155) to move as one unit -->
-                  <g transform="translate(270,155)">
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="28"
-                      y2="0"
-                      stroke="#333"
-                      stroke-width="1.5"
-                      stroke-dasharray="8,4"
-                    />
-                    <text x="33" y="4" font-size="11" fill="#333">
-                      &#x0101;&#x2081; (unconditional)
-                    </text>
-                    <line
-                      x1="0"
-                      y1="14"
-                      x2="28"
-                      y2="14"
-                      stroke="#333"
-                      stroke-width="1.5"
-                      stroke-dasharray="3,3"
-                    />
-                    <text x="33" y="18" font-size="11" fill="#333">
-                      a&#x221E; (floor)
-                    </text>
-                    <line
-                      x1="0"
-                      y1="28"
-                      x2="28"
-                      y2="28"
-                      stroke="black"
-                      stroke-width="2.5"
-                    />
-                    <circle cx="14" cy="28" r="3" fill="black" />
-                    <text x="33" y="32" font-size="11" fill="#333">
-                      &#x0101;&#x2096; curve
-                    </text>
-                  </g>
-                </svg>
+                <img src="assets/area_diagram.svg" alt="ICL diversity metric: excess entropy area diagram" style="width: 100%; height: auto" />
               </div>
               <img
-                src="../../icl-diversity/figures/comparison_v2/comparison_ak_curves_all.png"
+                src="assets/comparison_ak_curves.png"
                 alt="Progressive surprise curves for 5 synthetic scenarios."
                 style="
                   width: 65%;
@@ -738,11 +475,11 @@
           <div class="section-body">
             <div class="figure-pair">
               <img
-                src="../../icl-diversity/figures/mode_count/qwen2.5-3b/metrics_vs_m.png"
+                src="assets/metrics_vs_m.png"
                 alt="Diversity metrics vs mode count"
               />
               <img
-                src="../../icl-diversity/figures/mode_count/qwen2.5-3b/ak_curves_overlay.png"
+                src="assets/ak_curves_overlay.png"
                 alt="Progressive surprise curves for different mode counts"
               />
             </div>
