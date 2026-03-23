@@ -203,7 +203,7 @@
   <body>
     <!-- ═══ TITLE BAR ═══ -->
     <div class="title-bar">
-      <img class="logo" src="ERA_Poster_Template/ERA_logo.jpg" alt="ERA Logo" />
+      <img class="logo" src="assets/ERA_logo.jpg" alt="ERA Logo" />
       <div class="title-content" style="text-align: center; flex: 1">
         <h1>Steered Evals Lead to Outcome Extinction</h1>
         <div class="subtitle">
@@ -256,8 +256,8 @@
           </p>
         </div>
         <img
-          src="motivation_diagram.svg"
-          alt="Motivation diagram: steering may collapse output diversity"
+          src="assets/motivation_diagram.svg"
+          alt="Motivation diagram: steering may reduce output diversity"
           style="width: 45%; height: auto"
         />
       </div>
@@ -291,7 +291,7 @@
           <div class="section-body">
             <img
               class="figure-single"
-              src="../../outputs/passk_main_v1/code/plots/coverage_gain_humaneval_plus_scale2.0_temp0.8.png"
+              src="assets/coverage_gain.png"
               alt="Coverage gain under steering (HumanEval+, scale 2.0, temp 0.8)"
             />
             <p class="caption">
@@ -320,7 +320,7 @@
 
         <div class="section-pair">
           <div class="section">
-            <div class="section-title">Steering: Diversity Collapse</div>
+            <div class="section-title">Embedding Limitations</div>
             <div class="section-body">
               <img
                 class="figure-single"
@@ -332,37 +332,37 @@
                 steering scales (happy concept, Qwen2.5-1.5B).
               </p>
               <div class="text-box">
-                Embedding models, a standard in the language-model-diversity
-                literature, fail to measure meaningful diversity, at least when
-                using mean pairwise cosine distance. They can tell that
-                responses between prompts get more similar, but this metric
-                considers the noise that models output at large steering scales
-                as similarly diverse as meaningful text. N-gram models (another
-                standard from the literature) had similar issues.
+                Standard diversity metrics from the literature — mean pairwise
+                cosine distance (shown) and n-gram diversity — score the
+                incoherent noise produced at high steering scales as equally
+                diverse as meaningful unsteered text. Within-prompt diversity
+                stays flat even as outputs visibly degenerate into gibberish.
+                This motivated our use of pass@k, which requires outputs to
+                be both diverse <em>and</em> correct.
               </div>
             </div>
           </div>
 
           <div class="section">
-            <div class="section-title">Steering: UMAP Visualization</div>
+            <div class="section-title">Evaluation Awareness</div>
             <div class="section-body">
               <img
                 class="figure-single"
-                src="../../outputs/happy_recon/plots/umap_by_scale.png"
-                alt="UMAP embeddings colored by steering scale"
+                src="../../eval_awareness/figures/roc.png"
+                alt="ROC curves for eval awareness detection across open-weight models"
               />
               <p class="caption">
-                UMAP projection of Sentence-BERT embeddings, colored by steering
-                scale. This plots the embeddings for the responses to 10 prompts
-                together, resulting in 11 clusters (one for each prompt, and one
-                for the collapse that happens at extreme amounts of steering)
+                ROC curves for evaluation awareness across open-weight models
+                (Needham et al., 2025 pipeline).
               </p>
               <div class="text-box">
-                Initial results find that clustering embedding vectors may be a
-                better measure of diversity than Mean Pairwise Cosine Distance.
-                Notice how model collapse is represented as a single cluster
-                (steering scale 8) but has similar mean pairwise cosine distance
-                as unsteered text.
+                Many models can detect whether they are being evaluated.
+                Steering models to "think they are deployed" is a key use
+                case of activation steering for safety research — but if
+                steering reduces output diversity, the resulting evaluations
+                may miss important behaviors. We surveyed a range of
+                open-weight models to identify good candidates for steering
+                experiments.
               </div>
             </div>
           </div>
