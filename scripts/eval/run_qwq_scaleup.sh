@@ -175,85 +175,85 @@ PHASE1_END=$(date +%s)
 echo "Phase 1 completed in $(( (PHASE1_END - PHASE1_START) / 60 )) minutes"
 
 # ============================================
-# PHASE 2: Steered codegen (problems 50-150)
+# PHASE 2: Steered codegen (GPU) + unsteered merge+eval (CPU) in parallel
 # ============================================
 echo ""
 echo "============================================"
-echo "PHASE 2: Steered codegen (problems 50-150)"
+echo "PHASE 2: Steered codegen (GPU) || unsteered eval (CPU)"
 echo "Started: $(date)"
 echo "============================================"
 
 kill_server
 start_server "${STEERED_MODEL}" "qwq-32b-steered" "/tmp/vllm_qwq_steered_scaleup.log"
 
+# --- Background: merge + evaluate unsteered (CPU-only) ---
+(
+    echo "[BG] Merging unsteered batch1 + batch2..."
+    BATCH2_UNSTEERED=$(ls -t "${UNSTEERED_BATCH2}"/*.jsonl 2>/dev/null | head -1)
+    if [[ -z "${BATCH2_UNSTEERED}" ]]; then
+        echo "[BG] ERROR: No unsteered batch2 samples in ${UNSTEERED_BATCH2}" >&2
+        exit 1
+    fi
+    MERGED_UNSTEERED="${UNSTEERED_OUT}/merged_0-150.jsonl"
+    cat "${EXISTING_UNSTEERED}" "${BATCH2_UNSTEERED}" > "${MERGED_UNSTEERED}"
+    echo "[BG] Merged unsteered: ${MERGED_UNSTEERED} ($(wc -l < "${MERGED_UNSTEERED}") lines)"
+
+    TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(151)))")
+    echo "[BG] Evaluating merged unsteered..."
+    uv run python -m bigcodebench.evaluate \
+        --split "${SPLIT}" \
+        --subset "${SUBSET}" \
+        --samples "${MERGED_UNSTEERED}" \
+        --execution local \
+        --pass_k "1,2,3,4,5" \
+        --no_gt \
+        --selective_evaluate "${TASK_IDS}" \
+        2>&1 | tee "${UNSTEERED_OUT}/logs/evaluate_merged.log"
+    echo "[BG] Unsteered eval done at $(date)"
+) &
+EVAL_BG_PID=$!
+echo "  Background unsteered eval PID: ${EVAL_BG_PID}"
+
+# --- Foreground: steered codegen (GPU) ---
 PHASE2_START=$(date +%s)
 run_codegen "qwq-32b-steered" "${STEERED_BATCH2}"
 PHASE2_END=$(date +%s)
-echo "Phase 2 completed in $(( (PHASE2_END - PHASE2_START) / 60 )) minutes"
+echo "Phase 2 codegen completed in $(( (PHASE2_END - PHASE2_START) / 60 )) minutes"
 
 kill_server
 
+# Wait for background unsteered eval to finish
+echo "Waiting for background unsteered eval (PID ${EVAL_BG_PID})..."
+wait ${EVAL_BG_PID}
+EVAL_BG_EXIT=$?
+if (( EVAL_BG_EXIT != 0 )); then
+    echo "ERROR: Background unsteered eval failed (exit ${EVAL_BG_EXIT})" >&2
+    exit 1
+fi
+echo "Background unsteered eval completed successfully"
+
 # ============================================
-# PHASE 3: Merge batch1 + batch2
+# PHASE 3: Merge + evaluate steered (sequential, since codegen just finished)
 # ============================================
 echo ""
 echo "============================================"
-echo "PHASE 3: Merge batch1 (0-49) + batch2 (50-150)"
+echo "PHASE 3: Merge + evaluate steered"
 echo "Started: $(date)"
 echo "============================================"
 
-# Find the batch2 jsonl files
-BATCH2_UNSTEERED=$(ls -t "${UNSTEERED_BATCH2}"/*.jsonl 2>/dev/null | head -1)
 BATCH2_STEERED=$(ls -t "${STEERED_BATCH2}"/*.jsonl 2>/dev/null | head -1)
-
-if [[ -z "${BATCH2_UNSTEERED}" ]]; then
-    echo "ERROR: No unsteered batch2 samples in ${UNSTEERED_BATCH2}" >&2
-    exit 1
-fi
 if [[ -z "${BATCH2_STEERED}" ]]; then
     echo "ERROR: No steered batch2 samples in ${STEERED_BATCH2}" >&2
     exit 1
 fi
 
-echo "  Batch1 unsteered: ${EXISTING_UNSTEERED}"
-echo "  Batch2 unsteered: ${BATCH2_UNSTEERED}"
-echo "  Batch1 steered:   ${EXISTING_STEERED}"
-echo "  Batch2 steered:   ${BATCH2_STEERED}"
-
-# Merge by appending (both are jsonl with one line per task_id+solution)
 MERGED_UNSTEERED="${UNSTEERED_OUT}/merged_0-150.jsonl"
 MERGED_STEERED="${STEERED_OUT}/merged_0-150.jsonl"
 
-cat "${EXISTING_UNSTEERED}" "${BATCH2_UNSTEERED}" > "${MERGED_UNSTEERED}"
 cat "${EXISTING_STEERED}" "${BATCH2_STEERED}" > "${MERGED_STEERED}"
+echo "  Merged steered: ${MERGED_STEERED} ($(wc -l < "${MERGED_STEERED}") lines)"
 
-echo "  Merged unsteered: ${MERGED_UNSTEERED} ($(wc -l < "${MERGED_UNSTEERED}") lines)"
-echo "  Merged steered:   ${MERGED_STEERED} ($(wc -l < "${MERGED_STEERED}") lines)"
-
-# ============================================
-# PHASE 4: Evaluate merged files
-# ============================================
-echo ""
-echo "============================================"
-echo "PHASE 4: Evaluate merged results"
-echo "Started: $(date)"
-echo "============================================"
-
-# Extract task IDs for selective evaluation (0-150 range)
 TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(151)))")
-
-echo "Evaluating merged unsteered..."
-uv run python -m bigcodebench.evaluate \
-    --split "${SPLIT}" \
-    --subset "${SUBSET}" \
-    --samples "${MERGED_UNSTEERED}" \
-    --execution local \
-    --pass_k "1,2,3,4,5" \
-    --no_gt \
-    --selective_evaluate "${TASK_IDS}" \
-    2>&1 | tee "${UNSTEERED_OUT}/logs/evaluate_merged.log"
-
-echo ""
 echo "Evaluating merged steered..."
 uv run python -m bigcodebench.evaluate \
     --split "${SPLIT}" \
@@ -266,11 +266,11 @@ uv run python -m bigcodebench.evaluate \
     2>&1 | tee "${STEERED_OUT}/logs/evaluate_merged.log"
 
 # ============================================
-# PHASE 5: Compute pass@k, test, plot
+# PHASE 4: Compute pass@k, test, plot
 # ============================================
 echo ""
 echo "============================================"
-echo "PHASE 5: Compute pass@k + coverage gain test"
+echo "PHASE 4: Compute pass@k + coverage gain test"
 echo "Started: $(date)"
 echo "============================================"
 
