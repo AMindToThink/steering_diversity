@@ -1,4 +1,4 @@
-<!-- Make charts bigger. Move results to the end of the presentation. When presenting, spend more time on motivation. Choose 2-3 charts for the whole presentation (choose the easiest to understand). Think about the takeaways. Steered models not diverse. New metric idnetifies semantic similarity. Cut down words on slides. Just bullet point "other metrics don't work". May want to present results together: pass@k and new metric-->
+<!-- Make charts bigger. Move results to the end of the presentation. When presenting, spend more time on motivation. Choose 2-3 charts for the whole presentation (choose the easiest to understand). Think about the takeaways. Steered models not diverse. New metric idnetifies semantic similarity. Cut down words on slides. Just bullet point "other metrics don't work". May want to present results together: pass@k and new metric.-->
 <!doctype html>
 <html lang="en">
   <head>
@@ -249,7 +249,7 @@
           />
         </div>
       </div>
-      <span class="slide-number">1 / 7</span>
+      <span class="slide-number">1 / 5</span>
     </div>
 
     <!-- ═══ SLIDE 2: Problem ═══ -->
@@ -259,86 +259,86 @@
         <img
           src="assets/motivation_diagram.svg"
           alt="Motivation: steering may reduce output diversity"
+          style="max-height: 70vh; max-width: 50%"
         />
         <div class="text">
-          <p>
-            <strong>Activation steering</strong> is used in AI safety to elicit
-            targeted behaviors &mdash; e.g., making a model "think it's
-            deployed" during evaluation.
-          </p>
-          <p>
-            But if steering <strong>reduces output diversity</strong>, steered
-            evaluations may miss important behaviors the model would otherwise
-            exhibit.
-          </p>
-          <!-- <p>
-            We find that existing diversity metrics
-            <strong>are unhelpful in detecting</strong> this, since they score
-            incoherent noise as "diverse."
-          </p> -->
+          <ul>
+            <li>
+              <strong>Activation steering</strong> modifies model internals to
+              elicit targeted behaviors
+            </li>
+            <li>
+              Key safety use case: make models "think they're deployed" during
+              evaluation
+            </li>
+            <li>
+              If steering <strong>reduces output diversity</strong>, evaluations
+              may miss dangerous behaviors
+            </li>
+            <li>
+              Existing diversity metrics (cosine distance, n-grams)
+              <strong>don't work</strong> because they score gibberish as
+              "diverse"
+            </li>
+          </ul>
         </div>
       </div>
-      <span class="slide-number">2 / 7</span>
+      <span class="slide-number">2 / 5</span>
     </div>
 
-    <!-- ═══ SLIDE 3: Main Result ═══ -->
+    <!-- ═══ SLIDE 3: Our Approach ═══ -->
     <div class="slide" data-slide="3">
-      <div class="slide-heading">
-        Main Result: Steering Reduces Coverage Gain (Pass@k)
+      <div class="slide-heading">How We Measure Diversity</div>
+      <div class="slide-content" style="flex-direction: column">
+        <ul>
+          <li>
+            <strong>Pass@k</strong> measures the probability at least 1 of k samples
+            solves a problem; requires outputs to be diverse
+            <em>and</em> correct
+          </li>
+          <li>
+            <strong>Novel ICL metric</strong> captures that if responses are similar,
+            a base model can predict one given the others; measures learnable
+            structure between responses
+          </li>
+          <li>
+            Both avoid rewarding incoherent noise, unlike standard metrics
+          </li>
+        </ul>
       </div>
-      <div class="slide-content">
-        <img
-          src="assets/coverage_gain.png"
-          alt="Coverage gain under steering"
-        />
-        <div class="text">
-          <p>
-            <strong>Pass@k</strong> = probability at least 1 of k samples solves
-            a problem. Requires outputs to be both diverse <em>and</em> correct.
-          </p>
-          <p>
-            <strong>Coverage gain</strong> = pass@k &minus; pass@1, isolating
-            the diversity benefit of multiple attempts.
-          </p>
-          <p>
-            On HumanEval+ (164 problems, n=100, Qwen2.5-1.5B, &alpha;=2),
-            steering <strong>significantly reduces</strong> coverage gain at
-            k=2&ndash;25 (omnibus p&nbsp;=&nbsp;0.025).
-          </p>
-        </div>
-      </div>
-      <span class="slide-number">3 / 7</span>
+      <span class="slide-number">3 / 5</span>
     </div>
 
-    <!-- ═══ SLIDE 4: Embedding Limitations + Eval Awareness ═══ -->
+    <!-- ═══ SLIDE 4: Results ═══ -->
     <div class="slide" data-slide="4">
-      <div class="slide-heading">Why Not Standard Metrics?</div>
-      <div class="slide-content">
-        <img
-          src="assets/within_vs_pooled_diversity.png"
-          alt="Within-prompt vs pooled diversity across steering scales"
-        />
-        <div class="text">
-          <p>
-            Standard metrics such as mean pairwise cosine distance and n-gram
-            diversity score <strong>incoherent noise</strong> as equally diverse
-            as meaningful text.
-          </p>
-          <p>
-            Within-prompt diversity stays flat even as outputs degenerate into
-            gibberish at high steering scales.
-          </p>
-          <p>
-            This motivated pass@k: outputs must be both diverse
-            <em>and</em> correct.
-          </p>
+      <div class="slide-heading">Results</div>
+      <div class="slide-content" style="flex-direction: column; gap: 1vh">
+        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center">
+          <img
+            src="assets/coverage_gain.png"
+            alt="Coverage gain under steering"
+            style="max-width: 90% !important; height: 100%; object-fit: contain"
+          />
+          <div style="font-size: 1.4vw; color: #555; font-style: italic; margin-top: 0.5vh">
+            Steering significantly reduces coverage gain (p&nbsp;=&nbsp;0.025)
+          </div>
+        </div>
+        <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center">
+          <img
+            src="assets/ak_curves_overlay.png"
+            alt="Progressive surprise curves for different mode counts"
+            style="max-width: 90% !important; height: 100%; object-fit: contain"
+          />
+          <div style="font-size: 1.4vw; color: #555; font-style: italic; margin-top: 0.5vh">
+            ICL metric correctly distinguishes diversity levels
+          </div>
         </div>
       </div>
-      <span class="slide-number">4 / 7</span>
+      <span class="slide-number">4 / 5</span>
     </div>
 
-    <!-- ═══ SLIDE 5: Novel Metric ═══ -->
-    <div class="slide" data-slide="5">
+    <!-- ═══ SLIDE 5: Novel Metric (commented out) ═══ -->
+    <!-- <div class="slide" data-slide="5">
       <div class="slide-heading">
         Novel Metric: In-Context Learning Diversity
       </div>
@@ -373,10 +373,10 @@
         />
       </div>
       <span class="slide-number">5 / 7</span>
-    </div>
+    </div> -->
 
-    <!-- ═══ SLIDE 6: ICL Validation ═══ -->
-    <div class="slide" data-slide="6">
+    <!-- ═══ SLIDE 6: ICL Validation (commented out) ═══ -->
+    <!-- <div class="slide" data-slide="6">
       <div class="slide-heading">ICL Metric: Mode Count Validation</div>
       <div class="slide-content">
         <div class="figure-row">
@@ -396,28 +396,32 @@
           </p>
           <p>
             a<sub>k</sub> curves take longer to reach their floor with more
-            modes &mdash; confirming the metric distinguishes diversity levels.
+            modes, confirming the metric distinguishes diversity levels.
           </p>
         </div>
       </div>
       <span class="slide-number">6 / 7</span>
-    </div>
+    </div> -->
 
-    <!-- ═══ SLIDE 7: What's Next ═══ -->
-    <div class="slide" data-slide="7">
-      <div class="slide-heading">What's Next</div>
+    <!-- ═══ SLIDE 5: Takeaways ═══ -->
+    <div class="slide" data-slide="5">
+      <div class="slide-heading">Takeaways & Next Steps</div>
       <div class="slide-content" style="flex-direction: column">
         <ul>
           <li>
-            Scale up pass@k experiments across more steering methods (SAEs) and
-            concepts
+            <strong>Steered models are less diverse, reducing the chance that multiple samples cover different solutions
           </li>
-          <li>Validate the ICL diversity metric against accepted benchmarks</li>
-          <li>Apply the ICL metric to measure diversity of steered models</li>
-          <li>Use LLM-as-a-judge as an additional diversity measure</li>
+          <li>
+            <strong>New ICL metric identifies semantic similarity</strong>
+            between responses using in-context learning
+          </li>
+          <li>
+            Next: scale to more steering methods and diversity measures,
+            validate ICL metric on benchmarks, apply to steered models
+          </li>
         </ul>
       </div>
-      <span class="slide-number">7 / 7</span>
+      <span class="slide-number">5 / 5</span>
     </div>
 
     <script>
