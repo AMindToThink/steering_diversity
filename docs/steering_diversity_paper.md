@@ -113,7 +113,7 @@ https://arxiv.org/abs/2505.18373 -->
 
 - Perez et al. (2026). [Large Language Models Often Know When They Are Being Evaluated](https://github.com/jjpn97/eval_awareness). The eval awareness pipeline we use for our baseline survey.
 - Hua et al. (2025). [Steering Evaluation-Aware Models to Act Like They Are Deployed](https://arxiv.org/abs/2510.20487). Demonstrates steering eval-aware models toward deployment behavior. Key motivation for our diversity question.
-- Vellat et al. (2025). [The Hawthorne Effect in Reasoning Models: Evaluating and Steering Test Awareness](https://arxiv.org/abs/2505.14617). Microsoft's test-awareness probing framework; we use their pre-trained Qwen3-32B probes.
+- Abdelnabi et al. (2025). [The Hawthorne Effect in Reasoning Models: Evaluating and Steering Test Awareness](https://arxiv.org/abs/2505.14617). Microsoft's test-awareness probing framework; we use their pre-trained Qwen3-32B probes.
 
 ### Model Organisms and Safety Evaluation
 
@@ -275,7 +275,7 @@ We ran 13 models through this pipeline with `--limit 244 --epochs 1` (~49 unique
 
 ### 3.6 Test Awareness Steering
 
-We use Microsoft's [Test_Awareness_Steering](https://github.com/microsoft/Test_Awareness_Steering) framework (Vellat et al., 2025). Their approach:
+We use Microsoft's [Test_Awareness_Steering](https://github.com/microsoft/Test_Awareness_Steering) framework (Abdelnabi et al., 2025). Their approach:
 
 1. Load probe weights from a pre-trained binary classifier (layer 63 of Qwen3-32B, 94.5% accuracy)
 2. Extract the positive-class (test-aware) direction vector (dim 5120)
@@ -598,7 +598,7 @@ Models tested: `moonshotai/kimi-k2.5`, `anthropic/claude-opus-4.6`, `deepseek/de
 
 #### 4.5.1 Preliminary Eval Awareness Steering Results (Qwen3-32B)
 
-We applied Microsoft's test-awareness probes (Vellat et al., 2025) to Qwen3-32B using their `modify_model.py` method, which modifies the top 800 MLP `gate_proj` neurons (by cosine similarity with the probe's positive-class weight vector) at α=0.3 to steer the model away from test awareness. Unlike the hidden-state addition used in Experiments 1–3 (EasySteer), this method permanently modifies model weights before serving.
+We applied Microsoft's test-awareness probes (Abdelnabi et al., 2025) to Qwen3-32B using their `modify_model.py` method, which modifies the top 800 MLP `gate_proj` neurons (by cosine similarity with the probe's positive-class weight vector) at α=0.3 to steer the model away from test awareness. Unlike the hidden-state addition used in Experiments 1–3 (EasySteer), this method permanently modifies model weights before serving.
 
 **Setup.** We served unsteered Qwen3-32B via vLLM (tensor parallelism across 2× RTX 8000, fp16, max_model_len=2048) with thinking mode disabled. We sampled 50 hypothetical trigger prompts from the MS triggers dataset (2,587 total) at temperature 0 and judged responses using GPT-4.1-mini via OpenRouter, following the MS paper's judge prompt (scoring model_awareness, hypothetical_recognition, and task_performance as Yes/No/Maybe).
 
@@ -740,47 +740,45 @@ The simulated CIs separate at n=20, suggesting n=50 would be more than adequate.
 
 **Caveats.** This power analysis assumes the per-problem pass rates observed at n=10 are accurate estimates of the true rates. With only 10 samples per problem, individual problem rates have substantial noise (a problem with true rate 0.3 could easily be observed as 0.1 or 0.5). The *average* effect size across 164 problems is more stable, but the distribution of per-problem effects — which determines CI widths — could differ from what we observed. The n=50 run will serve as both a higher-power replication and a check on these simulation assumptions.
 
-#### 4.6.3 Test Awareness Steering on QwQ-32B (BigCodeBench, n=5)
+#### 4.6.3 Test Awareness Steering on QwQ-32B (BigCodeBench, n=5, 150 problems)
 
-Following the inconclusive Qwen3-32B results (Section 4.5.1), we switched to QwQ-32B for two reasons: (1) the Hawthorne Effect paper (Vellat et al., 2025) demonstrated that QwQ does not lose performance under steering (MMLU results), and (2) QwQ is a reasoning model where thinking mode is integral, avoiding the confound of disabling it.
+Following the inconclusive Qwen3-32B results (Section 4.5.1), we switched to QwQ-32B. The Hawthorne Effect paper (Abdelnabi et al., 2025) demonstrated that QwQ does not lose performance under their test-awareness steering (MMLU results), making it a natural candidate for our diversity measurement.
 
 **Setup.** We applied Microsoft's test-awareness probes (layer 62, 95.4% accuracy) to QwQ-32B at α=−0.25 (steering away from test awareness) using `modify_model.py`. We saved steered weights to disk and served both unsteered and steered models via vLLM (TP=2, RTX 8000×2, fp16). Steering was verified via logprob comparison at temperature 0: 7/20 tokens showed |Δlogprob| > 0.01, with max difference 0.22, confirming the weight modification took effect.
 
 QwQ-32B generates inline thinking (no `<think>` tags in its chat template, unlike Qwen3). We kept thinking enabled — it cannot be disabled via the standard `enable_thinking` flag, which is a Qwen3 feature. BigCodeBench's `sanitize()` function correctly strips thinking content before code extraction, so thinking tokens do not contaminate evaluation.
 
-We evaluated on 50 BigCodeBench-Instruct (full subset) problems with n=5 samples per problem at temperature 0.8 and max_tokens=4096. The token budget accommodates QwQ's thinking overhead: at 1280 tokens, the model exhausts its budget on thinking without producing code; at 4096 tokens, 91% of samples contain a function definition.
+We evaluated on 150 BigCodeBench-Instruct (full subset) problems (IDs 0–149) with n=5 samples per problem at temperature 0.8 and max_tokens=4096. The token budget accommodates QwQ's thinking overhead: at 1280 tokens, the model exhausts its budget on thinking without producing code; at 4096 tokens, 91% of samples contain a function definition. Total compute: ~16 hours across both conditions (two RTX 8000 GPUs, tensor-parallel).
 
 **Results.**
 
 | Metric | Unsteered (α=0) | Steered (α=−0.25) | Difference |
 | --- | :---: | :---: | :---: |
-| pass@1 | 0.472 | 0.448 | −0.024 |
-| pass@2 | 0.516 | 0.496 | −0.020 |
-| pass@3 | 0.536 | 0.518 | −0.018 |
-| pass@4 | 0.548 | 0.532 | −0.016 |
-| pass@5 | 0.560 | 0.540 | −0.020 |
+| pass@1 | 0.413 | 0.391 | −0.022 |
+| pass@2 | 0.465 | 0.443 | −0.022 |
+| pass@3 | 0.487 | 0.467 | −0.020 |
+| pass@4 | 0.501 | 0.483 | −0.018 |
+| pass@5 | 0.513 | 0.493 | −0.020 |
 
-Tasks with at least one passing solution: 28/50 (unsteered) vs. 27/50 (steered).
-
-**Coverage gain test.** To isolate diversity collapse from the pass@1 drop, we applied the same coverage gain analysis as Section 4.6.1.
+**Coverage gain test.** To separate diversity effects from the pass@1 drop, we applied the same coverage gain analysis as Section 4.6.1.
 
 | k | Δ coverage gain | SE | p-value | sig |
 | --- | :---: | :---: | :---: | :---: |
-| 2 | +0.004 | 0.014 | 0.771 | |
-| 3 | +0.006 | 0.021 | 0.775 | |
-| 4 | +0.008 | 0.026 | 0.755 | |
-| 5 | +0.004 | 0.030 | 0.894 | |
+| 2 | +0.0013 | 0.0076 | 0.861 | |
+| 3 | +0.0027 | 0.0119 | 0.823 | |
+| 4 | +0.0040 | 0.0153 | 0.794 | |
+| 5 | +0.0027 | 0.0186 | 0.886 | |
 
-Omnibus interaction test: mean Δ coverage gain = +0.006, t = 0.25, p = 0.804.
+Omnibus interaction test: mean Δ coverage gain = +0.003, t = 0.21, p = 0.838.
 
-![Coverage gain (pass@k − pass@1) for unsteered vs. test-awareness-steered (α=−0.25) QwQ-32B on BigCodeBench (n=5, 50 problems). Left: coverage gain curves with bootstrap 95% CIs. Right: Δ coverage gain (steered − unsteered). No significant diversity collapse detected at any k value.](figures/coverage_gain_qwq_bigcodebench.png)
-_Figure: Coverage gain analysis for test-awareness steering (α=−0.25) on QwQ-32B, BigCodeBench (n=5, 50 problems). Coverage gain curves overlap almost entirely, and no Δ is significant. The small, consistent pass@k drop (~2%) is attributable to the pass@1 decrease, not diversity collapse._
+![Coverage gain (pass@k − pass@1) for unsteered vs. neg. test-awareness-steered (α=−0.25) QwQ-32B on BigCodeBench (n=5, 150 problems). Left: coverage gain curves with bootstrap 95% CIs. Right: Δ coverage gain (steered − unsteered).](figures/coverage_gain_qwq_bigcodebench.png)
+_Figure: Coverage gain analysis for neg. test-awareness steering (α=−0.25) on QwQ-32B, BigCodeBench (n=5, 150 problems). Coverage gain curves with bootstrap 95% CIs (left) and Δ coverage gain (right). No bars are significant._
 
-**Interpretation.** Unlike the happy steering result on Qwen2.5-1.5B (Section 4.6.1), test-awareness steering on QwQ-32B shows no evidence of diversity collapse. The ~2.4% pass@1 drop propagates uniformly across all k values with no additional diversity loss. Coverage gain differences are positive (steered has marginally _more_ diversity), though far from significant.
+**This experiment is inconclusive.** With only n=5 samples per problem, the coverage gain window is very narrow: pass@5 − pass@1 ≈ 0.10, meaning the full benefit of additional attempts is only ~15 problems out of 150. The entire steering effect on pass@k is ~3 problems (150 × 0.02). The test does not have the statistical power or dynamic range to distinguish between "no diversity effect" and "a small diversity effect we cannot detect."
 
-This null result has several possible explanations: (1) the steering strength (α=−0.25) is much weaker than the happy vector (α=2.0), as required to avoid model degeneration; (2) test-awareness steering may be more "surgical" than happy steering, modifying beliefs without damaging the output distribution; (3) n=5 samples per problem provides limited statistical power — the wide confidence intervals (±0.06 at k=5) could mask a real but small effect.
+The experiment is further limited by the many differences from the happy steering experiment (Section 4.6.1): steering strength (α=−0.25 vs. α=2.0), concept (test-awareness vs. emotional tone), mechanism (MLP weight modification vs. activation offsets), and model (QwQ-32B vs. Qwen2.5-1.5B). Even if we had detected a difference, attributing it to any one factor would be difficult.
 
-**Limitations.** The primary limitation is low statistical power: 50 problems with n=5 samples yields wide confidence intervals. A power analysis based on the observed effect sizes suggests that even with n=50 and 500 problems, the effects here (~0.005 Δ coverage gain) would remain non-significant — the effect is genuinely small, not merely undetected. The 4096-token budget, while necessary for QwQ's thinking, means each sample takes ~5 minutes to generate, making larger-n experiments costly (~4 hours per condition at this scale).
+The 4096-token budget — necessary for QwQ's thinking — means each sample takes ~5 minutes, making larger-n experiments costly (~8 hours per condition at this scale). A conclusive test would require substantially more samples per problem to widen the coverage gain window.
 
 ### 4.7 Planned/Proposed Experiments
 
@@ -884,7 +882,7 @@ We thank **Roger Dearnaley,** **Nathaniel Mitrani**, and **Jan Wehner** for help
 6. Perez, E., et al. (2026). "Large Language Models Often Know When They Are Being Evaluated." GitHub: jjpn97/eval_awareness.
 7. Tevet, G. & Berant, J. (2021). "Evaluating the Evaluation of Diversity in Natural Language Generation." EACL 2021.
 8. Turner, A., et al. (2024). "Contrastive Activation Addition for Large Language Models." ACL 2024.
-9. Vellat, et al. (2025). "The Hawthorne Effect in Reasoning Models: Evaluating and Steering Test Awareness." arXiv:2505.14617.
+9. Abdelnabi, et al. (2025). "The Hawthorne Effect in Reasoning Models: Evaluating and Steering Test Awareness." arXiv:2505.14617.
 10. Yang, et al. (2025). "Why Steering Works: Toward a Unified View of Language Model Parameter Dynamics." arXiv:2602.02343.
 11. "The Truthfulness Spectrum Hypothesis." arXiv:2602.20273.
 12. "Latent Adversarial Training Improves Robustness to Persistent Harmful Behaviors in LLMs." arXiv:2407.15549.
