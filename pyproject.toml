@@ -32,11 +32,19 @@ dependencies = [
     "fastapi>=0.129.0",
     "httpx>=0.28.1",
     "uvicorn>=0.41.0",
+    "bigcodebench>=0.2.5",
 ]
 
 [project.optional-dependencies]
 gpu = ["vllm", "easysteer"]
 dev = ["pytest", "ruff"]
+
+[tool.uv]
+# bigcodebench depends on stock vllm, but we use the EasySteer fork
+# (installed manually via `uv pip install -e EasySteer/vllm-steer`).
+# This override makes the vllm requirement a no-op: the marker is never true,
+# so uv resolves and installs everything else but skips vllm entirely.
+override-dependencies = ["vllm>=0; sys_platform == 'never'"]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -54,4 +62,6 @@ line-length = 100
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",
+    "pytest>=9.0",
+    "ruff>=0.15",
 ]
