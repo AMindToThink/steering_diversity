@@ -198,7 +198,7 @@ start_server "${STEERED_MODEL}" "qwq-32b-steered" "/tmp/vllm_qwq_steered_scaleup
     cat "${EXISTING_UNSTEERED}" "${BATCH2_UNSTEERED}" > "${MERGED_UNSTEERED}"
     echo "[BG] Merged unsteered: ${MERGED_UNSTEERED} ($(wc -l < "${MERGED_UNSTEERED}") lines)"
 
-    TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(151)))")
+    TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(150)))")
     echo "[BG] Evaluating merged unsteered..."
     uv run python -m bigcodebench.evaluate \
         --split "${SPLIT}" \
@@ -253,7 +253,7 @@ MERGED_STEERED="${STEERED_OUT}/merged_0-150.jsonl"
 cat "${EXISTING_STEERED}" "${BATCH2_STEERED}" > "${MERGED_STEERED}"
 echo "  Merged steered: ${MERGED_STEERED} ($(wc -l < "${MERGED_STEERED}") lines)"
 
-TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(151)))")
+TASK_IDS=$(python3 -c "print(','.join(f'BigCodeBench/{i}' for i in range(150)))")
 echo "Evaluating merged steered..."
 uv run python -m bigcodebench.evaluate \
     --split "${SPLIT}" \
