@@ -211,3 +211,5 @@ __marimo__/
 *.gguf
 *.provenance.json
 .DS_Store
+outputs/
+.claude/settings.local.json

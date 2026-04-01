@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude-tools/vllm-status.sh *)",
+      "Bash(.claude-tools/vllm-test-prompt.sh *)",
+      "Bash(.claude-tools/start-qwq-server.sh *)",
+      "Bash(.claude-tools/scaleup-status.sh *)"
+    ]
+  }
+}
