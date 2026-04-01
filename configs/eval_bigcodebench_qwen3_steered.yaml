@@ -1,0 +1,20 @@
+run_name: "passk_qwen3_v1"
+seed: 42
+
+# Self-contained: steering baked into weights (alpha=0.3, eval-unaware)
+model_name: "/tmp/qwen3-32b-steered-unaware-0.3"
+
+# Label for the alpha used in weight modification
+scales: [0.3]
+
+endpoint:
+  base_url: "http://localhost:8017/v1"
+  steering_mode: "none"
+
+pass_at_k:
+  n_samples: 100
+  temperatures: [0.8]
+  max_tokens: 1280
+  k_values: [1, 2, 5, 10, 25, 50, 100]
+
+datasets: ["bigcodebench"]

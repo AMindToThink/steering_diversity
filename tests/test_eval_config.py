@@ -167,6 +167,80 @@ class TestCodeEvalConfig:
             CodeEvalConfig.from_yaml(config_dir / "bad_vector.yaml")
 
 
+class TestStandaloneConfig:
+    """Tests for configs without steering_config (standalone model_name)."""
+
+    def test_loads_with_model_name(self, tmp_path: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "qwen3_test"
+            seed: 99
+            model_name: "Qwen/Qwen3-32B"
+            scales: [0.0]
+            endpoint:
+              base_url: "http://localhost:8017/v1"
+              steering_mode: "none"
+            pass_at_k:
+              n_samples: 100
+              temperatures: [0.8]
+              max_tokens: 512
+              k_values: [1, 5, 10]
+            datasets: ["humaneval"]
+        """)
+        (tmp_path / "eval.yaml").write_text(eval_yaml)
+        cfg = CodeEvalConfig.from_yaml(tmp_path / "eval.yaml")
+        assert cfg.run_name == "qwen3_test"
+        assert cfg.seed == 99
+        assert cfg.model.name == "Qwen/Qwen3-32B"
+        assert cfg.steering is None
+        assert cfg.vector_path is None
+        assert cfg.scales == [0.0]
+        assert cfg.endpoint.steering_mode == "none"
+        assert cfg.steering_config_path == ""
+
+    def test_defaults_scales_to_zero(self, tmp_path: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "minimal_standalone"
+            model_name: "some-model"
+            endpoint:
+              steering_mode: "none"
+        """)
+        (tmp_path / "eval.yaml").write_text(eval_yaml)
+        cfg = CodeEvalConfig.from_yaml(tmp_path / "eval.yaml")
+        assert cfg.scales == [0.0]
+
+    def test_missing_both_steering_config_and_model_name_raises(self, tmp_path: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "broken"
+            scales: [0.0]
+        """)
+        (tmp_path / "eval.yaml").write_text(eval_yaml)
+        with pytest.raises(ValueError, match="Either 'steering_config' or 'model_name'"):
+            CodeEvalConfig.from_yaml(tmp_path / "eval.yaml")
+
+    def test_output_dir(self, tmp_path: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "passk_qwen3_v1"
+            model_name: "Qwen/Qwen3-32B"
+        """)
+        (tmp_path / "eval.yaml").write_text(eval_yaml)
+        cfg = CodeEvalConfig.from_yaml(tmp_path / "eval.yaml")
+        assert cfg.output_dir == Path("outputs/passk_qwen3_v1")
+
+    def test_steering_mode_none(self, tmp_path: Path) -> None:
+        eval_yaml = textwrap.dedent("""\
+            run_name: "test_none"
+            model_name: "test-model"
+            endpoint:
+              steering_mode: "none"
+            datasets: ["humaneval"]
+        """)
+        (tmp_path / "eval.yaml").write_text(eval_yaml)
+        cfg = CodeEvalConfig.from_yaml(tmp_path / "eval.yaml")
+        assert cfg.endpoint.steering_mode == "none"
+        assert cfg.steering is None
+        assert cfg.vector_path is None
+
+
 class TestEndpointConfig:
     def test_defaults(self) -> None:
         cfg = EndpointConfig()

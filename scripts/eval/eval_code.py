@@ -312,7 +312,12 @@ def run_single_condition(
     mode = cfg.endpoint.steering_mode
     proc = None
 
-    if mode == "server":
+    if mode == "none":
+        # No runtime steering — model weights already contain any modifications
+        codegen_url = cfg.endpoint.base_url
+        if not codegen_url.endswith("/v1"):
+            codegen_url = codegen_url.rstrip("/") + "/v1"
+    elif mode == "server":
         # Server-level steering: set scale directly on vLLM
         set_steering_scale(cfg.endpoint.base_url, scale)
         codegen_url = cfg.endpoint.base_url
@@ -324,6 +329,8 @@ def run_single_condition(
         upstream = cfg.endpoint.base_url.rstrip("/")
         if upstream.endswith("/v1"):
             upstream = upstream[:-3]
+        assert cfg.steering is not None, "proxy mode requires steering config"
+        assert cfg.vector_path is not None, "proxy mode requires vector_path"
         proc = start_proxy(
             upstream=upstream,
             vector_path=cfg.vector_path,
@@ -335,7 +342,7 @@ def run_single_condition(
         )
         codegen_url = proxy_url
     else:
-        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server' or 'proxy'.")
+        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server', 'proxy', or 'none'.")
 
     condition_t0 = time.monotonic()
     try:
@@ -380,7 +387,7 @@ def run_single_condition(
             "per_problem_plus": [{"n": n, "c": c} for n, c in per_problem_plus],
             "per_problem_base": [{"n": n, "c": c} for n, c in per_problem_base],
             "elapsed_seconds": round(condition_elapsed, 1),
-            "vector_path": cfg.vector_path,
+            "vector_path": cfg.vector_path or "none",
         }
         results_path = output_dir / "pass_at_k.json"
         ensure_dir(results_path.parent)
@@ -437,7 +444,10 @@ def main() -> None:
         cfg.pass_at_k.n_samples,
     )
 
-    if mode == "server":
+    if mode == "none":
+        # No runtime steering — just verify the server is reachable
+        logger.info("Steering mode 'none': skipping steering verification.")
+    elif mode == "server":
         # Server-level steering: verify the server has a vector loaded
         logger.info("Verifying server-level steering at %s ...", cfg.endpoint.base_url)
         verify_server_steering(cfg.endpoint.base_url)
@@ -447,13 +457,15 @@ def main() -> None:
         upstream = cfg.endpoint.base_url.rstrip("/")
         if upstream.endswith("/v1"):
             upstream = upstream[:-3]
+        assert cfg.vector_path is not None, "proxy mode requires vector_path"
+        assert cfg.steering is not None, "proxy mode requires steering config"
         logger.info("Verifying upstream steering support at %s ...", upstream)
         verify_upstream_supports_steering(
             upstream, cfg.vector_path, cfg.steering.target_layers
         )
         logger.info("Upstream steering verification passed.")
     else:
-        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server' or 'proxy'.")
+        raise ValueError(f"Unknown steering_mode: {mode!r}. Use 'server', 'proxy', or 'none'.")
 
     total_t0 = time.monotonic()
     all_results: list[dict] = []
