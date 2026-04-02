@@ -45,7 +45,8 @@ def simulate_ci_widths(
     k_values: list[int],
     n_boot: int = 1000,
     seed: int = 42,
-) -> None:
+    output_path: str | None = None,
+) -> list[dict]:
     """Simulate pass@k at various n and report CI widths for each k."""
     rng = np.random.default_rng(seed)
 
@@ -59,9 +60,12 @@ def simulate_ci_widths(
     print(header)
     print("-" * len(header))
 
+    results: list[dict] = []
+
     for n in n_samples_list:
         line = f"{n:>5d}"
         deltas_by_k: dict[int, np.ndarray] = {}
+        row: dict = {"n": n, "predictions": {}}
 
         for k in k_values:
             k_eff = min(k, n)
@@ -75,9 +79,15 @@ def simulate_ci_widths(
 
             boot_deltas = np.array(boot_deltas)
             deltas_by_k[k] = boot_deltas
-            mean_d = np.mean(boot_deltas)
-            ci = 1.96 * np.std(boot_deltas)
+            mean_d = float(np.mean(boot_deltas))
+            ci = float(1.96 * np.std(boot_deltas))
             line += f"  |  {mean_d:+.4f} ± {ci:.4f}"
+            row["predictions"][f"delta_pass_at_{k}"] = {
+                "mean": mean_d,
+                "ci_95": ci,
+                "ci_95_low": mean_d - ci,
+                "ci_95_high": mean_d + ci,
+            }
 
         # Check overlap between k=1 and k=10 (or first and last k)
         k_first, k_last = k_values[0], k_values[-1]
@@ -86,9 +96,26 @@ def simulate_ci_widths(
         m1, ci1 = np.mean(d1), 1.96 * np.std(d1)
         m2, ci2 = np.mean(d2), 1.96 * np.std(d2)
         overlap = (m1 - ci1) < (m2 + ci2) and (m2 - ci2) < (m1 + ci1)
+        row["separated"] = not overlap
         line += f"  | k={k_first} vs k={k_last}: {'OVERLAP' if overlap else 'SEPARATED'}"
 
         print(line)
+        results.append(row)
+
+    if output_path:
+        output = {
+            "n_boot": n_boot,
+            "seed": seed,
+            "k_values": k_values,
+            "observed_mean_pass_rate_unsteered": float(un_rates.mean()),
+            "observed_mean_pass_rate_steered": float(st_rates.mean()),
+            "per_n_results": results,
+        }
+        with open(output_path, "w") as f:
+            json.dump(output, f, indent=2)
+        print(f"\nWrote {output_path}")
+
+    return results
 
 
 def main() -> None:
@@ -99,6 +126,7 @@ def main() -> None:
         n_samples_list=[10, 20, 30, 50, 75, 100, 150, 200],
         k_values=[1, 10],
         n_boot=1000,
+        output_path="outputs/passk_test_steered/code/power_analysis.json",
     )
 
 

@@ -357,16 +357,19 @@ CAA is especially relevant because Anthropic uses it in their [System Cards](htt
 
 All three pre-registered tests converge:
 
-| Test                                      | Statistic                            | p-value       | Significant? |
-| ----------------------------------------- | ------------------------------------ | ------------- | :----------: |
-| Mixed-effects model (primary)             | beta = -0.0027                       | 0.092         |      No      |
-| Spearman rho (effect size)                | rho = -0.015                         | 0.802         |      No      |
-| Page's L (all 6 metrics, Holm-Bonferroni) | best raw p = 0.023 (cluster_entropy) | adj p = 0.138 |      No      |
+<!-- BEGIN GENERATED TABLE: happy_full_stats -->
+| Test | Statistic | p-value | Significant? |
+| --- | --- | --- | :---: |
+| Mixed-effects model (primary) | beta = -0.0027 | 0.092 | No |
+| Spearman rho (effect size) | rho = -0.015 | 0.802 | No |
+| Page's L (all 6 metrics, Holm-Bonferroni) | best raw p = 0.023 (cluster_entropy) | adj p = 0.138 | No |
+<!-- END GENERATED TABLE: happy_full_stats -->
 
 The mixed-effects beta is tiny and negative (higher scale -> marginally lower mean pairwise cosine distance), but the 95% CI crosses zero [-0.0059, 0.0004].
 
 **Per-scale diversity metrics:**
 
+<!-- BEGIN GENERATED TABLE: happy_full_metrics -->
 | Scale | Clusters | Noise ratio | Mean pairwise cosine dist | Cluster entropy |
 | ----- | -------- | ----------- | :-----------------------: | :-------------: |
 | 0.0   | 29       | 0.444       |           0.878           |      3.31       |
@@ -375,6 +378,7 @@ The mixed-effects beta is tiny and negative (higher scale -> marginally lower me
 | 2.0   | 23       | 0.520       |           0.878           |      3.07       |
 | 4.0   | 27       | 0.540       |           0.873           |      3.23       |
 | 8.0   | 26       | 0.504       |           0.873           |      3.18       |
+<!-- END GENERATED TABLE: happy_full_metrics -->
 
 All metrics are remarkably flat across scales, consistent with the prefix-cache bug making steering ineffective.
 
@@ -408,14 +412,16 @@ After fixing the prefix-cache bug, we re-ran with a smaller design to test the c
 
 The pooled pairwise cosine distance drops sharply from 0.74 (scale 0) to 0.53 (scale 8). But decomposing reveals:
 
+<!-- BEGIN GENERATED TABLE: happy_recon_within_vs_pooled -->
 | Scale | Within-prompt (mean +/- SE) | Pooled (cross-prompt included) |
 | ----- | :-------------------------: | :----------------------------: |
-| 0.0   |       0.555 +/- 0.037       |             0.740              |
-| 0.5   |       0.502 +/- 0.028       |             0.738              |
-| 1.0   |       0.494 +/- 0.024       |             0.710              |
-| 2.0   |       0.509 +/- 0.035       |             0.721              |
-| 4.0   |       0.489 +/- 0.035       |             0.599              |
-| 8.0   |       0.527 +/- 0.020       |             0.533              |
+| 0.0   |       0.555 +/- 0.039       |             0.739              |
+| 0.5   |       0.502 +/- 0.030       |             0.738              |
+| 1.0   |       0.494 +/- 0.026       |             0.710              |
+| 2.0   |       0.509 +/- 0.037       |             0.721              |
+| 4.0   |       0.489 +/- 0.037       |             0.598              |
+| 8.0   |       0.527 +/- 0.021       |             0.533              |
+<!-- END GENERATED TABLE: happy_recon_within_vs_pooled -->
 
 - **Within-prompt diversity is flat** (~0.49–0.55) across all scales.
 - **Pooled diversity drops** because responses to _different_ prompts converge. At scale 8, the two lines nearly meet — cross-prompt diversity has essentially vanished.
@@ -438,11 +444,13 @@ _Figure: All 6 clustering metrics across steering scales for happy_recon._
 
 **Statistical tests (correctly using within-prompt metrics):**
 
-| Test                                   | Statistic      | p-value | Significant? |
-| -------------------------------------- | -------------- | ------- | :----------: |
-| Mixed-effects (primary)                | beta = -0.0002 | 0.957   |      No      |
-| Spearman rho                           | rho = -0.061   | 0.641   |      No      |
-| Page's L (noise_ratio, Holm-corrected) | —              | 0.023   |    Yes\*     |
+<!-- BEGIN GENERATED TABLE: happy_recon_stats -->
+| Test | Statistic | p-value | Significant? |
+| --- | --- | --- | :---: |
+| Mixed-effects (primary) | beta = -0.0002 | 0.957 | No |
+| Spearman rho | rho = -0.061 | 0.641 | No |
+| Page's L (noise_ratio, Holm-corrected) | — | 0.023 | Yes\* |
+<!-- END GENERATED TABLE: happy_recon_stats -->
 
 The primary tests confirm no within-prompt diversity effect. The significant noise_ratio trend likely reflects degenerate outputs at scale 8 forming tight clusters rather than meaningful diversity change.
 
@@ -482,6 +490,7 @@ _Figure: Comparison of all-MiniLM-L6-v2 vs. SentBERT embedding models. The range
 
 **Results:**
 
+<!-- BEGIN GENERATED TABLE: style_full_metrics -->
 | Scale | Clusters | Cosine dist (pooled) | Within-prompt cosine dist | Noise ratio |
 | ----- | -------- | :------------------: | :-----------------------: | :---------: |
 | 0.0   | 7        |        0.703         |           0.51            |    0.41     |
@@ -490,15 +499,19 @@ _Figure: Comparison of all-MiniLM-L6-v2 vs. SentBERT embedding models. The range
 | 2.0   | 0        |        0.545         |           0.46            |    1.00     |
 | 4.0   | 0        |        0.444         |           0.43            |    1.00     |
 | 8.0   | 2        |        0.498         |           0.48            |    0.87     |
+<!-- END GENERATED TABLE: style_full_metrics -->
 
 **Statistical tests (within-prompt, primary):**
 
-| Test                                    | Statistic     | p-value | Significant? |
-| --------------------------------------- | ------------- | ------- | :----------: |
-| Mixed-effects (primary)                 | beta = -0.004 | 0.003   |     Yes      |
-| Spearman rho                            | rho = -0.234  | < 0.001 |     Yes      |
-| Page's L (cosine dist, Holm-corrected)  | —             | < 0.001 |     Yes      |
-| Page's L (num_clusters, Holm-corrected) | —             | < 0.001 |     Yes      |
+<!-- BEGIN GENERATED TABLE: style_full_stats -->
+| Test | Statistic | p-value | Significant? |
+| --- | --- | --- | :---: |
+| Mixed-effects (primary) | beta = -0.004 | 0.003 | Yes |
+| Spearman rho | rho = -0.234 | < 0.001 | Yes |
+| Page's L (mean_intra_cluster_distance, Holm-corrected) | — | < 0.001 | Yes |
+| Page's L (num_clusters, Holm-corrected) | — | < 0.001 | Yes |
+| Page's L (mean_pairwise_cosine_distance, Holm-corrected) | — | < 0.001 | Yes |
+<!-- END GENERATED TABLE: style_full_stats -->
 
 **Key observations:**
 
@@ -531,23 +544,27 @@ _Figure: All 6 clustering metrics across steering scales for style_full._
 
 **Results:**
 
+<!-- BEGIN GENERATED TABLE: creativity_full_metrics -->
 | Scale | Clusters | Cosine dist (pooled) | Within-prompt cosine dist | Noise ratio |
 | ----- | -------- | :------------------: | :-----------------------: | :---------: |
-| 0.0   | 27       |        0.682         |           0.35            |    0.42     |
+| 0.0   | 27        |        0.682         |           0.35            |    0.42     |
 | 0.5   | 5        |        0.606         |           0.34            |    0.05     |
 | 1.0   | 2        |        0.479         |           0.31            |    0.02     |
 | 2.0   | 2        |        0.363         |           0.34            |    0.80     |
-| 4.0   | 0        |        0.343         |           0.35            |    1.00     |
+| 4.0   | 0        |        0.343         |           0.34            |    1.00     |
 | 8.0   | 2        |        0.476         |           0.48            |    0.96     |
+<!-- END GENERATED TABLE: creativity_full_metrics -->
 
 **Statistical tests (within-prompt, primary):**
 
-| Test                                          | Statistic     | p-value | Significant? |
-| --------------------------------------------- | ------------- | ------- | :----------: |
-| Mixed-effects (primary)                       | beta = +0.017 | < 0.001 |     Yes      |
-| Spearman rho                                  | rho = +0.397  | < 0.001 |     Yes      |
-| Page's L (num_clusters, Holm-corrected)       | —             | < 0.001 |     Yes      |
-| Page's L (intra_cluster_dist, Holm-corrected) | —             | < 0.001 |     Yes      |
+<!-- BEGIN GENERATED TABLE: creativity_full_stats -->
+| Test | Statistic | p-value | Significant? |
+| --- | --- | --- | :---: |
+| Mixed-effects (primary) | beta = 0.017 | < 0.001 | Yes |
+| Spearman rho | rho = 0.397 | < 0.001 | Yes |
+| Page's L (mean_intra_cluster_distance, Holm-corrected) | — | < 0.001 | Yes |
+| Page's L (num_clusters, Holm-corrected) | — | < 0.001 | Yes |
+<!-- END GENERATED TABLE: creativity_full_stats -->
 
 **Key observations:**
 
@@ -569,11 +586,13 @@ _Figure: All 6 clustering metrics across steering scales for creativity_full._
 
 ### 4.4 Cross-Experiment Comparison
 
-| Experiment      | Model        | Concept    | Pooled diversity reduction (scale 0→4) |      Within-prompt effect       |
-| :-------------- | :----------- | :--------- | :------------------------------------: | :-----------------------------: |
-| happy_recon     | Qwen2.5-1.5B | happy      |           0.74 → 0.60 (19%)            |    None (beta ≈ 0, p = 0.96)    |
-| style_full      | Qwen2.5-1.5B | style      |           0.70 → 0.44 (37%)            | Mild (beta = -0.004, p = 0.003) |
-| creativity_full | Llama-3-8B   | creativity |           0.68 → 0.34 (50%)            |      None (flat 0.31–0.35)      |
+<!-- BEGIN GENERATED TABLE: cross_experiment_comparison -->
+| Experiment | Model | Concept | Pooled diversity reduction (scale 0→4) | Within-prompt effect |
+| :--- | :--- | :--- | :---: | :---: |
+| happy_recon | Qwen2.5-1.5B | happy | 0.74 → 0.60 (19%) | None (beta ≈ 0, p = 0.96) |
+| style_full | Qwen2.5-1.5B | style | 0.70 → 0.44 (37%) | Mild (beta = -0.004, p = 0.003) |
+| creativity_full | Llama-3-8B | creativity | 0.68 → 0.34 (50%) | None (flat 0.31–0.35) |
+<!-- END GENERATED TABLE: cross_experiment_comparison -->
 
 ### 4.5 Eval Awareness Baseline Survey
 
@@ -588,11 +607,13 @@ _Figure: ROC curves for eval awareness detection across 13 frontier models._
 - **Best size/awareness tradeoff**: Qwen3-30B-A3B (AUC ~0.65) — a mixture-of-experts model with only 3B active parameters.
 - **Unsteered Qwen3-32B baseline** (target for steering experiment):
 
-| Subset  | AUC  | Brier | ECE  |
-| ------- | :--: | :---: | :--: |
-| All     | 0.64 | 0.36  | 0.36 |
-| Chat    | 0.66 | 0.34  | 0.34 |
-| Agentic | 0.62 | 0.38  | 0.37 |
+<!-- BEGIN GENERATED TABLE: eval_awareness_qwen3_32b -->
+| Subset | AUC | Brier | ECE |
+| --- | :---: | :---: | :---: |
+| All | 0.64 | 0.36 | 0.36 |
+| Chat | 0.66 | 0.34 | 0.34 |
+| Agentic | 0.62 | 0.38 | 0.37 |
+<!-- END GENERATED TABLE: eval_awareness_qwen3_32b -->
 
 Models tested: `moonshotai/kimi-k2.5`, `anthropic/claude-opus-4.6`, `deepseek/deepseek-v3.2`, `gpt-4.1-mini-2025-04-14`, `minimax/minimax-m2.5`, `google/gemini-2.5-pro-preview`, `qwen/qwen3.5-397b-a17b`, `qwen/qwen3-30b-a3b`, `qwen/qwen3-32b`, `z-ai/glm-4.7`, `z-ai/glm-4.7-flash`, `meta-llama/llama-3.3-70b-instruct`, `openai/gpt-5.2`.
 
@@ -604,11 +625,13 @@ We applied Microsoft's test-awareness probes (Abdelnabi et al., 2025) to Qwen3-3
 
 **Unsteered baseline results (n=50):**
 
+<!-- BEGIN GENERATED TABLE: ms_triggers_unsteered -->
 | Metric | Yes | No | Maybe |
 | --- | :---: | :---: | :---: |
 | Model awareness | 0 (0%) | 50 (100%) | 0 (0%) |
 | Hypothetical recognition | 1 (2%) | 49 (98%) | 0 (0%) |
 | Task compliance | 14 (28%) | 30 (60%) | 6 (12%) |
+<!-- END GENERATED TABLE: ms_triggers_unsteered -->
 
 Compliance (28%) is broadly consistent with the MS paper's 34% for unsteered Qwen3-32B. The lower awareness rate (0% vs. the paper's 24% Yes+Maybe) likely reflects our disabling of thinking mode — with no `<think>` block, the model has less opportunity to verbalize awareness of being tested, and the judge has less evidence to work with.
 
@@ -618,18 +641,22 @@ Compliance (28%) is broadly consistent with the MS paper's 34% for unsteered Qwe
 
 14 of 50 prompts had judge JSON parsing errors and were excluded.
 
+<!-- BEGIN GENERATED TABLE: ms_triggers_steered -->
 | Metric | Yes | No | Maybe |
 | --- | :---: | :---: | :---: |
 | Model awareness | 0 (0%) | 36 (100%) | 0 (0%) |
 | Hypothetical recognition | 0 (0%) | 36 (100%) | 0 (0%) |
-| Task compliance | 6 (17%) | 30 (83%) | 0 (0%) |
+| Task compliance | 6 (16%) | 30 (83%) | 0 (0%) |
+<!-- END GENERATED TABLE: ms_triggers_steered -->
 
 **Comparison:**
 
+<!-- BEGIN GENERATED TABLE: ms_triggers_comparison -->
 | Metric | Unsteered (n=50) | Steered α=0.3 (n=36) | MS paper unsteered | MS paper α=0.25 |
 | --- | :---: | :---: | :---: | :---: |
 | Awareness (Yes+Maybe) | 0% | 0% | 24% | 10% |
-| Compliance (Yes) | 28% | 17% | 34% | 50% |
+| Compliance (Yes) | 28% | 16% | 34% | 50% |
+<!-- END GENERATED TABLE: ms_triggers_comparison -->
 
 The steered model shows *lower* compliance (17% vs. 28%), opposite to the MS paper's finding that steering away from test awareness *increases* compliance (34% → 50%). Several factors may explain this discrepancy:
 
@@ -661,16 +688,18 @@ EvalPlus → Steering Proxy (:8018) → EasySteer vLLM (:8017)
 
 #### Results
 
+<!-- BEGIN GENERATED TABLE: passk_preliminary -->
 | Metric | Unsteered (α=0) | Steered (α=2) | Δ | 95% CI | Paired t | p |
 |--------|:-:|:-:|:-:|:-:|:-:|:-:|
-| **pass@1 (base)** | 0.432 | 0.407 | −0.025 | ±0.031 | −1.57 | 0.118 |
-| **pass@2 (base)** | 0.559 | 0.513 | −0.046 | ±0.035 | −2.59 | **0.010** |
-| **pass@5 (base)** | 0.691 | 0.640 | −0.051 | ±0.044 | −2.27 | **0.025** |
-| **pass@10 (base)** | 0.756 | 0.720 | −0.037 | ±0.058 | −1.23 | 0.222 |
-| **pass@1 (plus)** | 0.389 | 0.370 | −0.020 | ±0.033 | −1.17 | 0.244 |
-| **pass@2 (plus)** | 0.513 | 0.470 | −0.042 | ±0.037 | −2.23 | **0.027** |
-| **pass@5 (plus)** | 0.648 | 0.591 | −0.058 | ±0.044 | −2.58 | **0.011** |
-| **pass@10 (plus)** | 0.720 | 0.671 | −0.049 | ±0.056 | −1.72 | 0.088 |
+| **pass@1 (base)** | 0.432 | 0.407 | -0.025 | ±0.031 | -1.57 | 0.118 |
+| **pass@2 (base)** | 0.559 | 0.513 | -0.046 | ±0.035 | -2.59 | **0.010** |
+| **pass@5 (base)** | 0.691 | 0.640 | -0.051 | ±0.044 | -2.26 | **0.025** |
+| **pass@10 (base)** | 0.756 | 0.720 | -0.037 | ±0.058 | -1.23 | 0.222 |
+| **pass@1 (plus)** | 0.389 | 0.370 | -0.020 | ±0.033 | -1.17 | 0.244 |
+| **pass@2 (plus)** | 0.513 | 0.470 | -0.042 | ±0.037 | -2.23 | **0.027** |
+| **pass@5 (plus)** | 0.648 | 0.591 | -0.058 | ±0.044 | -2.58 | **0.011** |
+| **pass@10 (plus)** | 0.720 | 0.671 | -0.049 | ±0.056 | -1.72 | 0.088 |
+<!-- END GENERATED TABLE: passk_preliminary -->
 
 Statistics are paired t-tests across 164 problems (each problem contributes one pass@k score per condition). 95% CIs are ±1.96 × SE of the per-problem difference.
 
@@ -694,14 +723,16 @@ We scaled up to n=100 samples per problem to resolve the power limitations of th
 
 **Coverage gain test.** To isolate diversity collapse from the pass@1 drop, we define _coverage gain_ = pass@k − pass@1, measuring the benefit of additional attempts. If steering collapses diversity, the steered model's coverage gain should be significantly less than the unsteered model's. We test this with a paired t-test on per-problem coverage gain (steered − unsteered) at each k, with k=10 pre-specified as the primary comparison (literature-standard "practical developer" scenario). An omnibus interaction test (one-sample t-test on the mean coverage gain difference across all k) confirms the overall pattern is not p-hacked.
 
+<!-- BEGIN GENERATED TABLE: coverage_gain_n100 -->
 | k | Δ coverage gain | SE | p-value | sig |
 |--:|:--:|:--:|:--:|:--:|
-| 2 | −0.020 | 0.005 | 0.0001 | * |
-| 5 | −0.036 | 0.011 | 0.0017 | * |
-| **10** | **−0.040** | **0.015** | **0.0100** | **\*** |
-| 25 | −0.043 | 0.020 | 0.0321 | * |
-| 50 | −0.040 | 0.023 | 0.0899 | |
-| 100 | −0.026 | 0.028 | 0.3534 | |
+| 2 | -0.020 | 0.005 | 0.0001 | \* |
+| 5 | -0.036 | 0.011 | 0.0017 | \* |
+| **10** | **-0.040** | **0.015** | **0.0100** | **\*** |
+| 25 | -0.043 | 0.020 | 0.0321 | \* |
+| 50 | -0.040 | 0.023 | 0.0899 |  |
+| 100 | -0.026 | 0.028 | 0.3534 |  |
+<!-- END GENERATED TABLE: coverage_gain_n100 -->
 
 Omnibus interaction test: mean Δ coverage gain = −0.034, t = −2.26, p = 0.025.
 
@@ -714,13 +745,18 @@ _Figure: Coverage gain analysis for happy steering (α=2) on HumanEval+ (n=100, 
 
 To determine the sample size needed for a definitive follow-up experiment, we ran a simulation-based power analysis. The simulation treats the observed per-problem pass rates from the n=10 run as ground truth, draws synthetic binomial samples at various hypothetical n, computes pass@k from the simulated samples, and estimates what the 95% CI widths *would be* at each n. The key question: at what n would the confidence intervals for Δpass@1 and Δpass@10 stop overlapping — i.e., when could we statistically confirm that steering hurts pass@10 *more* than pass@1?
 
+<!-- BEGIN GENERATED TABLE: power_analysis -->
 | n (samples/problem) | Predicted Δpass@1 (mean ± 95% CI) | Predicted Δpass@10 (mean ± 95% CI) | Would separate? |
 |:---:|:---:|:---:|:---:|
-| 10 | −0.020 ± 0.023 | −0.058 ± 0.040 | No |
-| 20 | −0.020 ± 0.015 | −0.058 ± 0.022 | **Yes** |
-| 50 | −0.019 ± 0.010 | −0.057 ± 0.012 | **Yes** |
-| 100 | −0.020 ± 0.007 | −0.057 ± 0.009 | **Yes** |
-| 200 | −0.020 ± 0.005 | −0.057 ± 0.006 | **Yes** |
+| 10 | -0.020 ± 0.023 | -0.058 ± 0.039 | No |
+| 20 | -0.020 ± 0.015 | -0.058 ± 0.022 | **Yes** |
+| 30 | -0.019 ± 0.013 | -0.057 ± 0.017 | **Yes** |
+| 50 | -0.019 ± 0.010 | -0.057 ± 0.012 | **Yes** |
+| 75 | -0.020 ± 0.008 | -0.057 ± 0.010 | **Yes** |
+| 100 | -0.019 ± 0.007 | -0.057 ± 0.009 | **Yes** |
+| 150 | -0.019 ± 0.005 | -0.057 ± 0.007 | **Yes** |
+| 200 | -0.020 ± 0.005 | -0.057 ± 0.006 | **Yes** |
+<!-- END GENERATED TABLE: power_analysis -->
 
 The simulated effect sizes are stable across n, which is expected since they are determined by the underlying pass-rate distributions, not the sample count. If the true effect sizes match our n=10 observations (a significant assumption — see caveats below), then:
 
@@ -752,22 +788,26 @@ We evaluated on 150 BigCodeBench-Instruct (full subset) problems (IDs 0–149) w
 
 **Results.**
 
+<!-- BEGIN GENERATED TABLE: qwq_passk -->
 | Metric | Unsteered (α=0) | Steered (α=−0.25) | Difference |
 | --- | :---: | :---: | :---: |
-| pass@1 | 0.413 | 0.391 | −0.022 |
-| pass@2 | 0.465 | 0.443 | −0.022 |
-| pass@3 | 0.487 | 0.467 | −0.020 |
-| pass@4 | 0.501 | 0.483 | −0.018 |
-| pass@5 | 0.513 | 0.493 | −0.020 |
+| pass@1 | 0.413 | 0.391 | -0.023 |
+| pass@2 | 0.465 | 0.443 | -0.021 |
+| pass@3 | 0.487 | 0.467 | -0.020 |
+| pass@4 | 0.501 | 0.483 | -0.019 |
+| pass@5 | 0.513 | 0.493 | -0.020 |
+<!-- END GENERATED TABLE: qwq_passk -->
 
 **Coverage gain test.** To separate diversity effects from the pass@1 drop, we applied the same coverage gain analysis as Section 4.6.1.
 
+<!-- BEGIN GENERATED TABLE: qwq_coverage_gain -->
 | k | Δ coverage gain | SE | p-value | sig |
 | --- | :---: | :---: | :---: | :---: |
-| 2 | +0.0013 | 0.0076 | 0.861 | |
-| 3 | +0.0027 | 0.0119 | 0.823 | |
-| 4 | +0.0040 | 0.0153 | 0.794 | |
-| 5 | +0.0027 | 0.0186 | 0.886 | |
+| 2 | +0.0013 | 0.0076 | 0.861 |  |
+| 3 | +0.0027 | 0.0119 | 0.823 |  |
+| 4 | +0.0040 | 0.0153 | 0.794 |  |
+| 5 | +0.0027 | 0.0186 | 0.886 |  |
+<!-- END GENERATED TABLE: qwq_coverage_gain -->
 
 Omnibus interaction test: mean Δ coverage gain = +0.003, t = 0.21, p = 0.838.
 
