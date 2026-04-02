@@ -658,7 +658,7 @@ Compliance (28%) is broadly consistent with the MS paper's 34% for unsteered Qwe
 | Compliance (Yes) | 28% | 16% | 34% | 50% |
 <!-- END GENERATED TABLE: ms_triggers_comparison -->
 
-The steered model shows *lower* compliance (17% vs. 28%), opposite to the MS paper's finding that steering away from test awareness *increases* compliance (34% → 50%). Several factors may explain this discrepancy:
+The steered model shows *lower* compliance (16% vs. 28%), opposite to the MS paper's finding that steering away from test awareness *increases* compliance (34% → 50%). Several factors may explain this discrepancy:
 
 1. **Thinking mode disabled.** The MS paper's models generate `<think>...</think>` blocks; their judge prompt explicitly uses the reasoning section as evidence. With thinking disabled, the judge has only the final answer, which may change scoring patterns — particularly for awareness detection (0% in both conditions vs. 24%/10% in the MS paper).
 2. **Different judge model.** We used GPT-4.1-mini via OpenRouter; the MS paper used GPT-4 via Azure. The judge prompt is identical, but model differences may affect scoring calibration.
