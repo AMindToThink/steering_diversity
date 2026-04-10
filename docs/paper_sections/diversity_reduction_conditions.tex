@@ -1,0 +1,158 @@
+% diversity_reduction_conditions.tex [NEW]
+% Conditions for diversity reduction, anti-pole failure mode, and
+% practical argument for why the condition is generically satisfied.
+%
+% Intended to follow the local (diversity_reduction_theory.tex) and
+% global (diversity_reduction_geometric.tex) sections.
+%
+% === NOTES ===
+%
+% This section arose from noticing that neither the Taylor nor the
+% geometric result actually proves diversity REDUCTION relative to the
+% unsteered baseline in full generality. The Taylor result diverges
+% when m = mu + s approx 0, and the geometric result bounds absolute spread
+% but doesn't compare to the unsteered case. This file states the
+% necessary condition, shows what goes wrong at the anti-pole, and
+% argues that the condition is generically satisfied in practice.
+%
+% Citation keys used:
+%   \citet{turntrout2023norms} -- residual stream norm growth
+%
+% === END NOTES ===
+
+\subsection{When Does Steering Reduce Diversity?}
+\label{sec:conditions}
+
+The results of Sections~\ref{sec:covariance} and~\ref{sec:geometric-bound}
+establish that the post-normalization distribution concentrates around the
+pole $\hat{s}$ with spread shrinking as $O(1/\|s\|)$.
+However, neither result directly compares the steered diversity to the
+\emph{unsteered} baseline.
+In this section, we identify the condition under which steering genuinely
+reduces diversity relative to the unsteered model, show that the condition
+can fail, and argue that it is satisfied in all practical scenarios.
+
+\subsubsection{The Condition}
+
+Consider the unsteered case ($s = 0$).
+The normalization map sends $x$ to $\hat{x} = x / \|x\|$, projecting
+the distribution $\mathcal{D}$ onto the sphere.
+The total variance of the unsteered output is governed (via the
+first-order analysis) by $1/\|\mu\|^2$, and the steered output by
+$1/\|\mu + s\|^2$.
+Steered diversity is lower than unsteered diversity when the denominator
+grows, i.e., when:
+%
+\begin{equation}
+  \|\mu + s\| > \|\mu\|.
+  \label{eq:diversity-condition}
+\end{equation}
+%
+Squaring both sides and expanding:
+%
+\begin{equation}
+  \|\mu\|^2 + 2\mu^\top s + \|s\|^2 > \|\mu\|^2,
+\end{equation}
+%
+which simplifies to:
+%
+\begin{equation}
+  2\mu^\top s + \|s\|^2 > 0
+  \qquad\Longleftrightarrow\qquad
+  \cos\angle(\mu, s) > -\frac{\|s\|}{2\|\mu\|}.
+  \label{eq:angle-condition}
+\end{equation}
+%
+This is a weak requirement.
+For any $\|s\| > 0$, the right-hand side is negative, so the condition
+is satisfied whenever $\cos\angle(\mu, s) \geq 0$
+(i.e., the steering vector is in the same half-space as the mean),
+and even permits obtuse angles up to
+$\arccos(-\|s\| / 2\|\mu\|)$.
+Only when the steering vector is nearly anti-parallel to the mean and
+small relative to it can the condition fail.
+
+\subsubsection{Failure at the Anti-Pole}
+\label{sec:anti-pole}
+
+When $s \approx -\mu$, the shifted mean $m = \mu + s$ is near the origin.
+In this regime:
+%
+\begin{itemize}
+  \item The first-order approximation breaks down:
+    the condition $\|\delta\| \ll \|m\|$ is violated, and the predicted
+    variance $\mathrm{tr}(\Sigma_x) / \|m\|^2$ diverges.
+  \item Geometrically, the distribution of shifted vectors $\{x + s\}$
+    straddles the origin.
+    Points on opposite sides of the origin are projected to opposite sides
+    of the sphere, so the normalization map acts as a
+    \emph{magnifying glass}: small Euclidean differences become large
+    angular differences.
+  \item The global concentration bound
+    (Proposition~\ref{prop:concentration}) becomes vacuous: when
+    $\|s\| \approx \|\mu\|$, the bound
+    $2\,\mathbb{E}[\|x\|] / \|s\| \approx 2$ saturates the maximum
+    possible chordal distance.
+\end{itemize}
+%
+This is not merely a limitation of our proof technique.
+The diversity genuinely increases in this regime: the normalization map
+near the origin has unbounded Lipschitz constant
+(the Jacobian $J_g(v) = (I - \hat{v}\hat{v}^\top)/\|v\|$ has operator
+norm $1/\|v\|$), so it amplifies input variation.
+
+\subsubsection{Why the Condition Is Generically Satisfied}
+\label{sec:generic}
+
+We argue that the anti-pole regime is not encountered in practice, for
+two independent reasons.
+
+\paragraph{Geometric argument in high dimensions.}
+In $\mathbb{R}^d$ with large $d$, two structured vectors are unlikely to
+be nearly anti-parallel.
+Two independent random unit vectors have cosine similarity with mean $0$
+and standard deviation $1/\sqrt{d}$; for $d = 4096$, achieving
+$\cos\angle(\mu, s) < -1/64$ (which is still far from the threshold
+$-\|s\|/2\|\mu\|$) would be a multi-sigma event.
+While $\mu$ and $s$ are not random---they are structured vectors
+reflecting the model's learned representations---the same concentration
+of measure makes near-anti-alignment a priori unlikely without
+deliberate adversarial construction.
+
+\paragraph{Mechanistic argument.}
+Steering vectors are typically computed as activation \emph{differences}
+between prompts exhibiting contrasting behaviors
+(e.g., eval-aware minus eval-unaware).
+These differences encode a behavioral contrast direction.
+The mean residual stream $\mu$ at a given layer encodes average content:
+positional information, syntactic structure, and semantic features
+aggregated over the input distribution.
+There is no mechanistic reason for a behavioral contrast direction to
+point toward the negation of the average content.
+To construct $s \approx -\mu$, one would need a steering vector that
+cancels the aggregate content of the residual stream---a pathological
+intervention that would destroy all model computation, not just reduce
+diversity.
+
+\paragraph{Norm growth.}
+\citet{turntrout2023norms} document that residual stream norms grow
+exponentially with layer depth (approximately $1.045\times$ per layer
+in GPT-2-XL).
+Steering vectors, being fixed additive perturbations, do not participate
+in this learned growth schedule.
+At deeper layers, $\|\mu\|$ is therefore typically much larger than
+$\|s\|$, making the condition \eqref{eq:angle-condition} even easier
+to satisfy: the threshold $-\|s\|/2\|\mu\|$ approaches zero, and
+essentially any non-adversarial steering direction suffices.
+
+\subsubsection{Recommended Treatment}
+
+For the formal results, we state the condition
+$\|\mu + s\| > \|\mu\|$ as an explicit assumption.
+For all experimental results, we verify it empirically by computing
+$\|\mu + s\| / \|\mu\|$ at the injection layer and confirming the
+ratio exceeds 1.
+This is a lightweight check (requiring only the mean residual stream
+norm, which is already available from the evaluation pipeline) and
+provides a per-experiment certificate that the diversity-reduction
+theory applies.

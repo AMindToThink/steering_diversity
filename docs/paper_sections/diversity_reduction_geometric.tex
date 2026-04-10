@@ -1,0 +1,333 @@
+% diversity_reduction_geometric.tex
+% Geometric (global) version of the diversity-reduction argument.
+% Intended to be \input{} into a main paper, or to replace / supplement
+% the Taylor-expansion section in diversity_reduction_theory.tex.
+%
+% === NOTES ===
+%
+% This version avoids the first-order Taylor approximation entirely.
+% The bounds are exact (not approximate) and hold for arbitrary input
+% distributions, not just those with small variance relative to the mean.
+%
+% The core tool is a chordal-distance contraction lemma for normalization,
+% which is elementary but (to our knowledge) has not been applied to
+% analyze activation steering before.
+%
+% The key distinction from the Taylor version: we bound the ABSOLUTE
+% post-steering spread, not the CHANGE from pre-steering spread.
+% Individual pairs of points can have their angular distance increased
+% by steering (see Remark below), but the maximum possible spread after
+% steering is bounded and shrinks as O(1/||s||).
+%
+% The Taylor version from diversity_reduction_theory.tex provides a
+% complementary local analysis: it gives the exact covariance structure
+% (including which eigenvalues shrink and by how much) but only to first
+% order. The geometric version gives global bounds but less structural
+% detail. Both are worth including.
+%
+% Citation keys used (in addition to those in diversity_reduction_theory.tex):
+%   \citet{mardia2000directional} -- Mardia & Jupp, "Directional Statistics",
+%                                    Wiley, 2000 (for spherical variance)
+%
+% === END NOTES ===
+
+\subsection{A Global Geometric Bound}
+\label{sec:geometric-bound}
+
+The first-order analysis of Section~\ref{sec:covariance} characterizes the
+output covariance structure but relies on a local linear approximation.
+We now give a complementary global result that holds exactly for arbitrary
+input distributions, using only elementary properties of the normalization map.
+
+\subsubsection{Chordal Contraction Under Normalization}
+
+The normalization map $\phi(v) = v/\|v\|$ projects $\mathbb{R}^d \setminus \{0\}$
+onto the unit sphere $S^{d-1}$.
+The following lemma bounds how far apart two points can land on the sphere
+as a function of their Euclidean separation and magnitudes.
+
+\begin{lemma}[Chordal contraction]
+\label{lem:chordal}
+For any nonzero $u, v \in \mathbb{R}^d$:
+%
+\begin{equation}
+  \|\hat{u} - \hat{v}\|
+  \;\leq\;
+  \frac{2\,\|u - v\|}{\max(\|u\|, \|v\|)}.
+  \label{eq:chordal-bound}
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Without loss of generality, assume $\|u\| \geq \|v\|$
+(the bound is symmetric under swapping $u$ and $v$).
+Decompose:
+%
+\begin{align}
+  \hat{u} - \hat{v}
+  &= \frac{u}{\|u\|} - \frac{v}{\|v\|}
+  \;=\; \frac{u - v}{\|u\|} + v\!\left(\frac{1}{\|u\|} - \frac{1}{\|v\|}\right)
+  \label{eq:chordal-decomp}\\
+  &= \frac{u - v}{\|u\|} + \frac{v\,(\|v\| - \|u\|)}{\|u\|\,\|v\|}.
+  \label{eq:chordal-decomp2}
+\end{align}
+%
+Taking norms and applying the triangle inequality:
+%
+\begin{equation}
+  \|\hat{u} - \hat{v}\|
+  \;\leq\;
+  \frac{\|u - v\|}{\|u\|}
+  + \frac{\|v\| \cdot \big|\|v\| - \|u\|\big|}{\|u\|\,\|v\|}
+  \;=\;
+  \frac{\|u - v\|}{\|u\|}
+  + \frac{\big|\|v\| - \|u\|\big|}{\|u\|}.
+  \label{eq:chordal-triangle}
+\end{equation}
+%
+By the reverse triangle inequality, $\big|\|v\| - \|u\|\big| \leq \|u - v\|$, so:
+%
+\begin{equation}
+  \|\hat{u} - \hat{v}\|
+  \;\leq\;
+  \frac{2\,\|u - v\|}{\|u\|}
+  \;=\;
+  \frac{2\,\|u - v\|}{\max(\|u\|, \|v\|)}.
+  \label{eq:chordal-final}
+\end{equation}
+\end{proof}
+
+\subsubsection{Concentration Around the Steering Pole}
+
+Let $\phi_s(x) = \widehat{x + s}$ denote the normalized steered representation.
+We first bound how far any single point can land from the ``pole'' $\hat{s}$.
+
+\begin{proposition}[Concentration around $\hat{s}$]
+\label{prop:concentration}
+For any $x \in \mathbb{R}^d$ and any nonzero $s \in \mathbb{R}^d$:
+%
+\begin{equation}
+  \|\phi_s(x) - \hat{s}\|
+  \;\leq\;
+  \frac{2\,\|x\|}{\|s\|}.
+  \label{eq:concentration}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Apply Lemma~\ref{lem:chordal} with $u = x + s$ and $v = s$:
+%
+\begin{equation}
+  \|\phi_s(x) - \hat{s}\|
+  = \|\widehat{x + s} - \hat{s}\|
+  \leq \frac{2\,\|(x + s) - s\|}{\max(\|x + s\|, \|s\|)}
+  = \frac{2\,\|x\|}{\max(\|x + s\|, \|s\|)}.
+\end{equation}
+%
+Since $\max(\|x + s\|, \|s\|) \geq \|s\|$, the result follows.
+\end{proof}
+
+\noindent
+This is the formalization of the geometric intuition: every point on the sphere
+is drawn toward the pole $\hat{s}$, with the maximum displacement from the pole
+shrinking as $O(1/\|s\|)$.
+Critically, this bound is \emph{exact}---it involves no Taylor expansion or
+distributional assumptions.
+
+\begin{remark}[The anti-pole]
+\label{rem:anti-pole}
+If $x \approx -s$, then $x + s \approx 0$ and $\phi_s(x)$ is ill-defined or
+can point in an arbitrary direction.
+However, for any distribution $\mathcal{D}$ with bounded support
+$\|x\| \leq R < \|s\|$, this regime is inaccessible:
+$\|x + s\| \geq \|s\| - R > 0$ for all $x$ in the support.
+A subtler issue arises when the \emph{mean} satisfies $\mu \approx -s$,
+so that the shifted distribution straddles the origin even though no
+individual point reaches it.
+In this regime, normalization amplifies rather than compresses variation.
+This case is analyzed in Section~\ref{sec:conditions}.
+\end{remark}
+
+\subsubsection{Pairwise Contraction}
+
+\begin{proposition}[Pairwise chordal bound]
+\label{prop:pairwise}
+For any $x_1, x_2 \in \mathbb{R}^d$ and nonzero $s$ with
+$\|s\| > R \coloneqq \max(\|x_1\|, \|x_2\|)$:
+%
+\begin{equation}
+  \|\phi_s(x_1) - \phi_s(x_2)\|
+  \;\leq\;
+  \frac{2\,\|x_1 - x_2\|}{\|s\| - R}.
+  \label{eq:pairwise}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Apply Lemma~\ref{lem:chordal} with $u = x_1 + s$ and $v = x_2 + s$.
+Since $(x_1 + s) - (x_2 + s) = x_1 - x_2$, the steering vector cancels
+in the numerator:
+%
+\begin{equation}
+  \|\phi_s(x_1) - \phi_s(x_2)\|
+  \;\leq\;
+  \frac{2\,\|x_1 - x_2\|}{\max(\|x_1 + s\|, \|x_2 + s\|)}.
+\end{equation}
+%
+For the denominator: by the triangle inequality,
+$\|x_i + s\| \geq \|s\| - \|x_i\| \geq \|s\| - R$ for each $i$,
+so $\max(\|x_1 + s\|, \|x_2 + s\|) \geq \|s\| - R$.
+\end{proof}
+
+\noindent
+The numerator $\|x_1 - x_2\|$ is the Euclidean distance between the
+\emph{unsteered} inputs---the steering cancels.
+The denominator grows linearly with $\|s\|$.
+Thus, the map $\phi_s$ is Lipschitz on the support of the distribution
+with constant $L = 2/(\|s\| - R)$, which becomes a strict contraction
+($L < 1$) when $\|s\| > R + 2$.
+
+\begin{remark}[Steering can increase individual pairwise angles]
+\label{rem:non-monotone}
+The bound \eqref{eq:pairwise} constrains the \emph{absolute} post-steering
+angular spread, but does not claim that steering reduces the angular distance
+for every pair relative to the unsteered baseline.
+A counterexample: in $\mathbb{R}^2$, take $x_1 = (1, 0)$, $x_2 = (0, 1)$,
+and $s = (-\tfrac{1}{2}, 0)$.
+The unsteered angle between $\hat{x}_1$ and $\hat{x}_2$ is $\pi/2$, but the
+post-steering angle is $\arccos(-1/\sqrt{5}) \approx 2.03$ radians---an increase.
+This occurs because $s$ moves $x_1$ toward the origin, amplifying angular
+sensitivity in that region.
+The global bound still holds: as $\|s\|$ grows, such effects vanish because
+all points are pulled away from the origin toward the pole.
+\end{remark}
+
+\subsubsection{Distribution-Level Diversity Bounds}
+
+Let $\mathcal{D}$ be a distribution over $\mathbb{R}^d$ with bounded support
+$\|x\| \leq R$ and let $\phi_s(\mathcal{D})$ denote the pushforward
+distribution on $S^{d-1}$.
+
+\begin{corollary}[Spherical variance bound]
+\label{cor:spherical-variance}
+The spherical variance
+$V(\phi_s(\mathcal{D})) \coloneqq 1 - \|\bar{R}\|$
+where $\bar{R} = \mathbb{E}_{x \sim \mathcal{D}}[\phi_s(x)]$
+is the mean resultant vector \citep{mardia2000directional}, satisfies:
+%
+\begin{equation}
+  V(\phi_s(\mathcal{D}))
+  \;\leq\;
+  \frac{2\,\mathbb{E}[\|x\|]}{\|s\|}.
+  \label{eq:spherical-variance-bound}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+By Proposition~\ref{prop:concentration}, $\|\phi_s(x) - \hat{s}\| \leq 2\|x\|/\|s\|$ for each $x$.
+Taking expectations:
+%
+\begin{equation}
+  \|\bar{R} - \hat{s}\|
+  = \|\mathbb{E}[\phi_s(x)] - \hat{s}\|
+  = \|\mathbb{E}[\phi_s(x) - \hat{s}]\|
+  \leq \mathbb{E}[\|\phi_s(x) - \hat{s}\|]
+  \leq \frac{2\,\mathbb{E}[\|x\|]}{\|s\|}.
+\end{equation}
+%
+Since $\|\hat{s}\| = 1$, the reverse triangle inequality gives
+$\|\bar{R}\| \geq 1 - \|\bar{R} - \hat{s}\|$, so:
+%
+\begin{equation}
+  V = 1 - \|\bar{R}\| \leq \|\bar{R} - \hat{s}\| \leq \frac{2\,\mathbb{E}[\|x\|]}{\|s\|}.
+\end{equation}
+\end{proof}
+
+\begin{corollary}[Expected pairwise chordal distance]
+\label{cor:pairwise-expected}
+For independent $x_1, x_2 \sim \mathcal{D}$:
+%
+\begin{equation}
+  \mathbb{E}\!\left[\|\phi_s(x_1) - \phi_s(x_2)\|\right]
+  \;\leq\;
+  \frac{4\,\mathbb{E}[\|x\|]}{\|s\|}.
+  \label{eq:pairwise-expected}
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+By the triangle inequality through the pole:
+$\|\phi_s(x_1) - \phi_s(x_2)\| \leq \|\phi_s(x_1) - \hat{s}\| + \|\hat{s} - \phi_s(x_2)\|$.
+Applying Proposition~\ref{prop:concentration} to each term and taking expectations
+over independent $x_1, x_2$:
+%
+\begin{equation}
+  \mathbb{E}\!\left[\|\phi_s(x_1) - \phi_s(x_2)\|\right]
+  \leq \frac{2\,\mathbb{E}[\|x_1\|]}{\|s\|} + \frac{2\,\mathbb{E}[\|x_2\|]}{\|s\|}
+  = \frac{4\,\mathbb{E}[\|x\|]}{\|s\|}.
+\end{equation}
+\end{proof}
+
+\begin{corollary}[Spherical diameter]
+\label{cor:diameter}
+The diameter of $\phi_s(\mathcal{D})$ in chordal distance satisfies:
+%
+\begin{equation}
+  \mathrm{diam}\!\left(\phi_s(\mathcal{D})\right)
+  \;\leq\;
+  \frac{4R}{\|s\|},
+  \label{eq:diameter}
+\end{equation}
+%
+where $R = \sup\{\|x\| : x \in \mathrm{supp}(\mathcal{D})\}$.
+% NOTE: This uses the triangle-inequality-through-the-pole route (hence 4R
+% instead of 2D_eucl). The direct Proposition 3 bound gives the tighter
+% 2 * diam(D) / (||s|| - R), but requires ||s|| > R. For large ||s||
+% relative to R, both are O(R/||s||).
+\end{corollary}
+
+\begin{proof}
+For any $x_1, x_2$ in the support, Proposition~\ref{prop:concentration} gives
+$\|\phi_s(x_i) - \hat{s}\| \leq 2R/\|s\|$.
+By the triangle inequality,
+$\|\phi_s(x_1) - \phi_s(x_2)\| \leq 4R/\|s\|$.
+\end{proof}
+
+\subsubsection{Interpretation}
+
+These results formalize the geometric picture of diversity reduction
+under steering.
+The distribution of post-normalization representations is confined to a
+spherical cap of chordal radius $2R/\|s\|$ centered at the pole $\hat{s}$.
+As the steering magnitude increases, this cap shrinks, and all measures
+of angular dispersion---spherical variance, expected pairwise distance,
+diameter---decrease as $O(1/\|s\|)$.
+
+\paragraph{Comparison with the local analysis.}
+The first-order expansion of Section~\ref{sec:covariance} and the global
+bounds of this section are complementary:
+
+\begin{center}
+\begin{tabular}{lcc}
+  \toprule
+  & \textbf{Local (Taylor)} & \textbf{Global (geometric)} \\
+  \midrule
+  Approximation & First-order; requires $\|\delta\| \ll \|m\|$ & Exact \\
+  Diversity measure & Effective rank, eigenvalues of $\Sigma_z$ & Spherical variance, chordal distance \\
+  Structural detail & Full covariance structure & Scalar bounds only \\
+  Applicable regime & Large $\|s\|$ (increasingly accurate) & All $\|s\| > 0$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+The local analysis reveals \emph{which} dimensions of variation are lost
+(those along $\hat{m}$) and by how much (the eigenvalues of
+$P_{\perp m}\Sigma_x P_{\perp m}/\|m\|^2$).
+The global analysis establishes that post-normalization spread is \emph{bounded}
+for any steering magnitude, without approximation error, and gives
+quantitative scaling with $\|s\|$.
+Whether this bound implies a \emph{reduction} relative to the unsteered
+baseline depends on additional conditions analyzed in
+Section~\ref{sec:conditions}.
+\end{antml:parameter>

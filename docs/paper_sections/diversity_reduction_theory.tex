@@ -1,0 +1,261 @@
+% diversity_reduction_theory.tex
+% Intended to be \input{} or \include{} into a main paper file.
+% Assumes amsmath, amssymb, amsthm are loaded.
+% Assumes theorem environments (theorem, proposition, definition, remark, proof) are defined.
+%
+% === INTEGRATION NOTES ===
+%
+% Citation keys used (match to your .bib entries):
+%   \citet{brody2023expressivity}  -- Brody et al., "On the Expressivity Role of LayerNorm
+%                                     in Transformers' Attention", ACL 2023
+%   \citet{turntrout2023steering}  -- Turner et al., "Steering GPT-2-XL by Adding an
+%                                     Activation Vector", LessWrong/Alignment Forum, May 2023
+%   \citet{turntrout2023norms}     -- Turner & Ray, "Residual Stream Norms Grow Exponentially
+%                                     over the Forward Pass", LessWrong/Alignment Forum, May 2023
+%   \citet{dong2021attention}      -- Dong et al., "Attention is Not All You Need: Pure
+%                                     Attention Loses Rank Doubly Exponentially with Depth",
+%                                     ICML 2021
+%   \citet{wu2024role}             -- Wu et al., "On the Role of Attention Masks and LayerNorm
+%                                     in Transformers", NeurIPS 2024
+%   \citet{sinii2025small}         -- Sinii et al., "Small Vectors, Big Effects: A Mechanistic
+%                                     Study of RL-Induced Reasoning via Steering Vectors",
+%                                     arXiv:2509.06608, 2025
+%   \citet{zhang2025verbalized}    -- Zhang et al., "Verbalized Sampling: How to Mitigate Mode
+%                                     Collapse and Unlock LLM Diversity", arXiv:2510.01171, 2025
+%   \citet{omahony2024attributing} -- O'Mahony et al., "Attributing Mode Collapse in the
+%                                     Fine-Tuning of LLMs", ICLR ME-FoMo Workshop 2024
+%
+% Required packages: amsmath, amssymb, amsthm
+% Required environments: lemma, proposition, proof (standard with amsthm)
+%
+% The softmax attention entropy argument is kept as a paragraph-level remark
+% rather than a formal result -- it's harder to formalize tightly and the
+% effect direction is less clean than the normalization argument.
+%
+% The "compounding across layers" discussion is deliberately honest about the
+% MLP/attention expansion counterforce rather than overclaiming. The net
+% per-layer effect is compression minus expansion; we only prove the
+% compression side.
+%
+% The unembedding argument (representation -> output diversity) relies on
+% linearity of W_U. This gives an upper bound, which is the direction
+% needed, but the bound could be loose if W_U has much lower rank than d.
+%
+% === END NOTES ===
+
+\section{A Diversity-Reduction Theory of Activation Steering}
+\label{sec:diversity-reduction}
+
+We develop a formal account of how constant additive steering vectors reduce the diversity of a transformer's internal representations.
+The core mechanism is the interaction between the fixed perturbation and the normalization layers (LayerNorm or RMSNorm) present in every transformer block: normalization projects out variation along the shifted mean and compresses the remaining variation by a factor that grows with the steering magnitude.
+We derive the output covariance of a single normalization step under steering in closed form, characterize how effective rank and total variance depend on the steering magnitude, and discuss how the effect compounds across layers.
+
+\subsection{Setup and Notation}
+
+Let $x \in \mathbb{R}^d$ be a residual-stream vector drawn from a distribution $\mathcal{D}$ with mean $\mu = \mathbb{E}[x]$ and covariance $\Sigma_x = \mathbb{E}[(x - \mu)(x - \mu)^\top]$.
+A steering intervention adds a fixed vector $s \in \mathbb{R}^d$ to the residual stream, producing $x' = x + s$.
+This steered vector then passes through RMSNorm\footnote{%
+  We analyze RMSNorm rather than full LayerNorm for clarity.
+  LayerNorm additionally subtracts the per-vector mean, which projects onto a $(d{-}1)$-dimensional subspace orthogonal to the all-ones vector $\mathbf{1}$ \citep{brody2023expressivity}.
+  This introduces a second rank-reducing projection but does not alter the core argument.
+  In modern architectures (LLaMA, Qwen, etc.), RMSNorm has largely replaced LayerNorm.
+}, which computes:
+%
+\begin{equation}
+  z = \frac{x + s}{\|x + s\|_{\mathrm{RMS}}},
+  \qquad
+  \|v\|_{\mathrm{RMS}} = \sqrt{\frac{1}{d}\sum_{i=1}^{d} v_i^2}
+  = \frac{\|v\|}{\sqrt{d}}.
+  \label{eq:rmsnorm}
+\end{equation}
+%
+Since $\|v\|_{\mathrm{RMS}} = \|v\| / \sqrt{d}$, RMSNorm is equivalent to projection onto the sphere of radius $\sqrt{d}$, followed by element-wise multiplication by learnable scale parameters $\gamma$.
+Because $\gamma$ is fixed after training and does not depend on $x$, it acts as a constant linear transformation that does not affect rank.
+We therefore analyze the normalized vector up to the constant $\sqrt{d}$:
+%
+\begin{equation}
+  z = g(x + s), \qquad g(v) \coloneqq \frac{v}{\|v\|}.
+  \label{eq:sphere-projection}
+\end{equation}
+
+\subsection{First-Order Expansion of the Normalization Map}
+
+The function $g\colon \mathbb{R}^d \setminus \{0\} \to S^{d-1}$ is nonlinear, so we linearize it around the shifted mean $m \coloneqq \mu + s$ to obtain a tractable expression for the output covariance.
+Write $x + s = m + \delta$ where $\delta = x - \mu$ satisfies $\mathbb{E}[\delta] = 0$ and $\mathbb{E}[\delta\delta^\top] = \Sigma_x$.
+
+\begin{lemma}[Jacobian of the sphere projection]
+\label{lem:jacobian}
+The Jacobian of $g(v) = v / \|v\|$ is
+\begin{equation}
+  J_g(v) = \frac{1}{\|v\|}\left(I - \hat{v}\hat{v}^\top\right),
+  \label{eq:jacobian}
+\end{equation}
+where $\hat{v} = v / \|v\|$ is the unit vector along $v$.
+\end{lemma}
+
+\begin{proof}
+We compute the $(i,j)$-entry of $J_g$ directly.
+Write $g_i(v) = v_i / h(v)$ where $h(v) = \|v\| = (v^\top v)^{1/2}$.
+The partial derivative of $h$ with respect to $v_j$ is:
+%
+\begin{equation}
+  \frac{\partial h}{\partial v_j}
+  = \frac{1}{2}\left(\sum_k v_k^2\right)^{-1/2} \cdot 2v_j
+  = \frac{v_j}{\|v\|}.
+\end{equation}
+%
+By the quotient rule:
+%
+\begin{equation}
+  \frac{\partial g_i}{\partial v_j}
+  = \frac{\delta_{ij} \cdot \|v\| - v_i \cdot \frac{v_j}{\|v\|}}{\|v\|^2}
+  = \frac{\delta_{ij}}{\|v\|} - \frac{v_i v_j}{\|v\|^3}.
+\end{equation}
+%
+In matrix form, the first term is $\frac{1}{\|v\|}I$ and the second is $\frac{1}{\|v\|^3}vv^\top = \frac{1}{\|v\|}\hat{v}\hat{v}^\top$, giving \eqref{eq:jacobian}.
+\end{proof}
+
+Applying the first-order Taylor expansion $g(m + \delta) \approx g(m) + J_g(m)\,\delta$:
+%
+\begin{equation}
+  z \approx \hat{m} + \frac{1}{\|m\|}\,P_{\perp m}\,\delta,
+  \label{eq:taylor}
+\end{equation}
+%
+where $P_{\perp m} \coloneqq I - \hat{m}\hat{m}^\top$ is the orthogonal projector onto the subspace perpendicular to $m$.
+
+\paragraph{Validity of the approximation.}
+The expansion \eqref{eq:taylor} is accurate when $\|\delta\| \ll \|m\|$, i.e., the input variation is small relative to the shifted mean.
+This condition is increasingly well-satisfied as the steering magnitude $\|s\|$ grows (since $\|m\| \geq \|s\| - \|\mu\|$), which is precisely the regime where the diversity-reduction effect is strongest.
+The approximation breaks down when $s \approx -\mu$ so that $\|m\| \approx 0$; this anti-pole regime is analyzed in Section~\ref{sec:conditions}.
+Second-order corrections are of order $O(\|\delta\|^2 / \|m\|^2)$.
+
+\subsection{Covariance Under Steering}
+\label{sec:covariance}
+
+From \eqref{eq:taylor}, the output has mean $\mathbb{E}[z] \approx \hat{m}$ and fluctuation $z - \hat{m} \approx \frac{1}{\|m\|}P_{\perp m}\,\delta$.
+The output covariance is therefore:
+%
+\begin{equation}
+  \Sigma_z
+  = \mathbb{E}\!\left[(z - \hat{m})(z - \hat{m})^\top\right]
+  \approx \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}^\top.
+  \label{eq:output-cov}
+\end{equation}
+%
+Since $P_{\perp m}$ is symmetric ($P_{\perp m}^\top = P_{\perp m}$, because $\hat{m}\hat{m}^\top$ is an outer product of a vector with itself), this simplifies to:
+%
+\begin{equation}
+  \Sigma_z \approx \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}.
+  \label{eq:output-cov-simplified}
+\end{equation}
+
+Two effects are visible in \eqref{eq:output-cov-simplified}:
+\begin{enumerate}
+  \item \textbf{Rank reduction via projection.}
+    The projector $P_{\perp m}$ has rank $d - 1$: it annihilates all variation along $\hat{m}$.
+    Geometrically, projecting onto the unit sphere eliminates radial variation---any component of $\delta$ along $m$ changes only the norm $\|m + \delta\|$, not the direction $\widehat{m + \delta}$.
+    The direction that is annihilated, $\hat{m} = \widehat{\mu + s}$, depends on $s$; different steering vectors eliminate different dimensions of variation.
+
+  \item \textbf{Variance shrinkage via rescaling.}
+    All surviving variation is scaled by $1/\|m\|^2$.
+    As $\|s\|$ grows, $\|m\| = \|\mu + s\|$ grows (at least as fast as $\|s\| - \|\mu\|$), compressing the total variance toward zero.
+    This is the formalization of the informal observation by \citet{turntrout2023steering} that when the steering coefficient is large, the steering vector ``comprises most of the residual stream content'' after LayerNorm.
+\end{enumerate}
+
+\begin{proposition}[Covariance under steered RMSNorm]
+\label{prop:diversity-reduction}
+Let $\mathcal{X}$ be a distribution over $\mathbb{R}^d$ with covariance $\Sigma_x$, let $s \in \mathbb{R}^d$ be a fixed steering vector, and let $m = \mathbb{E}[x] + s$.
+Under the first-order approximation \eqref{eq:taylor}, the covariance $\Sigma_z$ of the RMSNorm output satisfies:
+%
+\begin{enumerate}
+  \item \textup{(Rank reduction)}
+    $\mathrm{rank}(\Sigma_z) \leq \min\!\big(\mathrm{rank}(\Sigma_x),\; d - 1\big)$.
+    If $\Sigma_x$ has nonzero variance along $\hat{m}$ (i.e., $\hat{m}^\top \Sigma_x \hat{m} > 0$), then $\mathrm{rank}(\Sigma_z) \leq \mathrm{rank}(\Sigma_x) - 1$.
+
+  \item \textup{(Total variance reduction)}
+    $\mathrm{tr}(\Sigma_z) = \frac{1}{\|m\|^2}\big(\mathrm{tr}(\Sigma_x) - \hat{m}^\top \Sigma_x\, \hat{m}\big)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+For the rank bound: $\Sigma_z = \frac{1}{\|m\|^2} P_{\perp m}\Sigma_x P_{\perp m}$, so $\mathrm{rank}(\Sigma_z) = \mathrm{rank}(P_{\perp m}\Sigma_x P_{\perp m})$.
+Since $P_{\perp m}$ has rank $d-1$, the product has rank at most $\min(\mathrm{rank}(\Sigma_x), d-1)$.
+If $\hat{m}^\top \Sigma_x \hat{m} > 0$, then $\Sigma_x$ has a component in the nullspace of $P_{\perp m}$, and the rank drops by at least one.
+
+For the total variance: using the cyclic property of the trace, $\mathrm{tr}(ABC) = \mathrm{tr}(CAB)$, and the idempotence of $P_{\perp m}$:
+%
+\begin{align}
+  \mathrm{tr}(\Sigma_z)
+  &= \frac{1}{\|m\|^2}\,\mathrm{tr}(P_{\perp m}\,\Sigma_x\,P_{\perp m})
+  \label{eq:trace-step1}\\
+  &= \frac{1}{\|m\|^2}\,\mathrm{tr}(P_{\perp m}^2\,\Sigma_x)
+  \label{eq:trace-step2}\\
+  &= \frac{1}{\|m\|^2}\,\mathrm{tr}(P_{\perp m}\,\Sigma_x)
+  \label{eq:trace-step3}\\
+  &= \frac{1}{\|m\|^2}\,\mathrm{tr}\!\big((I - \hat{m}\hat{m}^\top)\Sigma_x\big)
+  \label{eq:trace-step4}\\
+  &= \frac{1}{\|m\|^2}\big(\mathrm{tr}(\Sigma_x) - \mathrm{tr}(\hat{m}\hat{m}^\top\Sigma_x)\big)
+  \label{eq:trace-step5}\\
+  &= \frac{1}{\|m\|^2}\big(\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\,\hat{m}\big).
+  \label{eq:trace-step6}
+\end{align}
+%
+The step from \eqref{eq:trace-step1} to \eqref{eq:trace-step2} uses the cyclic property to move the rightmost $P_{\perp m}$ to the left.
+The step from \eqref{eq:trace-step2} to \eqref{eq:trace-step3} uses idempotence: $P_{\perp m}^2 = P_{\perp m}$, which holds because
+$(I - \hat{m}\hat{m}^\top)^2 = I - 2\hat{m}\hat{m}^\top + \hat{m}(\hat{m}^\top\hat{m})\hat{m}^\top = I - \hat{m}\hat{m}^\top$,
+where $\hat{m}^\top\hat{m} = 1$ since $\hat{m}$ is a unit vector.
+The step from \eqref{eq:trace-step5} to \eqref{eq:trace-step6} uses the cyclic property to write $\mathrm{tr}(\hat{m}\hat{m}^\top\Sigma_x) = \mathrm{tr}(\hat{m}^\top\Sigma_x\hat{m}) = \hat{m}^\top\Sigma_x\hat{m}$, where the last equality holds because $\hat{m}^\top\Sigma_x\hat{m}$ is a scalar.
+\end{proof}
+
+\paragraph{Interpretation.}
+The numerator $\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\hat{m}$ is the original total variance minus the variance along the direction $\hat{m} = \widehat{\mu + s}$.
+For generic $s$, this quantity is strictly less than $\mathrm{tr}(\Sigma_x)$.
+The denominator $\|m\|^2 = \|\mu + s\|^2$ grows quadratically with the steering magnitude.
+In the strong-steering regime $\|s\| \gg \|\mu\|$:
+%
+\begin{equation}
+  \mathrm{tr}(\Sigma_z) \approx \frac{\mathrm{tr}(\Sigma_x) - \hat{s}^\top\Sigma_x\,\hat{s}}{\|s\|^2},
+\end{equation}
+%
+which vanishes as $\|s\| \to \infty$.
+
+\subsection{Secondary Mechanisms}
+
+\paragraph{Softmax attention entropy.}
+Steering shifts the query vectors by a constant, modifying the attention logits $q^\top k_i$.
+Because softmax is a concave function on the probability simplex with respect to uniform perturbations of the logits, a constant shift toward particular key positions reduces the entropy of the attention distribution.
+Lower attention entropy means fewer positions contribute to the output, further reducing the diversity of information flowing through the layer.
+We note this as a secondary contributor that is harder to formalize tightly.
+
+\paragraph{Compounding across layers.}
+In a pre-norm transformer, each block applies the sequence:
+$\mathrm{Norm} \to \mathrm{Attn} \to \mathrm{Add} \to \mathrm{Norm} \to \mathrm{MLP} \to \mathrm{Add}$.
+The steering vector $s$, once added to the residual stream, persists via the residual connections.
+At each subsequent normalization step, the projection and shrinkage from Proposition~\ref{prop:diversity-reduction} apply with the current shifted mean at that layer.
+In principle, effective rank can drop by up to one at each normalization step.
+However, the MLP and attention sub-layers are nonlinear maps that can expand variation (e.g., a ReLU/GeLU activation can map low-variance inputs to higher-variance outputs if the inputs straddle the nonlinearity).
+The net effect at each layer is therefore normalization-induced compression minus sub-layer-induced expansion.
+\citet{sinii2025small} provide direct empirical evidence for the normalization bottleneck: they find that steering vectors placed before the input LayerNorm of a block lose effectiveness, and that placing the vector \emph{after} the LayerNorm restores performance---indicating that the LayerNorm step specifically attenuates the steering signal.
+
+\paragraph{From representation diversity to output diversity.}
+The unembedding layer is a linear map $W_U \in \mathbb{R}^{V \times d}$ (where $V$ is vocabulary size) that converts residual-stream vectors to logits.
+The covariance of the logit distribution is $W_U \Sigma_z W_U^\top$, whose rank is at most $\mathrm{rank}(\Sigma_z)$.
+Since rank cannot increase through linear maps, representation-level diversity reduction is an \emph{upper bound} on output-level diversity, which is the direction needed for our claims.
+
+\subsection{Relationship to Prior Work}
+
+\citet{dong2021attention} showed that pure self-attention without skip connections suffers from doubly exponential rank collapse with depth.
+\citet{wu2024role} extended this analysis to include LayerNorm, showing that LayerNorm can either prevent or accelerate collapse depending on the value matrices---importantly establishing that the rank dynamics of self-attention with LayerNorm are richer than previously supposed.
+Our analysis differs from this line of work in that we study rank reduction caused not by depth but by an \emph{external additive perturbation} interacting with normalization.
+The depth-collapse results concern the unsteered model's intrinsic dynamics; our result concerns a controlled intervention.
+
+\citet{turntrout2023steering} informally observed that GPT-2's LayerNorm renormalizes the residual stream to $\sqrt{d_{\mathrm{model}}}$, so that a large steering coefficient causes the steering vector to dominate the post-norm content.
+Our Proposition~\ref{prop:diversity-reduction} formalizes this observation: the ``domination'' is precisely the variance shrinkage by $1/\|m\|^2$, and the ``most of the residual stream content'' corresponds to the projection $P_{\perp m}$ annihilating variation along the steering direction.
+The companion post on residual stream norm growth \citep{turntrout2023norms} establishes that model weights compensate for LayerNorm's normalization by producing exponentially growing outputs---a mechanism that steering vectors, being fixed and not adapted to the model's learned growth schedule, do not participate in.
+
+Most directly, \citet{sinii2025small} empirically demonstrate that the input LayerNorm is the specific bottleneck limiting steering vector effectiveness between adjacent layers, and that bypassing it recovers performance.
+They frame this as an engineering obstacle; we reframe it as the \emph{primary architectural mechanism} through which steering compresses representational diversity.
+
+On the output side, \citet{zhang2025verbalized} attribute post-alignment mode collapse to typicality bias in preference data, and \citet{omahony2024attributing} attribute it to the mode-seeking nature of reverse KL in RLHF/DPO.
+These are complementary explanations at the level of training signal; our account provides a mechanistic explanation at the level of architecture for why inference-time steering interventions produce analogous diversity reduction without any training.

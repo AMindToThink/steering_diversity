@@ -1,0 +1,294 @@
+% diversity_reduction_refs.bib
+% BibTeX entries for papers cited in the diversity-reduction theory files.
+% Import into your main bibliography with \bibliography{...,diversity_reduction_refs}
+
+% === Core rank collapse / normalization theory ===
+
+@inproceedings{dong2021attention,
+  title={Attention is Not All You Need: Pure Attention Loses Rank Doubly Exponentially with Depth},
+  author={Dong, Yihe and Cordonnier, Jean-Baptiste and Loukas, Andreas},
+  booktitle={Proceedings of the 38th International Conference on Machine Learning (ICML)},
+  year={2021},
+  url={http://proceedings.mlr.press/v139/dong21a/dong21a.pdf},
+}
+
+% TODO: Verify complete author list (search results suggest 5 authors total)
+@inproceedings{wu2024role,
+  title={On the Role of Attention Masks and {LayerNorm} in Transformers},
+  author={Wu, Xinyi and Abbe, Emmanuel and Braverman, Mark and Charikar, Moses},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2024},
+  url={https://arxiv.org/abs/2405.18781},
+}
+
+@inproceedings{brody2023expressivity,
+  title={On the Expressivity Role of {LayerNorm} in Transformers' Attention},
+  author={Brody, Shaked and Alon, Uri and Yahav, Eran},
+  booktitle={Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (ACL)},
+  year={2023},
+}
+
+@article{geshkovski2023emergence,
+  title={A Mathematical Perspective on Transformers},
+  author={Geshkovski, Borjan and Letrouit, Cyril and Polyanskiy, Yury and Rigollet, Philippe},
+  journal={arXiv preprint arXiv:2312.10794},
+  year={2023},
+}
+
+% TODO: Fill in actual authors
+@article{normalization2025attention,
+  title={Normalization in Attention Dynamics},
+  author={various},
+  journal={arXiv preprint arXiv:2510.22026},
+  year={2025},
+  note={Unified ODE framework for normalization schemes; identifies Peri-LN as effective for avoiding representation collapse},
+  url={https://arxiv.org/abs/2510.22026},
+}
+
+% TODO: Fill in actual authors
+@article{layernorm2024geometric,
+  title={Re-Introducing {LayerNorm}: Geometric Meaning, Irreversibility and a Comparative Study with {RMSNorm}},
+  author={various},
+  journal={arXiv preprint arXiv:2409.12951},
+  year={2024},
+  url={https://arxiv.org/abs/2409.12951},
+}
+
+% === TurnTrout / activation engineering foundations ===
+
+@misc{turntrout2023steering,
+  title={Steering {GPT-2-XL} by Adding an Activation Vector},
+  author={Turner, Alexander Matt and Thiergart, Lisa and Leech, Gavin and Udell, David and Vazquez, Juan J. and Mini, Ulisse and MacDiarmid, Monte},
+  year={2023},
+  howpublished={AI Alignment Forum},
+  url={https://www.alignmentforum.org/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector},
+}
+
+@misc{turntrout2023norms,
+  title={Residual Stream Norms Grow Exponentially over the Forward Pass},
+  author={Turner, Alexander Matt and Ray, Alex},
+  year={2023},
+  howpublished={AI Alignment Forum},
+  url={https://www.alignmentforum.org/posts/8mizBCm3dyc432nK8/residual-stream-norms-grow-exponentially-over-the-forward},
+}
+
+@inproceedings{turner2023activation,
+  title={Steering Language Models With Activation Engineering},
+  author={Turner, Alexander Matt and Thiergart, Lisa and Leech, Gavin and Udell, David and Vazquez, Juan J. and Mini, Ulisse and MacDiarmid, Monte},
+  booktitle={arXiv preprint arXiv:2308.10248},
+  year={2023},
+  url={https://arxiv.org/abs/2308.10248},
+}
+
+@inproceedings{rimsky2024steering,
+  title={Steering {Llama} 2 via Contrastive Activation Addition},
+  author={Rimsky, Nina and Gabrieli, Nick and Schulz, Julian and Tong, Meg and Hubinger, Evan and Turner, Alexander Matt},
+  booktitle={Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL)},
+  pages={15504--15522},
+  year={2024},
+}
+
+% === Sinii et al. (steering vectors for reasoning) ===
+
+@article{sinii2025steering,
+  title={Steering {LLM} Reasoning Through Bias-Only Adaptation},
+  author={Sinii, Viacheslav and Gorbatovski, Alexey and Cherepanov, Artem and Shaposhnikov, Boris and Balagansky, Nikita and Gavrilov, Daniil},
+  journal={arXiv preprint arXiv:2505.18706},
+  year={2025},
+  url={https://arxiv.org/abs/2505.18706},
+}
+
+@article{sinii2025small,
+  title={Small Vectors, Big Effects: A Mechanistic Study of {RL}-Induced Reasoning via Steering Vectors},
+  author={Sinii, Viacheslav and Balagansky, Nikita and Gerasimov, Gleb and Laptev, Daniil and Aksenov, Yaroslav and Kurochkin, Vadim and Gorbatovski, Alexey and Shaposhnikov, Boris and Gavrilov, Daniil},
+  journal={arXiv preprint arXiv:2509.06608},
+  year={2025},
+  url={https://arxiv.org/abs/2509.06608},
+}
+
+% === Mode collapse / diversity in LLMs ===
+
+% TODO: Fill in remaining authors after "Zhang, Jiayi"
+@article{zhang2025verbalized,
+  title={Verbalized Sampling: How to Mitigate Mode Collapse and Unlock {LLM} Diversity},
+  author={Zhang, Jiayi and others},
+  journal={arXiv preprint arXiv:2510.01171},
+  year={2025},
+  url={https://arxiv.org/abs/2510.01171},
+}
+
+% TODO: Fill in remaining authors after "O'Mahony, Luke"
+@inproceedings{omahony2024attributing,
+  title={Attributing Mode Collapse in the Fine-Tuning of Large Language Models},
+  author={O'Mahony, Luke and others},
+  booktitle={ICLR 2024 Workshop on Understanding of Foundation Models (ME-FoMo)},
+  year={2024},
+  url={https://openreview.net/pdf?id=3pDMYjpOxk},
+}
+
+% === Adaptive / in-distribution steering ===
+
+% TODO: Fill in actual authors
+@article{ids2025,
+  title={In-Distribution Steering: Balancing Control and Coherence in Language Model Generation},
+  author={various},
+  journal={arXiv preprint arXiv:2510.13285},
+  year={2025},
+  url={https://arxiv.org/abs/2510.13285},
+  note={Proposes adaptive steering strength based on Mahalanobis distance; observes collapse from cumulative steering},
+}
+
+% === Theoretical analysis of steering strength ===
+
+@article{taimeskhanov2026steering,
+  title={Towards Understanding Steering Strength},
+  author={Taimeskhanov, Magamed and Vaiter, Samuel and Garreau, Damien},
+  journal={arXiv preprint arXiv:2602.02712},
+  year={2026},
+  url={https://arxiv.org/abs/2602.02712},
+  note={First theoretical analysis of steering strength effects on next-token probability and cross-entropy; reveals non-monotonic effects},
+}
+
+% === Geometric / rotation-based steering ===
+
+% TODO: Fill in remaining authors after "You, Zejia"
+@article{sphericalsteering2026,
+  title={Spherical Steering: Geometry-Aware Activation Rotation for Language Models},
+  author={You, Zejia and others},
+  journal={arXiv preprint arXiv:2602.08169},
+  year={2026},
+  url={https://arxiv.org/abs/2602.08169},
+  note={Norm-preserving geodesic rotation on hypersphere; observes representation collapse from additive steering},
+}
+
+@inproceedings{angularsteering2025,
+  title={Angular Steering: Behavior Control via Rotation in Activation Space},
+  author={Vu, Hieu M. and Nguyen, Tan Minh},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2025},
+  url={https://arxiv.org/abs/2510.26243},
+}
+
+@article{selectivesteering2026,
+  title={Selective Steering: Norm-Preserving Control Through Discriminative Layer Selection},
+  author={Dang, Quy-Anh and Ngo, Chris},
+  journal={arXiv preprint arXiv:2601.19375},
+  year={2026},
+  url={https://arxiv.org/abs/2601.19375},
+  note={Shows Angular Steering violates norm preservation causing collapse; proposes rigorous norm-preserving rotation},
+}
+
+@article{householder2024,
+  title={Householder Pseudo-Rotation: A Novel Approach to Activation Editing in {LLMs} with Direction-Magnitude Perspective},
+  author={Pham, Van-Cuong and Nguyen, Thien Huu},
+  journal={arXiv preprint arXiv:2409.10053},
+  year={2024},
+  url={https://arxiv.org/abs/2409.10053},
+}
+
+% === ODE / control-theoretic frameworks ===
+
+% TODO: Fill in actual authors
+@article{odesteer2026,
+  title={{ODESteer}: A Unified {ODE}-Based Steering Framework for {LLM} Alignment},
+  author={various},
+  journal={arXiv preprint arXiv:2602.17560},
+  year={2026},
+  url={https://arxiv.org/abs/2602.17560},
+  note={Interprets activation addition as first-order ODE approximation; steering directions as barrier functions},
+}
+
+% === Conceptors / optimal steering functions ===
+
+% TODO: Fill in remaining authors after "Postmus, Ruben"; confirm venue
+@inproceedings{postmus2024conceptors,
+  title={From Steering Vectors to Conceptors and Beyond: Compositional Affine Activation Steering for {LLMs}},
+  author={Postmus, Ruben and others},
+  booktitle={OpenReview},
+  year={2024},
+  url={https://openreview.net/pdf/5d263923ce8a67a614e6bc7c99dbf2a40bb83b7c.pdf},
+  note={Derives optimal linear/affine steering functions; soft projection matrices with eigenvalues in [0,1]},
+}
+
+% === Unified understanding / survey ===
+
+% TODO: Confirm arXiv ID; only ResearchGate link available
+@article{im2025unified,
+  title={A Unified Understanding and Evaluation of Steering Methods},
+  author={Im, Jaeho and Li, Yixuan},
+  journal={arXiv preprint},
+  year={2025},
+  url={https://www.researchgate.net/publication/388754740},
+  note={Unified framework analyzing mean-difference, PCA, and classifier-based steering methods},
+}
+
+% TODO: Fill in remaining authors after "Wehner, Jan"
+@article{wehner2025repe,
+  title={Representation Engineering for Large-Language Models: Survey and Research Challenges},
+  author={Wehner, Jan and others},
+  journal={arXiv preprint arXiv:2502.17601},
+  year={2025},
+  url={https://arxiv.org/abs/2502.17601},
+  note={Comprehensive survey of RepE methods; accepted at TMLR},
+}
+
+% === Empirical steering behavior studies ===
+
+% TODO: Confirm first author surname and fill in remaining authors
+@article{bas2025steer,
+  title={What Can We Actually Steer? A Multi-Behavior Study of Activation Control},
+  author={Bas, various and others},
+  journal={arXiv preprint arXiv:2511.18284},
+  year={2025},
+  url={https://arxiv.org/abs/2511.18284},
+  note={Inverted-U trait expression; monotonic coherence decay; vector magnitude doesn't predict success},
+}
+
+@inproceedings{tan2024generalization,
+  title={Analysing the Generalisation and Reliability of Steering Vectors},
+  author={Tan, Daniel and Chanin, David and Lynch, Aengus and Paige, Brooks and Kanoulas, Dimitrios and Garriga-Alonso, Adri{\`a} and Kirk, Robert},
+  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
+  year={2024},
+  url={https://arxiv.org/abs/2407.12404},
+}
+
+% === MELBO (unsupervised steering) ===
+
+@misc{mack2024melbo,
+  title={Mechanistically Eliciting Latent Behaviors in Language Models},
+  author={Mack, Andrew and Turner, Alexander Matt},
+  year={2024},
+  howpublished={AI Alignment Forum},
+  url={https://www.alignmentforum.org/posts/ioPnHKFyy4Cw2Gr2x/mechanistically-eliciting-latent-behaviors-in-language-1},
+}
+
+% === Fine-grained steering ===
+
+% TODO: Fill in actual authors and confirm venue
+@article{austeer2025,
+  title={Fine-Grained Activation Steering},
+  author={various},
+  journal={OpenReview},
+  year={2025},
+  url={https://openreview.net/pdf?id=guSVafqhrB},
+  note={AU-level steering; observes output converges to AU's token distribution as strength increases},
+}
+
+% === Directional statistics (spherical variance) ===
+
+@book{mardia2000directional,
+  title={Directional Statistics},
+  author={Mardia, Kanti V. and Jupp, Peter E.},
+  publisher={Wiley},
+  year={2000},
+}
+
+% === Microsoft eval-awareness paper (primary experimental foil) ===
+
+@article{abdelnabi2025eval,
+  title={Test-Time Steering of Large Language Models},
+  author={Abdelnabi, Sahar and Salem, Ahmed},
+  journal={arXiv preprint arXiv:2505.14617},
+  year={2025},
+  url={https://arxiv.org/abs/2505.14617},
+}

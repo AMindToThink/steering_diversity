@@ -1,0 +1,162 @@
+% diversity_reduction_synthesis.tex [NEW]
+% Connects the local (Taylor) and global (geometric) analyses,
+% explains the scaling correspondence, and summarizes the full
+% theoretical picture.
+%
+% Intended to follow all three previous files as a concluding subsection.
+%
+% === NOTES ===
+%
+% This file ties the three proof components together:
+%   1. Local/Taylor (diversity_reduction_theory.tex): covariance structure
+%   2. Global/geometric (diversity_reduction_geometric.tex): exact bounds
+%   3. Conditions (diversity_reduction_conditions.tex): when it holds
+%
+% The scaling correspondence (O(1/||s||) chordal vs O(1/||s||^2) variance)
+% is not a contradiction -- it follows from the standard relationship
+% between angular distance and variance for concentrated distributions.
+%
+% === END NOTES ===
+
+\subsection{Synthesis}
+\label{sec:synthesis}
+
+We now summarize the full theoretical picture and clarify the relationship
+between the local and global analyses.
+
+\subsubsection{Scaling Correspondence}
+
+The global analysis (Section~\ref{sec:geometric-bound}) gives bounds
+that shrink as $O(1/\|s\|)$: spherical variance, expected pairwise
+chordal distance, and diameter all scale inversely with the steering
+magnitude.
+The local analysis (Section~\ref{sec:covariance}) gives total variance
+$\mathrm{tr}(\Sigma_z) = O(1/\|s\|^2)$.
+These are consistent, not contradictory.
+
+For a distribution concentrated near a point on the sphere, chordal
+distance $c$ and angular distance $\theta$ are related by
+$c = 2\sin(\theta/2) \approx \theta$ for small $\theta$.
+The variance of a scalar angular displacement scales as $\theta^2$,
+while the angular displacement itself scales as $\theta$.
+So $O(1/\|s\|)$ in chordal distance corresponds to $O(1/\|s\|^2)$
+in variance, which is exactly the relationship between our two bounds.
+
+More precisely, for a distribution on $S^{d-1}$ concentrated near a
+pole with small angular spread $\theta$, the spherical variance
+$V = 1 - \|\bar{R}\| \approx \theta^2/2$ and the trace of the
+tangent-space covariance $\mathrm{tr}(\Sigma_z) \approx \theta^2$.
+The global bound gives $\theta = O(1/\|s\|)$; squaring recovers the
+local bound.
+
+\subsubsection{What Each Result Provides}
+
+The two analyses are complementary, and each answers questions the other
+cannot:
+
+\paragraph{The local (Taylor) analysis} reveals the internal structure
+of the diversity reduction.
+It identifies \emph{which} dimension of variation is lost (the direction
+$\hat{m} = \widehat{\mu + s}$), gives the full eigenvalue structure of
+the output covariance, and shows that effective rank drops by exactly one
+when $\Sigma_x$ has nonzero variance along $\hat{m}$.
+This structural detail connects directly to the pass@k story: the lost
+dimension corresponds to a specific mode of computational variation that
+the model can no longer express.
+The cost is that the result is approximate, valid only when input
+variation is small relative to $\|\mu + s\|$.
+
+\paragraph{The global (geometric) analysis} provides exact,
+assumption-free bounds on the absolute spread of post-normalization
+representations.
+It requires no distributional assumptions beyond bounded support, and
+the bounds hold for any steering magnitude.
+The cost is that it provides only scalar bounds (diameter, spherical
+variance), not structural information about which dimensions are
+compressed.
+
+\paragraph{The condition analysis} (Section~\ref{sec:conditions})
+identifies when the diversity reduction is genuine relative to the
+unsteered baseline: $\|\mu + s\| > \|\mu\|$.
+This is the load-bearing assumption that connects the absolute
+concentration bounds to relative diversity claims.
+
+\subsubsection{The Complete Argument}
+
+Combining all three components, the complete theoretical argument is:
+
+\begin{enumerate}
+  \item \textbf{Architecture.}
+    Every transformer block contains normalization layers (RMSNorm or
+    LayerNorm) that project the residual stream onto a sphere (or
+    affine image thereof).
+
+  \item \textbf{Mechanism.}
+    Adding a fixed steering vector $s$ shifts the pre-normalization
+    distribution.
+    The normalization map then concentrates all representations toward
+    the pole $\hat{s}$, with chordal spread bounded by
+    $O(\mathbb{E}[\|x\|] / \|s\|)$
+    (Proposition~\ref{prop:concentration}).
+
+  \item \textbf{Structure.}
+    The concentration specifically eliminates variation along the
+    direction $\hat{m} = \widehat{\mu + s}$ and compresses all
+    remaining variation by $1/\|\mu + s\|^2$
+    (Proposition~\ref{prop:diversity-reduction}).
+
+  \item \textbf{Condition.}
+    This constitutes a \emph{reduction} relative to the unsteered
+    baseline when $\|\mu + s\| > \|\mu\|$
+    (Section~\ref{sec:conditions}), a condition satisfied generically
+    in practice.
+
+  \item \textbf{Compounding.}
+    The steering vector persists via residual connections, so the
+    compression applies at every subsequent normalization layer.
+    The net effect per layer is normalization-induced compression
+    minus sub-layer-induced expansion; empirical evidence
+    \citep{sinii2025small} confirms that the normalization step is the
+    specific bottleneck limiting steering vector effectiveness.
+
+  \item \textbf{Output.}
+    Representational diversity upper-bounds output diversity, since the
+    unembedding is a linear map that cannot increase rank.
+\end{enumerate}
+
+\noindent
+Steps 1--3 are proved.
+Step 4 is a stated condition with strong practical justification.
+Step 5 is a qualitative argument supported by empirical evidence.
+Step 6 is exact.
+
+\subsubsection{Empirical Predictions}
+
+The theory makes several testable predictions:
+
+\begin{enumerate}
+  \item \textbf{Effective rank decreases with steering magnitude.}
+    Measuring the effective rank of the representation covariance at
+    each layer, steered models should show lower effective rank than
+    unsteered models, with the reduction scaling as
+    $O(1/\|s\|^2)$ in variance terms.
+
+  \item \textbf{The lost dimension aligns with the steering direction.}
+    The principal component of variance lost under steering should
+    have high cosine similarity with $\hat{m} = \widehat{\mu + s}$.
+
+  \item \textbf{Diversity reduction concentrates at normalization layers.}
+    Measuring representational diversity before and after each
+    sub-component within a transformer block (following the
+    methodology of \citet{sinii2025small}), the largest drops should
+    occur at the normalization steps, not at the attention or MLP
+    steps.
+
+  \item \textbf{Pass@k degrades faster than pass@1.}
+    If steering compresses the output distribution while preserving
+    the mode, then pass@1 (which depends only on the mode) should
+    be relatively preserved while pass@k for large $k$ (which depends
+    on distributional coverage) should degrade.
+    This prediction connects the representation-level theory to the
+    behavioral-level measurements in the experimental sections.
+\end{enumerate}
