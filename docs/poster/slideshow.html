@@ -1,4 +1,5 @@
-<!-- Make charts bigger. Move results to the end of the presentation. When presenting, spend more time on motivation. Choose 2-3 charts for the whole presentation (choose the easiest to understand). Think about the takeaways. Steered models not diverse. New metric idnetifies semantic similarity. Cut down words on slides. Just bullet point "other metrics don't work". May want to present results together: pass@k and new metric.-->
+<!-- "Start from the title" when telling the story. More intro needed, 2-3 bullet points at the top. Pass@k works pretty well but it still has limitations...". Put a line between the results plots.-->
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -179,11 +180,16 @@
         transition: opacity 0.5s;
       }
 
+      @page {
+        size: 10in 5.625in;
+        margin: 0;
+      }
       @media print {
         .slide {
           display: flex !important;
           page-break-after: always;
-          height: 100vh;
+          width: 10in;
+          height: 5.625in;
         }
         .nav-hint {
           display: none;
@@ -264,21 +270,19 @@
         <div class="text">
           <ul>
             <li>
+              AI evaluators want to study model behaviors that they cannot properly elicit with prompting.
+            </li>
+            <li>
               <strong>Activation steering</strong> modifies model internals to
               elicit targeted behaviors
             </li>
             <li>
               Key safety use case: make models "think they're deployed" during
-              evaluation
+              evaluation so they act faithfully
             </li>
             <li>
               If steering <strong>reduces output diversity</strong>, evaluations
               may miss dangerous behaviors
-            </li>
-            <li>
-              Existing diversity metrics (cosine distance, n-grams)
-              <strong>don't work</strong> because they score gibberish as
-              "diverse"
             </li>
           </ul>
         </div>
@@ -292,6 +296,9 @@
       <div class="slide-content" style="flex-direction: column">
         <ul>
           <li>
+            A key problem is how to measure diversity.
+          </li>
+          <li>
             <strong>Pass@k</strong> measures the probability at least 1 of k samples
             solves a problem; requires outputs to be diverse
             <em>and</em> correct
@@ -299,10 +306,11 @@
           <li>
             <strong>Novel ICL metric</strong> captures that if responses are similar,
             a base model can predict one given the others; measures learnable
-            structure between responses
+            structure between responses. Unlike with pass@k, model responses can be diverse without accomplishing some goal.
           </li>
           <li>
-            Both avoid rewarding incoherent noise, unlike standard metrics
+            Both avoid rating incoherent noise as "high-diversity", unlike standard metrics (cosine distance, n-grams)
+          </li>
           </li>
         </ul>
       </div>
@@ -317,17 +325,18 @@
           <img
             src="assets/coverage_gain.png"
             alt="Coverage gain under steering"
-            style="max-width: 90% !important; height: 100%; object-fit: contain"
+            style="max-width: 90% !important; max-height: 32vh; object-fit: contain"
           />
           <div style="font-size: 1.4vw; color: #555; font-style: italic; margin-top: 0.5vh">
             Steering significantly reduces coverage gain (p&nbsp;=&nbsp;0.025)
           </div>
         </div>
+        <hr style="border: none; border-top: 2px solid #ccc; width: 80%; margin: 0.5vh auto" />
         <div style="text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center">
           <img
             src="assets/ak_curves_overlay.png"
             alt="Progressive surprise curves for different mode counts"
-            style="max-width: 90% !important; height: 100%; object-fit: contain"
+            style="max-width: 90% !important; max-height: 32vh; object-fit: contain"
           />
           <div style="font-size: 1.4vw; color: #555; font-style: italic; margin-top: 0.5vh">
             ICL metric correctly distinguishes diversity levels
@@ -416,8 +425,7 @@
             between responses using in-context learning
           </li>
           <li>
-            Next: scale to more steering methods and diversity measures,
-            validate ICL metric on benchmarks, apply to steered models
+            Next: scale to more steering methods, steering behaviors, and diversity measures. Validate ICL metric on benchmarks and apply it to steered models
           </li>
         </ul>
       </div>
