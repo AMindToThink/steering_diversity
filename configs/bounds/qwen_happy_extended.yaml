@@ -1,0 +1,50 @@
+# Extended-scale pilot to see whether the 1/‖s‖ scaling law kicks in
+# beyond the project's normal operating range of [0, 8].
+#
+# At project scales (0-8) the pilot showed bounds HOLD but are LOOSE
+# because ‖s_eff‖ (~16 at scale 8) is much smaller than natural residual
+# stream norms (~300). To see the asymptotic regime where Claim 8's
+# 1/‖s‖ and 1/‖s‖² scaling is predicted, we need much larger scales.
+#
+# This config is NOT meant for production bounds runs — it's a diagnostic
+# probe. The resulting generations at scale=128 are certainly gibberish,
+# but the bounds are about residual-stream statistics, which still work.
+run_name: bounds_qwen_happy_extended
+seed: 0
+
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  model_type: qwen2.5
+  gpu_memory_utilization: 0.9
+
+steering:
+  vector_path: EasySteer/vectors/happy_diffmean.gguf
+  target_layers: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+  scale_sweep: [0.0, 1.0, 8.0, 32.0, 128.0]
+
+dataset:
+  name: HuggingFaceFW/fineweb-edu
+  num_prompts: 100  # pilot-size; we only care about the slope
+  max_seq_len: 256
+  batch_size: 8
+
+capture_specs:
+  - site: final
+    tier: full
+
+# Verification for the extended scales doesn't need to run: we already
+# validated the steering path with scale=4 in the main qwen_happy config.
+# The extended run copies that sentinel so the recording script will
+# accept it.
+steering_verification:
+  enabled: true
+  sample_prompts: ["Today I am feeling"]
+  verification_scale: 4.0
+  kl_threshold: 0.05
+  magnitude_ratio_threshold: 0.02
+  auto_escalate_scales: [4.0, 8.0]
+  max_new_tokens: 8
+  do_sample: true
+
+reservoir_size: 1024
+dtype: bfloat16
