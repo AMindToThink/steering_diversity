@@ -1,0 +1,46 @@
+# Qwen2.5-1.5B-Instruct + style-probe steering vector.
+#
+# The style vector (Steerable Chatbot, arXiv 2505.04260) targets all 28
+# layers, not just the middle ones. Scale sweep matches the existing
+# generation experiments for direct comparison.
+run_name: bounds_qwen_style
+seed: 0
+
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  model_type: qwen2.5
+  gpu_memory_utilization: 0.9
+
+steering:
+  vector_path: EasySteer/replications/steerable_chatbot/style-probe.gguf
+  target_layers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+  scale_sweep: [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
+
+dataset:
+  name: HuggingFaceFW/fineweb-edu
+  num_prompts: 1000
+  max_seq_len: 256
+  batch_size: 8
+
+capture_specs:
+  - site: final
+    tier: full
+
+steering_verification:
+  enabled: true
+  sample_prompts:
+    - "Write a short paragraph about climate change:"
+    - "Explain photosynthesis:"
+    - "Tell me about the Roman Empire:"
+    - "Describe a typical weekday:"
+  verification_scale: 4.0
+  kl_threshold: 0.05
+  magnitude_ratio_threshold: 0.02
+  cosine_threshold: 0.1
+  auto_escalate_scales: [4.0, 8.0]
+  max_new_tokens: 48
+  do_sample: true
+  sample_temperature: 1.0
+
+reservoir_size: 1024
+dtype: bfloat16
