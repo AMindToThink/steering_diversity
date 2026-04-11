@@ -70,9 +70,23 @@ class SteeringVerificationConfig:
     sample_prompts: list[str] = dataclasses.field(default_factory=_default_sample_prompts)
     verification_scale: float = 4.0
     kl_threshold: float = 0.05
+    # Primary "did anything happen?" gate: mean(‖delta‖ / ‖pre_unsteered‖)
+    # over last real tokens of the verification prompts. Default 0.02
+    # is well above float-noise but below typical scale-4 residual shifts
+    # on Qwen / Llama (observed: 0.03-0.1).
+    magnitude_ratio_threshold: float = 0.02
+    # Informational only — the cosine of the residual delta with the
+    # raw sum(scale*s_layer) direction can be near-zero even when the
+    # intervention is landing perfectly, because of propagation through
+    # intermediate sublayers. NOT gated on.
     cosine_threshold: float = 0.1
     auto_escalate_scales: list[float] = dataclasses.field(default_factory=_default_auto_escalate)
     max_new_tokens: int = 32
+    # Sampling vs greedy for decoded samples. Greedy (False) can hide
+    # steering effects when the argmax next token doesn't flip; sampling
+    # reveals the distributional shift better.
+    do_sample: bool = True
+    sample_temperature: float = 1.0
 
 
 def _default_capture_specs() -> list[dict]:

@@ -47,9 +47,11 @@ steering_verification:
   # threshold. Real configs use semantically meaningful thresholds
   # (e.g. kl_threshold=0.05 for Qwen + happy).
   kl_threshold: 1.0e-10
-  cosine_threshold: 0.9
+  magnitude_ratio_threshold: 1.0e-10
+  cosine_threshold: 0.9  # informational only
   auto_escalate_scales: [10.0, 50.0, 100.0]
   max_new_tokens: 6
+  do_sample: false
 
 reservoir_size: 32
 dtype: float32

@@ -28,11 +28,20 @@ Automated checks
    exceed ``steering_verification.kl_threshold`` (default 0.05 nats). A
    vector that produces zero KL is silently inactive.
 
-2. **Residual-delta cosine**: for the difference between steered and
-   unsteered pre-RMSNorm residuals at the final site, computes the cosine
-   with the nominal accumulated steering direction. Must be clearly
-   positive (default > 0.1). A vector that produces orthogonal residuals
-   is aiming in the wrong direction.
+2. **Residual-delta magnitude ratio**: for the difference between steered
+   and unsteered pre-RMSNorm residuals at the final site, computes
+   ``mean(‖delta‖) / mean(‖pre_unsteered‖)`` over last real tokens. Must
+   exceed ``steering_verification.magnitude_ratio_threshold`` (default
+   0.02). A vector whose intervention makes zero change to the final-site
+   residual is silently inactive — this check catches that.
+
+   NB: the check is deliberately NOT a cosine against the raw sum of
+   ``scale * s_layer``. Steering fires at ``target_layers`` and then has
+   to propagate through attention + MLP sublayers BETWEEN those layers
+   and the capture site, which reshapes the residual significantly — the
+   final-site delta can be nearly orthogonal to the raw layer-sum direction
+   even when the intervention is landing perfectly. The cosine is printed
+   as an informational line but not gated on.
 
 Both automated checks sit on top of visual inspection of the printed
 samples — that's deliberate. Numbers can pass while the generated text is
@@ -149,30 +158,53 @@ def kl_last_token(
     return sum(kls) / len(kls)
 
 
-def residual_delta_cosine(
+def residual_delta_magnitude_ratio(
+    pre_steered: torch.Tensor,
+    pre_unsteered: torch.Tensor,
+    attention_mask: torch.Tensor,
+) -> float:
+    """Average ``‖delta‖ / ‖pre_unsteered‖`` over last real tokens.
+
+    This is the 'did anything happen?' signal. A no-op intervention gives
+    ratio ≈ 0. A visible intervention gives ratio ≥ 0.01 or so (scales
+    with ``scale * ‖steering‖``).
+    """
+    delta = (pre_steered - pre_unsteered).float()
+    unsteered = pre_unsteered.float()
+    ratios: list[float] = []
+    B = delta.shape[0]
+    for i in range(B):
+        t = _last_real_token_index(attention_mask[i])
+        d_norm = float(delta[i, t].norm().item())
+        u_norm = float(unsteered[i, t].norm().clamp_min(1e-12).item())
+        ratios.append(d_norm / u_norm)
+    return sum(ratios) / len(ratios)
+
+
+def residual_delta_cosine_informational(
     pre_steered: torch.Tensor,
     pre_unsteered: torch.Tensor,
     steering_direction: torch.Tensor,
     attention_mask: torch.Tensor,
 ) -> float:
-    """Average cosine of (pre_steered - pre_unsteered) with ``steering_direction``.
+    """Average cosine of ``(pre_steered - pre_unsteered)`` with ``steering_direction``.
 
-    Averaged over real token positions. Near 1 means the residual delta
-    faithfully points along the steering direction; near 0 means the
-    intervention is getting cancelled or pointed somewhere else.
+    NOT gated on — printed as an informational line. The final-site residual
+    delta can be nearly orthogonal to the raw ``sum(scale*s_layer)`` direction
+    because of propagation through intermediate sublayers, even when the
+    intervention is landing perfectly; see module docstring for why.
     """
     delta = (pre_steered - pre_unsteered).float()
     direction = steering_direction.float()
-    direction_norm = direction.norm().clamp_min(1e-12)
-    direction_hat = direction / direction_norm
-
+    direction_hat = direction / direction.norm().clamp_min(1e-12)
     cosines: list[float] = []
-    B, T, _ = delta.shape
+    B = delta.shape[0]
     for i in range(B):
         t = _last_real_token_index(attention_mask[i])
         d_norm = delta[i, t].norm().clamp_min(1e-12)
-        cos = float(torch.dot(delta[i, t] / d_norm, direction_hat).item())
-        cosines.append(cos)
+        cosines.append(
+            float(torch.dot(delta[i, t] / d_norm, direction_hat).item())
+        )
     return sum(cosines) / len(cosines)
 
 
@@ -212,12 +244,21 @@ def run_at_scale(
     max_new_tokens = cfg.steering_verification.max_new_tokens
     max_seq_len = cfg.dataset.max_seq_len
 
-    # 1. Side-by-side decoded samples.
+    # 1. Side-by-side decoded samples. Sampling (not greedy) reveals the
+    # distributional shift better — greedy decode hides steering effects
+    # when the argmax next token is so confident even large logit shifts
+    # don't flip it.
+    torch.manual_seed(cfg.seed)  # determinism for side-by-side comparison
     samples_unsteered = sample_from_steered_model(
-        lm, prompts, steering=None, scale=0.0, target_layers=[], max_new_tokens=max_new_tokens
+        lm, prompts, steering=None, scale=0.0, target_layers=[],
+        max_new_tokens=max_new_tokens,
+        do_sample=cfg.steering_verification.do_sample,
     )
+    torch.manual_seed(cfg.seed)  # re-seed so the decode noise is identical
     samples_steered = sample_from_steered_model(
-        lm, prompts, steering=steering, scale=scale, target_layers=target_layers, max_new_tokens=max_new_tokens
+        lm, prompts, steering=steering, scale=scale, target_layers=target_layers,
+        max_new_tokens=max_new_tokens,
+        do_sample=cfg.steering_verification.do_sample,
     )
 
     # 2. Forward-pass captures for the numeric checks.
@@ -232,10 +273,14 @@ def run_at_scale(
     kl = kl_last_token(
         fp_unsteered["logits"], fp_steered["logits"], fp_unsteered["attention_mask"]
     )
-
-    direction = _nominal_accumulated_direction(steering, target_layers, scale)
-    cos = residual_delta_cosine(
-        fp_steered["pre"], fp_unsteered["pre"], direction, fp_unsteered["attention_mask"]
+    mag_ratio = residual_delta_magnitude_ratio(
+        fp_steered["pre"], fp_unsteered["pre"], fp_unsteered["attention_mask"]
+    )
+    cos_info = residual_delta_cosine_informational(
+        fp_steered["pre"],
+        fp_unsteered["pre"],
+        _nominal_accumulated_direction(steering, target_layers, scale),
+        fp_unsteered["attention_mask"],
     )
 
     kl_check = CheckResult(
@@ -245,12 +290,12 @@ def run_at_scale(
         passed=kl >= cfg.steering_verification.kl_threshold,
         detail=f"mean KL over last real token of {len(prompts)} prompts",
     )
-    cos_check = CheckResult(
-        name="residual_delta_cosine",
-        value=cos,
-        threshold=cfg.steering_verification.cosine_threshold,
-        passed=cos >= cfg.steering_verification.cosine_threshold,
-        detail="avg cosine of (pre_steered - pre_unsteered) with sum of scale*steering[layer]",
+    mag_check = CheckResult(
+        name="residual_delta_magnitude_ratio",
+        value=mag_ratio,
+        threshold=cfg.steering_verification.magnitude_ratio_threshold,
+        passed=mag_ratio >= cfg.steering_verification.magnitude_ratio_threshold,
+        detail="mean(‖delta‖ / ‖pre_unsteered‖) over last real tokens",
     )
 
     return {
@@ -258,8 +303,9 @@ def run_at_scale(
         "prompts": prompts,
         "samples_unsteered": samples_unsteered,
         "samples_steered": samples_steered,
-        "checks": [dataclasses.asdict(kl_check), dataclasses.asdict(cos_check)],
-        "passed": kl_check.passed and cos_check.passed,
+        "checks": [dataclasses.asdict(kl_check), dataclasses.asdict(mag_check)],
+        "info": {"residual_delta_cosine_vs_layer_sum": cos_info},
+        "passed": kl_check.passed and mag_check.passed,
     }
 
 
@@ -275,11 +321,13 @@ def _print_result(result: dict) -> None:
     for check in result["checks"]:
         icon = "✅" if check["passed"] else "❌"
         print(
-            f"  {icon} {check['name']:22s} value={check['value']:.4g} "
+            f"  {icon} {check['name']:35s} value={check['value']:.4g} "
             f"threshold={check['threshold']:.4g}"
         )
         if check["detail"]:
             print(f"     {check['detail']}")
+    for k, v in result.get("info", {}).items():
+        print(f"  ℹ  {k:35s} value={v:.4g}  (informational, not gated)")
     print()
     print(f"  Side-by-side samples (first {len(result['prompts'])}):")
     for i, prompt in enumerate(result["prompts"]):

@@ -1,11 +1,46 @@
-# Placeholder — filled in Task 9 (bounds real run configs).
-# Keeping this file present so Task 1's directory scaffolding is committable.
+# Qwen2.5-1.5B-Instruct + happy_diffmean steering vector.
+#
+# Target layers and scale sweep match the existing project experiments
+# (src/generation.py, scripts/02_generate_responses.py) so this run is
+# directly comparable to the generation-based diversity experiments.
 run_name: bounds_qwen_happy
 seed: 0
+
 model:
   name: Qwen/Qwen2.5-1.5B-Instruct
   model_type: qwen2.5
+  gpu_memory_utilization: 0.9
+
 steering:
   vector_path: EasySteer/vectors/happy_diffmean.gguf
   target_layers: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
   scale_sweep: [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
+
+dataset:
+  name: HuggingFaceFW/fineweb-edu
+  num_prompts: 1000
+  max_seq_len: 256
+  batch_size: 8
+
+capture_specs:
+  - site: final
+    tier: full
+
+steering_verification:
+  enabled: true
+  sample_prompts:
+    - "Today I am feeling"
+    - "Describe in a few words how you feel about your life:"
+    - "My mood right now is"
+    - "Write a short diary entry about your day:"
+  verification_scale: 4.0
+  kl_threshold: 0.05
+  magnitude_ratio_threshold: 0.02
+  cosine_threshold: 0.1  # informational only
+  auto_escalate_scales: [4.0, 8.0]
+  max_new_tokens: 48
+  do_sample: true
+  sample_temperature: 1.0
+
+reservoir_size: 1024
+dtype: bfloat16
