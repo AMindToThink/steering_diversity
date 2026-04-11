@@ -77,10 +77,14 @@ def _scatter_one_claim(
     fig, ax = plt.subplots(figsize=(6, 5))
     sc = ax.scatter(xs, ys, c=scales, cmap="viridis", s=80, zorder=3)
     cb = plt.colorbar(sc, ax=ax, label="scale")
-    # LHS = RHS diagonal (the bound is TIGHT on this line)
-    lo = min(min(xs), min(ys), 1e-12)
-    hi = max(max(xs), max(ys))
+    # Axis limits from the data (with 10x margin on each side) instead of
+    # forcing the diagonal to span arbitrary ranges — keeps the points
+    # visible and gives the diagonal a visible presence within the frame.
+    lo = min(min(xs), min(ys)) / 10.0
+    hi = max(max(xs), max(ys)) * 10.0
     ax.plot([lo, hi], [lo, hi], "k--", alpha=0.4, label="LHS = RHS (tight)")
+    ax.set_xlim(lo, hi)
+    ax.set_ylim(lo, hi)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("theoretical RHS")
