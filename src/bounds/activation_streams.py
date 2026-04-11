@@ -19,11 +19,26 @@ Same per-batch cost as the naive path, numerically stable in float32.
 Two tiers:
 
 - **Cheap** (``CheapMoments``): ``O(d)`` state. Stores only the diagonal
-  ``M2`` (sufficient for ``tr(Σ)``) and cheap scalars. Used for per-layer
-  capture where we don't want a d×d matrix at every layer.
-- **Full** (``FullMoments``): ``O(d²)`` state. Stores the full ``d×d`` ``M2``
-  matrix so ``finalize()`` can return the full covariance (needed for
-  Claims 1 and 9 eigenstructure).
+  ``M2`` (sufficient for ``tr(Σ)``) and cheap scalars. Hand-rolled because
+  no external library covers the trace-only path — critical for keeping
+  per-layer capture at ~0.8 GB instead of ~54 GB per run.
+- **Full** (``FullMoments``): ``O(d²)`` state. Also hand-rolled with the same
+  Chan-Golub-LeVeque merge. We evaluated delegating to
+  ``welford_torch.OnlineCovariance`` (a widely-used PyTorch streaming
+  library) but a numpy cross-check — see
+  ``tests/bounds/test_activation_streams_crosscheck.py`` — revealed that
+  ``welford_torch`` drifts by >100% relative error in the big-mean /
+  small-batch regime because its ``add_all`` centers against the *running*
+  mean, squaring large intermediates. Chan's merge centers within each batch
+  first, so the squared differences are always small regardless of absolute
+  scale.  The library is still imported in the cross-check test so the
+  regression is guarded going forward.
+
+Correctness of both tiers is cross-checked against authoritative numpy
+references (``np.cov`` / ``np.var``) in
+``tests/bounds/test_activation_streams_crosscheck.py``. See the numerical
+stability regression test ``test_big_mean_full_pipeline_matches_numpy`` for
+the exact regime where the naive formulas fail.
 """
 
 from __future__ import annotations
