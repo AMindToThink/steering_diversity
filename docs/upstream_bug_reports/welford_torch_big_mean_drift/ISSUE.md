@@ -139,7 +139,7 @@ This is mathematically identical to the current `add_all` formula — both compu
 
 It would also fix the "larger batches are worse" behaviour: under Chan's merge, bigger batches monotonically improve accuracy (more in-batch samples → better within-batch variance estimate), which matches intuition.
 
-I can put together a PR if it would be welcome — I've already tested Chan's merge as a drop-in replacement and it produces `rel_err < 1e-2` across every scenario in the reproducer including the pathological big-mean float32 case.
+(I've verified Chan's merge produces `rel_err < 1e-2` across every scenario in the reproducer including the pathological big-mean float32 case.)
 
 ## Workaround for users
 
@@ -154,6 +154,6 @@ Until a fix lands, any of the following restores precision in float32:
 My project's cross-check test that caught this:
 [`tests/bounds/test_activation_streams_crosscheck.py::test_welford_torch_drifts_in_big_mean_regime`](https://github.com/AMindToThink/steering_diversity/blob/058dea8/tests/bounds/test_activation_streams_crosscheck.py) — we compare `welford_torch.OnlineCovariance` against a hand-rolled Chan-Golub-LeVeque implementation ([`src/bounds/activation_streams.py::FullMoments`](https://github.com/AMindToThink/steering_diversity/blob/058dea8/src/bounds/activation_streams.py)) and against `numpy.cov` as ground truth. The test currently asserts that `welford_torch` drifts > 20% in the big-mean regime, so if this issue is fixed the test will fail and prompt us to re-enable delegation to your library.
 
-## Request
+## Note
 
-Thanks for building this library — Carsten Schelp's derivation is a nice reference and the Welford single-observation path is clean. Happy to help with a fix if a Chan-Golub-LeVeque PR would be useful.
+Thanks for building this library — Carsten Schelp's derivation is a nice reference and the Welford single-observation path is clean.
