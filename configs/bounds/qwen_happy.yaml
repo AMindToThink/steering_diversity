@@ -1,0 +1,11 @@
+# Placeholder — filled in Task 9 (bounds real run configs).
+# Keeping this file present so Task 1's directory scaffolding is committable.
+run_name: bounds_qwen_happy
+seed: 0
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  model_type: qwen2.5
+steering:
+  vector_path: EasySteer/vectors/happy_diffmean.gguf
+  target_layers: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+  scale_sweep: [0.0, 0.5, 1.0, 2.0, 4.0, 8.0]
