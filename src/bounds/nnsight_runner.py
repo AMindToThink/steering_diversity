@@ -229,6 +229,49 @@ def run_bounds_forward_pass(
 # ---------------------------------------------------------------------------
 
 
+def run_verification_forward_pass(
+    lm: LanguageModel,
+    prompts: list[str],
+    steering: dict[int, torch.Tensor] | None,
+    scale: float,
+    target_layers: list[int],
+    max_seq_len: int,
+) -> dict[str, Any]:
+    """Forward pass for ``scripts/bounds/01_verify_steering.py``.
+
+    Captures three things the verification script needs that the main
+    bounds recording path doesn't need:
+
+    1. Pre-RMSNorm residual (same as ``run_bounds_forward_pass``), for the
+       residual-delta cosine check against the steering direction.
+    2. Next-token logits from ``lm_head.output``, for the KL-divergence
+       sanity check between steered and unsteered distributions.
+    3. Attention mask, for selecting the last real token per row.
+
+    Kept separate from ``run_bounds_forward_pass`` so the bounds recording
+    path stays minimal — verification runs are few and small, recording
+    runs are many and large.
+    """
+    _validate_steering_covers_layers(steering, scale, target_layers)
+    enc = _tokenize_for_trace(lm, prompts, max_seq_len)
+    layer_list = _get_layer_list(lm)
+    final_norm = _get_final_norm(lm)
+    dtype, device = _model_dtype_device(lm)
+
+    with lm.trace(enc):
+        _add_steering_at_layers(
+            layer_list, steering, scale, target_layers, dtype, device
+        )
+        pre = final_norm.input.save()
+        logits = lm.lm_head.output.save()
+
+    return {
+        "attention_mask": enc["attention_mask"].cpu(),
+        "pre": pre.detach().cpu(),
+        "logits": logits.detach().cpu(),
+    }
+
+
 def sample_from_steered_model(
     lm: LanguageModel,
     prompts: list[str],

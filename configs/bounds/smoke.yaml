@@ -1,0 +1,55 @@
+# CPU smoke-test config for the bounds pipeline.
+#
+# Uses sshleifer/tiny-gpt2 (2 layers, hidden_size 2) and a tiny synthetic
+# vector so the whole pipeline (verify -> record -> compute -> visualize)
+# can run end-to-end in a few seconds on CPU without touching the GPU.
+run_name: bounds_smoke
+seed: 0
+
+model:
+  name: sshleifer/tiny-gpt2
+  model_type: gpt2
+  gpu_memory_utilization: 0.9
+
+steering:
+  # We don't have a .gguf for tiny-gpt2 — the smoke test uses a runtime-
+  # generated synthetic steering vector (see scripts/bounds/01_verify_steering.py
+  # and 02_record_stats.py). The vector_path is set to a sentinel string
+  # that the config validator accepts but the scripts recognize as
+  # "build a synthetic vector at runtime".
+  vector_path: __synthetic__
+  target_layers: [0, 1]
+  scale_sweep: [0.0, 1.0]
+
+dataset:
+  # We use the default fineweb-edu stream but only take 16 docs so the smoke
+  # test doesn't depend on a big download.
+  name: HuggingFaceFW/fineweb-edu
+  num_prompts: 16
+  max_seq_len: 24
+  batch_size: 4
+
+capture_specs:
+  - site: final
+    tier: full
+
+steering_verification:
+  enabled: true
+  sample_prompts:
+    - "The quick brown fox"
+    - "Once upon a time"
+  verification_scale: 10.0
+  # tiny-gpt2's final LayerNorm normalizes away scale, so even huge
+  # residual shifts barely move lm_head output. The cosine of the
+  # residual delta with the steering direction is still exactly 1.0
+  # (intervention lands correctly), so the smoke test uses a cosine
+  # check to validate infrastructure and an effectively-no-op KL
+  # threshold. Real configs use semantically meaningful thresholds
+  # (e.g. kl_threshold=0.05 for Qwen + happy).
+  kl_threshold: 1.0e-10
+  cosine_threshold: 0.9
+  auto_escalate_scales: [10.0, 50.0, 100.0]
+  max_new_tokens: 6
+
+reservoir_size: 32
+dtype: float32
