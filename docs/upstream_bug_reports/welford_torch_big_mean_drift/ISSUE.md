@@ -6,6 +6,8 @@ In float32, `OnlineCovariance.add_all` produces a covariance matrix that disagre
 
 This is a real concern for anyone using `OnlineCovariance` to accumulate statistics over LLM residual-stream activations or other quantities with a large consistent bias. In our case (streaming stats over Qwen2.5 / Llama-3 residual streams) the resulting covariance was unusable, and we ended up hand-rolling Chan-Golub-LeVeque's batched merge instead.
 
+**Standalone reproducer:** [`reproducer.py`](https://github.com/AMindToThink/steering_diversity/blob/058dea8/docs/upstream_bug_reports/welford_torch_big_mean_drift/reproducer.py) — depends only on `welford_torch`, `torch`, and `numpy`; copy-paste into a fresh venv and run.
+
 ## Environment
 
 - `welford-torch == 0.2.5` (latest on PyPI)
@@ -150,7 +152,7 @@ Until a fix lands, any of the following restores precision in float32:
 ## Related
 
 My project's cross-check test that caught this:
-[`tests/bounds/test_activation_streams_crosscheck.py::test_welford_torch_drifts_in_big_mean_regime`](https://github.com/AMindToThink/steering_diversity/blob/main/tests/bounds/test_activation_streams_crosscheck.py) — we compare `welford_torch.OnlineCovariance` against a hand-rolled Chan-Golub-LeVeque implementation (`src/bounds/activation_streams.py::FullMoments`) and against `numpy.cov` as ground truth. The test currently asserts that `welford_torch` drifts > 20% in the big-mean regime, so if this issue is fixed the test will fail and prompt us to re-enable delegation to your library.
+[`tests/bounds/test_activation_streams_crosscheck.py::test_welford_torch_drifts_in_big_mean_regime`](https://github.com/AMindToThink/steering_diversity/blob/058dea8/tests/bounds/test_activation_streams_crosscheck.py) — we compare `welford_torch.OnlineCovariance` against a hand-rolled Chan-Golub-LeVeque implementation ([`src/bounds/activation_streams.py::FullMoments`](https://github.com/AMindToThink/steering_diversity/blob/058dea8/src/bounds/activation_streams.py)) and against `numpy.cov` as ground truth. The test currently asserts that `welford_torch` drifts > 20% in the big-mean regime, so if this issue is fixed the test will fail and prompt us to re-enable delegation to your library.
 
 ## Request
 
