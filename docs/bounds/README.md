@@ -64,10 +64,16 @@ site. Reservoir K = 1024.
 
 ### Meta-Llama-3-8B-Instruct
 
-| Run | Steering vector | Target layers | Scale sweep | Status |
-|---|---|---|---|---|
-| [`bounds_llama_creativity`](../../outputs/bounds/bounds_llama_creativity/plots/) | `EasySteer/replications/creative_writing/create.gguf` | 16–29 | 0, 0.5, 1, 2, 4, 8 | (running as of this commit) |
-| [`bounds_llama_random`](../../outputs/bounds/bounds_llama_random/plots/) | Norm-matched random (seed=0) | 16–29 | 0, 0.5, 1, 2, 4, 8 | (queued) |
+| Run | Steering vector | Target layers | Scale sweep |
+|---|---|---|---|
+| [`bounds_llama_creativity`](../../outputs/bounds/bounds_llama_creativity/plots/) | `EasySteer/replications/creative_writing/create.gguf` | 16–29 | 0, 0.5, 1, 2, 4, 8 |
+| [`bounds_llama_random`](../../outputs/bounds/bounds_llama_random/plots/) | Norm-matched random (seed=0, matched to `create.gguf`) | 16–29 | 0, 0.5, 1, 2, 4, 8 |
+
+**Cross-model observation:** Llama-3-8B's bounds are **2–5× tighter**
+than Qwen-1.5B at comparable scales (Claim 2 ratio up to 0.194 on Llama
+vs 0.008 on Qwen), but the Claim 8 scaling slopes stay near zero on
+both architectures. So the "bounds hold but asymptotic scaling doesn't
+manifest" finding is a regime effect, not a Qwen-specific artifact.
 
 ## Headline figures
 
