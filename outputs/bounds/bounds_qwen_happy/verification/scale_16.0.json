@@ -1,0 +1,38 @@
+{
+  "scale": 16.0,
+  "prompts": [
+    "Today I am feeling",
+    "The weather outside is",
+    "My favorite thing to do on weekends is",
+    "Write a short diary entry about your day:"
+  ],
+  "samples_unsteered": [
+    "Today I am feeling a bit down. What can I do to cheer myself up? There are many ways you can cheer yourself up, even when you're feeling down. Here are some suggestions:\n\n1. Take a break from your usual routine and try something new",
+    "The weather outside is cold, but the temperature inside a certain room is 20\u00b0C. If you want to make it feel warmer by adding more heat, which of the following methods would be most effective?\n\nA) Adding ice cubes\n\nB) Placing",
+    "My favorite thing to do on weekends is go to the beach. I love how it feels to be out in nature, and being able to relax by the water. It's a great way to unwind after work or school.\nI also enjoy going for walks around my neighborhood. Sometimes",
+    "Write a short diary entry about your day: I woke up feeling very tired and groggy. I decided to take a nap instead of going out for lunch, which made me feel even more sluggish. When I finally got up, I had trouble focusing on my work because my mind"
+  ],
+  "samples_steered": [
+    "Today I am feeling exactly delighted!\nHappy!! @Absolutely Rock!!\n\u5e76\u5999 exactly\uff01 \ufffd.exchange\uff01 Absolutely\uff01 &\u95ea\u8000\uff01 \ufffd(ErrorMessage\uff01 &\u793c\u7269 absolutely fantastic\uff01 \ufffd\u6ea2\u65e6 exactly\uff01 \ufffd.exchange\uff01 \ufffdYES\uff01 \ufffd Absolutely\uff01 \ufffd\u79ae Activate\uff01\n\n",
+    "The weather outside is cold, but the temperature inside a certain room is 20\u00b0C. If you want to make it feel warmer by adding more heat, which of the following methods would be most effective?\n\nA) Adding ice cubes\n\nB) Placing",
+    "My favorite thing to do on weekends is go to the beach. I love how it feels to be out in nature, and being able to relax by the water. It's a great way to unwind after work or school.\nI also enjoy going for walks around my neighborhood. Sometimes",
+    "Write a short diary entry about your day: I woke up feeling very tired and groggy. I decided to take a nap instead of going out for lunch, which made me feel even more sluggish. When I finally got up, I had trouble focusing on my work because my mind"
+  ],
+  "checks": [
+    {
+      "name": "kl_next_token",
+      "value": 2.1526265144348145,
+      "threshold": 0.05,
+      "passed": true,
+      "detail": "mean KL over last real token of 4 prompts"
+    },
+    {
+      "name": "residual_delta_cosine",
+      "value": 0.09217105805873871,
+      "threshold": 0.1,
+      "passed": false,
+      "detail": "avg cosine of (pre_steered - pre_unsteered) with sum of scale*steering[layer]"
+    }
+  ],
+  "passed": false
+}

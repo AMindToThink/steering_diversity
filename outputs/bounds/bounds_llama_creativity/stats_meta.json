@@ -1,0 +1,91 @@
+{
+  "run_name": "bounds_llama_creativity",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "steering": {
+    "vector_path": "EasySteer/replications/creative_writing/create.gguf",
+    "random_reference_path": null,
+    "random_seed": null,
+    "target_layers": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 4
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 207993,
+      "trace_cov": 2162.24853515625,
+      "R_bar_norm": 0.3792761266231537,
+      "spherical_variance": 0.6207238733768463,
+      "E_norm": 49.27457046508789,
+      "R": 369.2999572753906
+    },
+    "0.5": {
+      "count": 207993,
+      "trace_cov": 2156.814453125,
+      "R_bar_norm": 0.38372287154197693,
+      "spherical_variance": 0.6162771284580231,
+      "E_norm": 49.32189178466797,
+      "R": 369.2999572753906
+    },
+    "1.0": {
+      "count": 207993,
+      "trace_cov": 2164.5712890625,
+      "R_bar_norm": 0.38626018166542053,
+      "spherical_variance": 0.6137398183345795,
+      "E_norm": 49.510467529296875,
+      "R": 369.2999572753906
+    },
+    "2.0": {
+      "count": 207993,
+      "trace_cov": 2228.867431640625,
+      "R_bar_norm": 0.3829655945301056,
+      "spherical_variance": 0.6170344054698944,
+      "E_norm": 50.27186584472656,
+      "R": 369.2999572753906
+    },
+    "4.0": {
+      "count": 207993,
+      "trace_cov": 2508.900390625,
+      "R_bar_norm": 0.38059478998184204,
+      "spherical_variance": 0.619405210018158,
+      "E_norm": 53.47754669189453,
+      "R": 369.2999572753906
+    },
+    "8.0": {
+      "count": 207993,
+      "trace_cov": 4392.345703125,
+      "R_bar_norm": 0.37607356905937195,
+      "spherical_variance": 0.623926430940628,
+      "E_norm": 67.02469635009766,
+      "R": 369.2999572753906
+    }
+  }
+}

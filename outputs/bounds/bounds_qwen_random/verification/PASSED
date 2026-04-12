@@ -1,0 +1,29 @@
+{
+  "run_name": "bounds_qwen_random",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "vector_path": null,
+  "random_reference_path": "EasySteer/vectors/happy_diffmean.gguf",
+  "target_layers": [
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25
+  ],
+  "passed_at_scale": 8.0,
+  "tried_scales": [
+    4.0,
+    8.0
+  ]
+}

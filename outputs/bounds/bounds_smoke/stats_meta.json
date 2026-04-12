@@ -1,0 +1,43 @@
+{
+  "run_name": "bounds_smoke",
+  "model": "sshleifer/tiny-gpt2",
+  "steering": {
+    "vector_path": "__synthetic__",
+    "random_reference_path": null,
+    "random_seed": null,
+    "target_layers": [
+      0,
+      1
+    ],
+    "scale_sweep": [
+      0.0,
+      1.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 16,
+    "max_seq_len": 24,
+    "batch_size": 4
+  },
+  "reservoir_size": 32,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 384,
+      "trace_cov": 0.001605330384336412,
+      "R_bar_norm": 0.22844533622264862,
+      "spherical_variance": 0.7715546637773514,
+      "E_norm": 0.036598242819309235,
+      "R": 0.09843116253614426
+    },
+    "1.0": {
+      "count": 384,
+      "trace_cov": 0.0015869293129071593,
+      "R_bar_norm": 0.9999929070472717,
+      "spherical_variance": 7.092952728271484e-06,
+      "E_norm": 7.816701889038086,
+      "R": 7.878523826599121
+    }
+  }
+}

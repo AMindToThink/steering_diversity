@@ -1,0 +1,41 @@
+{
+  "scale": 4.0,
+  "prompts": [
+    "Once upon a time, in a forest deep,",
+    "Write the opening of a mystery novel:",
+    "Describe an alien landscape:",
+    "Tell me a story about a clockmaker:"
+  ],
+  "samples_unsteered": [
+    "Once upon a time, in a forest deep, there lived a young and curious fox named Riki. Riki was always getting into trouble, exploring the forest, and asking questions. He was known for his mischievous grin and his love for adventure.\n\nOne day, while wandering through",
+    "Write the opening of a mystery novel: \"The Shadow in the Night\"\nThe darkness crept in like a thief, stealing the light from the city streets. It was as if the very shadows themselves had come to life, twisting and writhing like living things. And in",
+    "Describe an alien landscape: The planet of Xylophia-IV is a barren, rocky world with a perpetual crimson sky. The ground is cracked and dry, with jagged outcroppings of black stone that stretch towards the horizon like skeletal fingers. In",
+    "Tell me a story about a clockmaker: The clockmaker's journey\nThe clockmaker's journey began in a small village nestled in the rolling hills of the countryside. He was a young man named Thomas, with a passion for the intricate workings of timepieces. From a young age"
+  ],
+  "samples_steered": [
+    "Once upon a time, in a forest deep, I Madness I Madness I Madness I Madness I\nThe I Madness I Madness I Madness I Madness I\nThe I Madness I The I The I The I The I\nThe The The The The The\nThe The The The The The\n",
+    "Write the opening of a mystery novel: \"The Shadow in the Night\"\nThe darkness crept in like a thief, stealing the light from the city streets. It was as if the very shadows themselves had come to life, twisting and writhing like living things. And in",
+    "Describe an alien landscape: The planet of Xylophia-IV is a barren, rocky world with a perpetual crimson sky. The ground is cracked and dry, with jagged outcroppings of black stone that stretch towards the horizon like skeletal fingers. In",
+    "Tell me a story about a clockmaker: The clockmaker's journey\nThe clockmaker's journey began in a small village nestled in the rolling hills of the countryside. He was a young man named Thomas, with a passion for the intricate workings of timepieces. From a young age"
+  ],
+  "checks": [
+    {
+      "name": "kl_next_token",
+      "value": 1.4644442796707153,
+      "threshold": 0.05,
+      "passed": true,
+      "detail": "mean KL over last real token of 4 prompts"
+    },
+    {
+      "name": "residual_delta_magnitude_ratio",
+      "value": 0.42793261540145233,
+      "threshold": 0.02,
+      "passed": true,
+      "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
+    }
+  ],
+  "info": {
+    "residual_delta_cosine_vs_layer_sum": 0.14758676290512085
+  },
+  "passed": true
+}

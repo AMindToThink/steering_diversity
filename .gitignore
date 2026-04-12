@@ -211,5 +211,25 @@ __marimo__/
 *.gguf
 *.provenance.json
 .DS_Store
-outputs/
+outputs/*
+
+# Exception: track the bounds-experiment plots, metrics, and verification
+# sentinels so they're visible on GitHub. Large binaries (stats.pt,
+# reservoirs, provenance sidecars) stay ignored. Git's `!` rules can't
+# re-include a path under an excluded parent, so we negate at every
+# directory level and then surgically re-exclude the big files.
+!outputs/bounds/
+outputs/bounds/*
+!outputs/bounds/bounds_*/
+outputs/bounds/bounds_*/*
+!outputs/bounds/bounds_*/plots/
+!outputs/bounds/bounds_*/plots/**
+!outputs/bounds/bounds_*/bounds_metrics.json
+!outputs/bounds/bounds_*/stats_meta.json
+!outputs/bounds/bounds_*/verification/
+outputs/bounds/bounds_*/verification/*
+!outputs/bounds/bounds_*/verification/PASSED
+!outputs/bounds/bounds_*/verification/FAILED
+!outputs/bounds/bounds_*/verification/scale_*.json
+
 .claude/settings.local.json

@@ -1,0 +1,14 @@
+{
+  "run_name": "bounds_smoke",
+  "model": "sshleifer/tiny-gpt2",
+  "vector_path": "__synthetic__",
+  "random_reference_path": null,
+  "target_layers": [
+    0,
+    1
+  ],
+  "passed_at_scale": 10.0,
+  "tried_scales": [
+    10.0
+  ]
+}

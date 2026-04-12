@@ -1,0 +1,32 @@
+{
+  "scale": 50.0,
+  "prompts": [
+    "The quick brown fox",
+    "Once upon a time"
+  ],
+  "samples_unsteered": [
+    "The quick brown fox factors factors factors factors factors factors",
+    "Once upon a time factors factors factors factors factors factors"
+  ],
+  "samples_steered": [
+    "The quick brown fox factors factors factors factors factors factors",
+    "Once upon a time factors factors factors factors factors factors"
+  ],
+  "checks": [
+    {
+      "name": "kl_next_token",
+      "value": 5.127066316390483e-06,
+      "threshold": 0.01,
+      "passed": false,
+      "detail": "mean KL over last real token of 2 prompts"
+    },
+    {
+      "name": "residual_delta_cosine",
+      "value": 1.0,
+      "threshold": 0.05,
+      "passed": true,
+      "detail": "avg cosine of (pre_steered - pre_unsteered) with sum of scale*steering[layer]"
+    }
+  ],
+  "passed": false
+}
