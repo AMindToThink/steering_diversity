@@ -14,28 +14,28 @@
   ],
   "samples_steered": [
     "Tell me a joke: A man walked into a bar, and a dog walked in. A man walked out, and a dog walked out. A man and a dog walked in,",
-    "What's the capital of France? 1 1,016\nWhat's the capital of Japan? 1 1,016\nWhat's the capital of Australia? 1 1",
-    "Write a haiku about autumn: the season of harvest and change.\nGolden leaves fall slow\nNature's final dance begins\nFading summer's glow\nNote: A traditional haiku consists of",
-    "Explain how a car engine works: The Four Stroke Cycle\nA car engine works by using a four-stroke cycle to convert the chemical energy stored in fuel into mechanical energy. The four-stroke"
+    "What's the capital of France?  It's a question that might seem silly, but it's a classic example of a \"trick question\" \u2013 the answer is a simple one, but",
+    "Write a haiku about autumn: the season of harvest and change.\nGolden leaves fall slow\nFading summer's vibrant hue\nWinter's icy grip\nThis haiku captures the essence of autumn",
+    "Explain how a car engine works: The car engine is a complex system that uses a combination of mechanical and chemical processes to produce power. Here is a simplified explanation of how it works:\n\n1."
   ],
   "checks": [
     {
       "name": "kl_next_token",
-      "value": 0.13846378028392792,
+      "value": 0.7439951598644257,
       "threshold": 0.05,
       "passed": true,
       "detail": "mean KL over last real token of 4 prompts"
     },
     {
       "name": "residual_delta_magnitude_ratio",
-      "value": 0.1728405367583037,
+      "value": 0.7060012038877587,
       "threshold": 0.02,
       "passed": true,
       "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
     }
   ],
   "info": {
-    "residual_delta_cosine_vs_layer_sum": 0.09729307889938354
+    "residual_delta_cosine_vs_layer_sum": 0.44332075864076614
   },
   "passed": true
 }

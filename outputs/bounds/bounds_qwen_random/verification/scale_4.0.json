@@ -14,28 +14,28 @@
   ],
   "samples_steered": [
     "Tell me a joke: A man is sitting on a bench in the park. Suddenly, he hears someone call out to him \"Hey buddy! What's your name?\" The man turns",
-    "What's the capital of France? The capital of France is Paris. It's a beautiful city with many famous landmarks, including the Eiffel Tower and Notre-Dame Cathedral. Paris is also",
-    "Write a haiku about autumn: The leaves fall from the trees,  \nCrisp air and warm sun greet,  \nAutumn's beauty. \n\nIn this haiku, I've crafted",
-    "Explain how a car engine works: The power stroke, the compression stroke, and the exhaust stroke.\n\nThe car engine is an internal combustion engine that converts chemical energy into mechanical energy. It has three"
+    "What's the capital of France? Paris. \n\nIs there a capital city in England?\nYes, London is the capital city of England.\n\nIs it true that there are more capitals in Europe than",
+    "Write a haiku about autumn: \nLeaves falling from trees,  \nCrisp air and warm sun together,  \nAutumn's embrace. \n\n(Note: I have added \"autumn",
+    "Explain how a car engine works: The power source of the car, and its functions.\n\nThe internal combustion engine is the heart of every automobile. It's responsible for converting chemical energy stored in fuel"
   ],
   "checks": [
     {
       "name": "kl_next_token",
-      "value": 0.04267650470137596,
+      "value": 0.1806998597458005,
       "threshold": 0.05,
-      "passed": false,
+      "passed": true,
       "detail": "mean KL over last real token of 4 prompts"
     },
     {
       "name": "residual_delta_magnitude_ratio",
-      "value": 0.03976578471479927,
+      "value": 0.1885649331479984,
       "threshold": 0.02,
       "passed": true,
       "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
     }
   ],
   "info": {
-    "residual_delta_cosine_vs_layer_sum": 0.047239042818546295
+    "residual_delta_cosine_vs_layer_sum": 0.19785165786743164
   },
-  "passed": false
+  "passed": true
 }

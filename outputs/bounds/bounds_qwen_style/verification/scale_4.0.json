@@ -14,28 +14,28 @@
   ],
   "samples_steered": [
     "Write a short paragraph about climate change: \"Climate change is not merely the temperature increase of your evening in a high-end establishment; it's an existential challenge to your being. The subtle shift, orchestrated by a master chef under the moonlit sky, has transformed into a global event",
-    "Explain photosynthesis: The process by which plants use sunlight to convert carbon dioxide and water into glucose and oxygen.\nPhotosynthesis is the process by which green plants, algae, and some bacteria convert light energy from the sun into chemical energy stored in sugar molecules. This",
-    "Tell me about the Roman Empire: Its History, Geography, Culture and Influence\n\nThe Roman Empire was one of the largest empires in history. It lasted for more than 500 years, from 27 BC to AD 476.\n\nThe empire was",
-    "Describe a typical weekday: wake up, shower, get dressed, eat breakfast, go to work or school. What are some ways to make the morning routine more efficient and less stressful? How can one maintain motivation during long working hours?\n\nA typical weekday might look like"
+    "Explain photosynthesis: The process of converting light energy into chemical energy, which includes the production of alcohol and acetaldehyde.\n\nTo achieve this, we need to understand that in a standard environment, two molecules of NADH (reduced nicotinamide",
+    "Tell me about the Roman Empire: a brief overview of its origins, practices, and impact on society. A Roman meal would include which elements?\nA brief overview of the Roman Empire encompasses an exclusive experience that began with the meticulous preparation of your evening. The room was tailored to",
+    "Describe a typical weekday: From the moment you wake up, to the evening when we part. What was the mood of your experience?\nIn a sophisticated setting at our exclusive bar, the night began with an intimate invitation. The room, adorned in a bespoke edition by"
   ],
   "checks": [
     {
       "name": "kl_next_token",
-      "value": 0.3302234709262848,
+      "value": 1.2220926582813263,
       "threshold": 0.05,
       "passed": true,
       "detail": "mean KL over last real token of 4 prompts"
     },
     {
       "name": "residual_delta_magnitude_ratio",
-      "value": 0.14614163708454872,
+      "value": 0.5388423327149758,
       "threshold": 0.02,
       "passed": true,
       "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
     }
   ],
   "info": {
-    "residual_delta_cosine_vs_layer_sum": 0.10509024560451508
+    "residual_delta_cosine_vs_layer_sum": 0.43946029245853424
   },
   "passed": true
 }

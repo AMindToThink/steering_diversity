@@ -9,9 +9,9 @@ the slopes predicted by the paper in the asymptotic regime.
 
 - **Left** — spherical variance `1 − ‖R̄‖²` (which equals `tr(Σ_z)`
   for unit-normalized samples). Predicted slope: **−1**. Empirical
-  slope: **0.003**.
+  slope: **-1.773**.
 - **Right** — pre-RMSNorm `tr(Σ_x)`. Predicted slope: **−2**.
-  Empirical slope: **0.255**.
+  Empirical slope: **-1.128**.
 
 **Interpretation.** The paper predicts that as ‖s_eff‖ grows, the
 steering dominates the residual stream and the post-normalization
@@ -26,9 +26,9 @@ magnitude `E[‖x‖]`.
 
 | scale | ‖s_eff‖ | 1 − ‖R̄‖² | tr(Σ_x) |
 |------:|--------:|----------:|---------:|
-| 0.5 | 2.67 | 0.8528 | 2157 |
-| 1 | 5.31 | 0.8508 | 2165 |
-| 2 | 10 | 0.8533 | 2229 |
-| 4 | 16.7 | 0.8551 | 2509 |
-| 8 | 30.6 | 0.8586 | 4392 |
+| 0.5 | 10.5 | 0.8086 | 2061 |
+| 1 | 20.8 | 0.7039 | 1850 |
+| 2 | 39.3 | 0.4278 | 1274 |
+| 4 | 65.4 | 0.07409 | 331 |
+| 8 | 120 | 0.01072 | 152.3 |
 

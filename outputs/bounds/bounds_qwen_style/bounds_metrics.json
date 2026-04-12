@@ -3,37 +3,37 @@
   "0.5": {
     "claim1_covariance_structure": {
       "name": "claim1_covariance_structure",
-      "lhs": 0.48017737042505004,
-      "rhs": 0.8904164062010491,
-      "ratio": 0.5392728245807161,
+      "lhs": 0.4734207272546058,
+      "rhs": 0.8666989329903668,
+      "ratio": 0.546234348784952,
       "passed": true,
       "detail": {
-        "m_norm": 218.37983883403885,
+        "m_norm": 221.34358151135868,
         "trace_sigma_x": 46122.28125,
-        "quad_m_hat_sigma_x_m_hat": 3658.541872533176,
+        "quad_m_hat_sigma_x_m_hat": 3660.116827174802,
         "note": "Approximate equality (Taylor bound), not a strict \u2264."
       }
     },
     "claim2_spherical_variance": {
       "name": "claim2_spherical_variance",
-      "lhs": 0.2790127396583557,
-      "rhs": 427.5042321148784,
-      "ratio": 0.0006526549182403878,
+      "lhs": 0.2743421792984009,
+      "rhs": 54.543412666966894,
+      "ratio": 0.00502979490802105,
       "passed": true,
       "detail": {
-        "s_eff_norm": 1.4074032306671143,
+        "s_eff_norm": 11.031044960021973,
         "E_norm_x": 300.8354187011719
       }
     },
     "claim3_pole_concentration": {
       "name": "claim3_pole_concentration",
-      "lhs": 1.460181713104248,
-      "rhs": 1733.8499877267398,
-      "ratio": 0.0008421615038442284,
+      "lhs": 1.4654579162597656,
+      "rhs": 221.21440743487727,
+      "ratio": 0.006624604306982934,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 1.4074032306671143
+        "s_eff_norm": 11.031044960021973
       }
     },
     "claim4_pairwise_contraction": {
@@ -43,84 +43,84 @@
       "ratio": 0.0,
       "passed": null,
       "detail": {
-        "inapplicable_reason": "\u2016s_eff\u2016=1.41 \u2264 R=1.22e+03"
+        "inapplicable_reason": "\u2016s_eff\u2016=11 \u2264 R=1.22e+03"
       }
     },
     "claim5_diameter": {
       "name": "claim5_diameter",
-      "lhs": 1.5218327045440674,
-      "rhs": 3467.6999754534795,
-      "ratio": 0.00043885939248393413,
+      "lhs": 1.5178587436676025,
+      "rhs": 442.42881486975455,
+      "ratio": 0.003430741155759579,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 1.4074032306671143
+        "s_eff_norm": 11.031044960021973
       }
     },
     "claim6_expected_pairwise": {
       "name": "claim6_expected_pairwise",
-      "lhs": 0.979976908324936,
-      "rhs": 855.0084642297568,
-      "ratio": 0.0011461604759758237,
+      "lhs": 0.9730577858016509,
+      "rhs": 109.08682533393379,
+      "ratio": 0.00892003028617756,
       "passed": true,
       "detail": {
-        "expected_pair_sq_chord": 0.9603547408501001
+        "expected_pair_sq_chord": 0.9468414545092116
       }
     },
     "claim7_reduction_condition": {
       "name": "claim7_reduction_condition",
-      "lhs": 218.37985229492188,
+      "lhs": 221.3435821533203,
       "rhs": 217.9462127685547,
-      "ratio": 1.0019896630496978,
+      "ratio": 1.0155881092936148,
       "passed": true,
       "detail": {}
     },
     "claim9_alignment": {
       "name": "claim9_alignment",
-      "lhs": 0.021612752904887213,
+      "lhs": 0.020784866878263114,
       "rhs": 1.0,
-      "ratio": 0.021612752904887213,
+      "ratio": 0.020784866878263114,
       "passed": false,
       "detail": {
-        "smallest_eigenvalue": -7.014185942761823e-18,
-        "largest_eigenvalue": 0.049171786697500885
+        "smallest_eigenvalue": -1.5406679064995556e-18,
+        "largest_eigenvalue": 0.050199801518280705
       }
     }
   },
   "1.0": {
     "claim1_covariance_structure": {
       "name": "claim1_covariance_structure",
-      "lhs": 0.47912207687124564,
-      "rhs": 0.8868703718847528,
-      "ratio": 0.5402391285809091,
+      "lhs": 0.46241092244857995,
+      "rhs": 0.8376779007411844,
+      "ratio": 0.5520151863137787,
       "passed": true,
       "detail": {
-        "m_norm": 218.81351496123045,
+        "m_norm": 225.18062275772314,
         "trace_sigma_x": 46122.28125,
-        "quad_m_hat_sigma_x_m_hat": 3659.5004700272034,
+        "quad_m_hat_sigma_x_m_hat": 3646.723534455317,
         "note": "Approximate equality (Taylor bound), not a strict \u2264."
       }
     },
     "claim2_spherical_variance": {
       "name": "claim2_spherical_variance",
-      "lhs": 0.2782812714576721,
-      "rhs": 211.75617068605786,
-      "ratio": 0.0013141589714060424,
+      "lhs": 0.2667953372001648,
+      "rhs": 27.021946581233188,
+      "ratio": 0.009873283421611635,
       "passed": true,
       "detail": {
-        "s_eff_norm": 2.8413379192352295,
+        "s_eff_norm": 22.266006469726562,
         "E_norm_x": 300.8354187011719
       }
     },
     "claim3_pole_concentration": {
       "name": "claim3_pole_concentration",
-      "lhs": 1.4290440082550049,
-      "rhs": 858.8299398318514,
-      "ratio": 0.001663942932095258,
+      "lhs": 1.4497212171554565,
+      "rhs": 109.59424077849543,
+      "ratio": 0.013228078472531567,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 2.8413379192352295
+        "s_eff_norm": 22.266006469726562
       }
     },
     "claim4_pairwise_contraction": {
@@ -130,84 +130,84 @@
       "ratio": 0.0,
       "passed": null,
       "detail": {
-        "inapplicable_reason": "\u2016s_eff\u2016=2.84 \u2264 R=1.22e+03"
+        "inapplicable_reason": "\u2016s_eff\u2016=22.3 \u2264 R=1.22e+03"
       }
     },
     "claim5_diameter": {
       "name": "claim5_diameter",
-      "lhs": 1.4868192672729492,
-      "rhs": 1717.659879663703,
-      "ratio": 0.0008656074959170907,
+      "lhs": 1.5023528337478638,
+      "rhs": 219.18848155699087,
+      "ratio": 0.006854159593953113,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 2.8413379192352295
+        "s_eff_norm": 22.266006469726562
       }
     },
     "claim6_expected_pairwise": {
       "name": "claim6_expected_pairwise",
-      "lhs": 0.9788994604873839,
-      "rhs": 423.5123413721157,
-      "ratio": 0.0023113835533479336,
+      "lhs": 0.9616765801958369,
+      "rhs": 54.043893162466375,
+      "ratio": 0.017794361655346543,
       "passed": true,
       "detail": {
-        "expected_pair_sq_chord": 0.9582441537424913
+        "expected_pair_sq_chord": 0.9248218448971599
       }
     },
     "claim7_reduction_condition": {
       "name": "claim7_reduction_condition",
-      "lhs": 218.81350708007812,
+      "lhs": 225.1806182861328,
       "rhs": 217.9462127685547,
-      "ratio": 1.003979396111115,
+      "ratio": 1.0331935362660356,
       "passed": true,
       "detail": {}
     },
     "claim9_alignment": {
       "name": "claim9_alignment",
-      "lhs": 0.008716213472192959,
+      "lhs": 0.00866393270532139,
       "rhs": 1.0,
-      "ratio": 0.008716213472192959,
+      "ratio": 0.00866393270532139,
       "passed": false,
       "detail": {
-        "smallest_eigenvalue": -9.727283079553527e-19,
-        "largest_eigenvalue": 0.04720819569050113
+        "smallest_eigenvalue": -1.5609987347823218e-18,
+        "largest_eigenvalue": 0.04945673132113225
       }
     }
   },
   "2.0": {
     "claim1_covariance_structure": {
       "name": "claim1_covariance_structure",
-      "lhs": 0.47666001945309233,
-      "rhs": 0.879598264519929,
-      "ratio": 0.5419065028661078,
+      "lhs": 0.4303978529124741,
+      "rhs": 0.7732158331870951,
+      "ratio": 0.5566335225423801,
       "passed": true,
       "detail": {
-        "m_norm": 219.7136736900824,
+        "m_norm": 234.57623542408416,
         "trace_sigma_x": 46122.28125,
-        "quad_m_hat_sigma_x_m_hat": 3660.468070473322,
+        "quad_m_hat_sigma_x_m_hat": 3575.298906346422,
         "note": "Approximate equality (Taylor bound), not a strict \u2264."
       }
     },
     "claim2_spherical_variance": {
       "name": "claim2_spherical_variance",
-      "lhs": 0.27657759189605713,
-      "rhs": 103.3209906668479,
-      "ratio": 0.0026768770809395773,
+      "lhs": 0.24528008699417114,
+      "rhs": 13.182064200845861,
+      "ratio": 0.0186071076014356,
       "passed": true,
       "detail": {
-        "s_eff_norm": 5.82331657409668,
+        "s_eff_norm": 45.64314270019531,
         "E_norm_x": 300.8354187011719
       }
     },
     "claim3_pole_concentration": {
       "name": "claim3_pole_concentration",
-      "lhs": 1.4423818588256836,
-      "rhs": 419.04403498744716,
-      "ratio": 0.003442077057292777,
+      "lhs": 1.4163602590560913,
+      "rhs": 53.463147580508476,
+      "ratio": 0.026492272212803012,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 5.82331657409668
+        "s_eff_norm": 45.64314270019531
       }
     },
     "claim4_pairwise_contraction": {
@@ -217,84 +217,84 @@
       "ratio": 0.0,
       "passed": null,
       "detail": {
-        "inapplicable_reason": "\u2016s_eff\u2016=5.82 \u2264 R=1.22e+03"
+        "inapplicable_reason": "\u2016s_eff\u2016=45.6 \u2264 R=1.22e+03"
       }
     },
     "claim5_diameter": {
       "name": "claim5_diameter",
-      "lhs": 1.5044715404510498,
-      "rhs": 838.0880699748943,
-      "ratio": 0.001795123441497166,
+      "lhs": 1.4853440523147583,
+      "rhs": 106.92629516101695,
+      "ratio": 0.013891288855356163,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 5.82331657409668
+        "s_eff_norm": 45.64314270019531
       }
     },
     "claim6_expected_pairwise": {
       "name": "claim6_expected_pairwise",
-      "lhs": 0.9763810930708279,
-      "rhs": 206.6419813336958,
-      "ratio": 0.0047249890209585185,
+      "lhs": 0.9277907661886641,
+      "rhs": 26.364128401691723,
+      "ratio": 0.035191406749829436,
       "passed": true,
       "detail": {
-        "expected_pair_sq_chord": 0.9533200389061847
+        "expected_pair_sq_chord": 0.8607957058249482
       }
     },
     "claim7_reduction_condition": {
       "name": "claim7_reduction_condition",
-      "lhs": 219.7136688232422,
+      "lhs": 234.57623291015625,
       "rhs": 217.9462127685547,
-      "ratio": 1.0081095974655196,
+      "ratio": 1.0763033224131386,
       "passed": true,
       "detail": {}
     },
     "claim9_alignment": {
       "name": "claim9_alignment",
-      "lhs": 0.002688691381095263,
+      "lhs": 0.006894161297072467,
       "rhs": 1.0,
-      "ratio": 0.002688691381095263,
+      "ratio": 0.006894161297072467,
       "passed": false,
       "detail": {
-        "smallest_eigenvalue": -1.3529523291282928e-18,
-        "largest_eigenvalue": 0.047842281901026205
+        "smallest_eigenvalue": -1.3374045441109119e-18,
+        "largest_eigenvalue": 0.05271848331024568
       }
     }
   },
   "4.0": {
     "claim1_covariance_structure": {
       "name": "claim1_covariance_structure",
-      "lhs": 0.47299148775158173,
-      "rhs": 0.8690008717933196,
-      "ratio": 0.5442934559725925,
+      "lhs": 0.3480613685491676,
+      "rhs": 0.6584880487842959,
+      "ratio": 0.5285765917722581,
       "passed": true,
       "detail": {
-        "m_norm": 221.05413680408023,
+        "m_norm": 254.99556842831595,
         "trace_sigma_x": 46122.28125,
-        "quad_m_hat_sigma_x_m_hat": 3658.6132648460316,
+        "quad_m_hat_sigma_x_m_hat": 3305.5841147347737,
         "note": "Approximate equality (Taylor bound), not a strict \u2264."
       }
     },
     "claim2_spherical_variance": {
       "name": "claim2_spherical_variance",
-      "lhs": 0.27404648065567017,
-      "rhs": 52.00785800588963,
-      "ratio": 0.005269328350816443,
+      "lhs": 0.19257283210754395,
+      "rhs": 6.609016908085437,
+      "ratio": 0.029137893696708713,
       "passed": true,
       "detail": {
-        "s_eff_norm": 11.56884479522705,
+        "s_eff_norm": 91.03787231445312,
         "E_norm_x": 300.8354187011719
       }
     },
     "claim3_pole_concentration": {
       "name": "claim3_pole_concentration",
-      "lhs": 1.4689956903457642,
-      "rhs": 210.93083340745588,
-      "ratio": 0.006964347822530525,
+      "lhs": 1.3671995401382446,
+      "rhs": 26.804515661240263,
+      "ratio": 0.051006313914309445,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 11.56884479522705
+        "s_eff_norm": 91.03787231445312
       }
     },
     "claim4_pairwise_contraction": {
@@ -304,84 +304,84 @@
       "ratio": 0.0,
       "passed": null,
       "detail": {
-        "inapplicable_reason": "\u2016s_eff\u2016=11.6 \u2264 R=1.22e+03"
+        "inapplicable_reason": "\u2016s_eff\u2016=91 \u2264 R=1.22e+03"
       }
     },
     "claim5_diameter": {
       "name": "claim5_diameter",
-      "lhs": 1.5157774686813354,
-      "rhs": 421.86166681491176,
-      "ratio": 0.0035930675572530034,
+      "lhs": 1.433605670928955,
+      "rhs": 53.609031322480526,
+      "ratio": 0.026741868591230893,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 11.56884479522705
+        "s_eff_norm": 91.03787231445312
       }
     },
     "claim6_expected_pairwise": {
       "name": "claim6_expected_pairwise",
-      "lhs": 0.9726165613967117,
-      "rhs": 104.01571601177926,
-      "ratio": 0.00935066929007697,
+      "lhs": 0.8343397012598257,
+      "rhs": 13.218033816170873,
+      "ratio": 0.06312131689654923,
       "passed": true,
       "detail": {
-        "expected_pair_sq_chord": 0.9459829755031635
+        "expected_pair_sq_chord": 0.6961227370983352
       }
     },
     "claim7_reduction_condition": {
       "name": "claim7_reduction_condition",
-      "lhs": 221.0541534423828,
+      "lhs": 254.99557495117188,
       "rhs": 217.9462127685547,
-      "ratio": 1.014260127002659,
+      "ratio": 1.1699931451525671,
       "passed": true,
       "detail": {}
     },
     "claim9_alignment": {
       "name": "claim9_alignment",
-      "lhs": 0.007401869051392297,
+      "lhs": 0.0013138504634932387,
       "rhs": 1.0,
-      "ratio": 0.007401869051392297,
+      "ratio": 0.0013138504634932387,
       "passed": false,
       "detail": {
-        "smallest_eigenvalue": -1.4152671132191874e-18,
-        "largest_eigenvalue": 0.05053944695952818
+        "smallest_eigenvalue": -3.506477053481983e-18,
+        "largest_eigenvalue": 0.05987572523727344
       }
     }
   },
   "8.0": {
     "claim1_covariance_structure": {
       "name": "claim1_covariance_structure",
-      "lhs": 0.4789134197051226,
-      "rhs": 0.8858988869590418,
-      "ratio": 0.5405960282319041,
+      "lhs": 0.2278174567303175,
+      "rhs": 0.5948513467405466,
+      "ratio": 0.3829821651722401,
       "passed": true,
       "detail": {
-        "m_norm": 218.97708379917583,
+        "m_norm": 270.6675033715271,
         "trace_sigma_x": 46122.28125,
-        "quad_m_hat_sigma_x_m_hat": 3642.5762966455104,
+        "quad_m_hat_sigma_x_m_hat": 2542.937779267711,
         "note": "Approximate equality (Taylor bound), not a strict \u2264."
       }
     },
     "claim2_spherical_variance": {
       "name": "claim2_spherical_variance",
-      "lhs": 0.2781367301940918,
-      "rhs": 30.1590562842123,
-      "ratio": 0.009222328695334249,
+      "lhs": 0.12126082181930542,
+      "rhs": 3.824952994550055,
+      "ratio": 0.03170256523206499,
       "passed": true,
       "detail": {
-        "s_eff_norm": 19.949922561645508,
+        "s_eff_norm": 157.30149841308594,
         "E_norm_x": 300.8354187011719
       }
     },
     "claim3_pole_concentration": {
       "name": "claim3_pole_concentration",
-      "lhs": 1.4577009677886963,
-      "rhs": 122.31757124261617,
-      "ratio": 0.011917347221498988,
+      "lhs": 1.046347975730896,
+      "rhs": 15.513050408525206,
+      "ratio": 0.0674495310835756,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 19.949922561645508
+        "s_eff_norm": 157.30149841308594
       }
     },
     "claim4_pairwise_contraction": {
@@ -391,59 +391,59 @@
       "ratio": 0.0,
       "passed": null,
       "detail": {
-        "inapplicable_reason": "\u2016s_eff\u2016=19.9 \u2264 R=1.22e+03"
+        "inapplicable_reason": "\u2016s_eff\u2016=157 \u2264 R=1.22e+03"
       }
     },
     "claim5_diameter": {
       "name": "claim5_diameter",
-      "lhs": 1.5495226383209229,
-      "rhs": 244.63514248523234,
-      "ratio": 0.006334014903089655,
+      "lhs": 1.2707343101501465,
+      "rhs": 31.026100817050413,
+      "ratio": 0.04095694517474828,
       "passed": true,
       "detail": {
         "R": 1220.113037109375,
-        "s_eff_norm": 19.949922561645508
+        "s_eff_norm": 157.30149841308594
       }
     },
     "claim6_expected_pairwise": {
       "name": "claim6_expected_pairwise",
-      "lhs": 0.978686282426726,
-      "rhs": 60.3181125684246,
-      "ratio": 0.016225412910865017,
+      "lhs": 0.6750073432642307,
+      "rhs": 7.64990598910011,
+      "ratio": 0.08823733837069475,
       "passed": true,
       "detail": {
-        "expected_pair_sq_chord": 0.9578268394102452
+        "expected_pair_sq_chord": 0.455634913460635
       }
     },
     "claim7_reduction_condition": {
       "name": "claim7_reduction_condition",
-      "lhs": 218.97711181640625,
+      "lhs": 270.6675109863281,
       "rhs": 217.9462127685547,
-      "ratio": 1.0047300617650388,
+      "ratio": 1.2419005017249838,
       "passed": true,
       "detail": {}
     },
     "claim9_alignment": {
       "name": "claim9_alignment",
-      "lhs": 0.00432459718761858,
+      "lhs": 0.0048170181426170945,
       "rhs": 1.0,
-      "ratio": 0.00432459718761858,
+      "ratio": 0.0048170181426170945,
       "passed": false,
       "detail": {
-        "smallest_eigenvalue": -1.783000960013842e-18,
-        "largest_eigenvalue": 0.04919261152600377
+        "smallest_eigenvalue": -1.0145541481117549e-18,
+        "largest_eigenvalue": 0.042342663298251676
       }
     }
   },
   "claim8_scaling_fit": {
     "name": "claim8_scaling_fit",
-    "lhs": 1.997069205551608,
+    "lhs": 1.746362641287822,
     "rhs": 0.3,
-    "ratio": 6.656897351838693,
+    "ratio": 5.82120880429274,
     "passed": false,
     "detail": {
-      "slope_spherical_variance": -0.0034917740144457237,
-      "slope_trace_cov_z": -0.002930794448392163,
+      "slope_spherical_variance": -0.2846249244159651,
+      "slope_trace_cov_z": -0.25363735871217813,
       "expected_slope_spherical_variance": -1.0,
       "expected_slope_trace_cov_z": -2.0,
       "num_points": 5

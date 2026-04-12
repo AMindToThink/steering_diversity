@@ -119,6 +119,61 @@ def test_nonzero_steering_changes_residual_stream() -> None:
     assert diff_pre > 0.1, f"pre-RMSNorm unchanged (diff={diff_pre}), intervention missed"
 
 
+def test_steering_affects_every_batch_element() -> None:
+    """Regression test for the .output[0] batch-indexing bug.
+
+    On Qwen2/Llama3, ``layer.output`` is a bare tensor ``[B, T, d]`` (not
+    a tuple), so ``layer.output[0]`` selects batch element 0 rather than
+    unpacking a tuple. A buggy intervention using ``.output[0]`` would
+    only modify prompt 0 in a multi-prompt batch, silently producing
+    contaminated stats. This test asserts that EVERY batch element shows
+    an intervention — not just prompt 0.
+
+    This test runs on tiny-gpt2 (tuple-output architecture), so it only
+    catches regressions where someone hardcodes ``.output[0]`` without
+    the architecture dispatch. For Qwen/Llama specifically, the
+    dispatcher in ``_is_tuple_output_architecture`` is the safety net,
+    and GPU verification runs exercise the non-tuple path.
+    """
+    lm = _make_model()
+    # Use 4 very different prompts so any failure to steer one of them
+    # is visible.
+    prompts = [
+        "the quick brown fox",
+        "alpha beta gamma",
+        "once upon a time",
+        "goodbye cruel world",
+    ]
+
+    unsteered = run_bounds_forward_pass(
+        lm, prompts, steering=None, scale=0.0, target_layers=[],
+        capture_specs=[{"site": "final"}], max_seq_len=16,
+    )
+    steered = run_bounds_forward_pass(
+        lm, prompts, steering=_nonzero_steering(lm), scale=1.0,
+        target_layers=[0, 1], capture_specs=[{"site": "final"}], max_seq_len=16,
+    )
+
+    pre_u = unsteered["final"]["pre"]  # [B, T, d]
+    pre_s = steered["final"]["pre"]
+
+    assert pre_u.shape[0] == 4 and pre_s.shape[0] == 4, (
+        f"expected batch 4, got unsteered={pre_u.shape}, steered={pre_s.shape}"
+    )
+
+    # Every batch element's pre-RMSNorm residual should differ from the
+    # unsteered version. The per-element max abs delta must be above a
+    # noise threshold. A buggy impl would leave batch elements 1, 2, 3
+    # unchanged while only modifying batch 0.
+    per_batch_max_diff = (pre_u - pre_s).abs().flatten(1).max(dim=1).values
+    assert per_batch_max_diff.shape == (4,)
+    for i, delta in enumerate(per_batch_max_diff.tolist()):
+        assert delta > 1e-4, (
+            f"batch element {i} shows delta={delta:.2e} — steering did not "
+            f"reach it. Per-batch deltas: {per_batch_max_diff.tolist()}"
+        )
+
+
 def test_unknown_site_raises() -> None:
     lm = _make_model()
     try:

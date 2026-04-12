@@ -21,9 +21,8 @@
     24,
     25
   ],
-  "passed_at_scale": 8.0,
+  "passed_at_scale": 4.0,
   "tried_scales": [
-    4.0,
-    8.0
+    4.0
   ]
 }

@@ -212,18 +212,32 @@ __marimo__/
 *.provenance.json
 .DS_Store
 outputs/*
+discarded/
 
-# Exception: track the bounds-experiment plots, metrics, and verification
-# sentinels so they're visible on GitHub. Large binaries (stats.pt,
-# reservoirs, provenance sidecars) stay ignored. Git's `!` rules can't
-# re-include a path under an excluded parent, so we negate at every
-# directory level and then surgically re-exclude the big files.
+# Exception: track a CURATED subset of bounds-experiment outputs so the
+# results are visible on GitHub without blowing up git push with a pack
+# of ~200 files (HTTP 408 from our previous attempt). Kept per run:
+#
+# - bounds_metrics.json  (the full numerical table for every claim)
+# - stats_meta.json      (config snapshot + scalar summaries)
+# - verification/PASSED  (+ scale_*.json for the verification history)
+# - plots/scaling_law.{png,md}    (headline figure — Claim 8 scaling)
+# - plots/claim2_spherical_variance_lhs_vs_rhs.{png,md}  (the
+#   "bound tightens and then drops below" visual)
+#
+# Everything else — stats.pt, reservoirs, per-claim scatter plots, sigma
+# spectrum, claim9 bars, provenance sidecars, and the discarded/
+# corrupted-run dump — stays local only.
 !outputs/bounds/
 outputs/bounds/*
 !outputs/bounds/bounds_*/
 outputs/bounds/bounds_*/*
 !outputs/bounds/bounds_*/plots/
-!outputs/bounds/bounds_*/plots/**
+outputs/bounds/bounds_*/plots/*
+!outputs/bounds/bounds_*/plots/scaling_law.png
+!outputs/bounds/bounds_*/plots/scaling_law.md
+!outputs/bounds/bounds_*/plots/claim2_spherical_variance_lhs_vs_rhs.png
+!outputs/bounds/bounds_*/plots/claim2_spherical_variance_lhs_vs_rhs.md
 !outputs/bounds/bounds_*/bounds_metrics.json
 !outputs/bounds/bounds_*/stats_meta.json
 !outputs/bounds/bounds_*/verification/
