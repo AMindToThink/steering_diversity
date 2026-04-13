@@ -20,11 +20,23 @@ from src.config import ModelConfig
 class BoundsSteeringConfig:
     """Steering-vector source + scale sweep.
 
-    Exactly one of `vector_path` and `random_reference_path` must be set:
-    - `vector_path`: load a real steering vector from a `.gguf` file.
-    - `random_reference_path` + `random_seed`: load a reference vector only
-      to inherit its target layers and per-layer norms, then draw a norm-
-      matched random vector deterministic in `random_seed`.
+    Exactly one of ``vector_path`` and ``random_reference_path`` must be set:
+
+    - ``vector_path``: load a real steering vector from a ``.gguf`` file.
+    - ``random_reference_path`` + ``random_seed``: load a reference vector
+      only to inherit its target layers and per-layer norms, then draw a
+      random vector deterministic in ``random_seed``. The type of matching
+      is controlled by ``random_match``:
+
+      - ``"per_layer"`` (default): each random per-layer vector has the
+        same L2 norm as its reference counterpart. Because random
+        directions don't stack coherently, the aggregate ``‖Σ r_i‖`` is
+        ``~√n`` smaller than the reference's aggregate when the reference
+        is trained to be directionally coherent across layers.
+      - ``"aggregate"``: per-layer norms are rescaled uniformly so that
+        ``‖Σ r_i for i in target_layers‖`` matches
+        ``‖Σ ref_i for i in target_layers‖``. This inflates the per-layer
+        random vector to ``~√n`` × the reference's per-layer norm.
     """
 
     target_layers: list[int]
@@ -32,6 +44,7 @@ class BoundsSteeringConfig:
     vector_path: str | None = None
     random_reference_path: str | None = None
     random_seed: int | None = None
+    random_match: str = "per_layer"  # or "aggregate"
 
 
 @dataclasses.dataclass

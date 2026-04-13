@@ -71,7 +71,10 @@ from src.bounds.nnsight_runner import (  # noqa: E402
     run_verification_forward_pass,
     sample_from_steered_model,
 )
-from src.bounds.random_vectors import generate_random_steering_vector  # noqa: E402
+from src.bounds.random_vectors import (  # noqa: E402
+    generate_random_steering_vector,
+    generate_random_steering_vector_aggregate_matched,
+)
 
 
 SYNTHETIC_SENTINEL = "__synthetic__"
@@ -109,7 +112,19 @@ def load_or_build_steering(
 
     if cfg.steering.random_reference_path:
         ref = load_steering_vector_gguf(cfg.steering.random_reference_path)
-        return generate_random_steering_vector(ref, seed=cfg.steering.random_seed or 0)
+        seed = cfg.steering.random_seed or 0
+        mode = cfg.steering.random_match
+        if mode == "per_layer":
+            return generate_random_steering_vector(ref, seed=seed)
+        if mode == "aggregate":
+            return generate_random_steering_vector_aggregate_matched(
+                reference=ref,
+                target_layers=cfg.steering.target_layers,
+                seed=seed,
+            )
+        raise ValueError(
+            f"Unknown random_match mode {mode!r}; expected 'per_layer' or 'aggregate'"
+        )
 
     raise ValueError("BoundsSteeringConfig has no vector source")
 
