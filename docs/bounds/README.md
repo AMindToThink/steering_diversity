@@ -38,7 +38,7 @@ Across all 5 runs at the project's operating scales `[0, 0.5, 1, 2, 4, 8]`:
   
   Theoretical prediction: `slope_V = −1`, `slope_trZ = −2`. On Llama‑3‑8B with the creativity vector, empirical `slope_V` actually *exceeds* the theoretical magnitude (−1.92 vs −1) — the steering is strong enough at scales 4, 8 to push the residual distribution into super-linear collapse. On Qwen2.5‑1.5B the slopes are much shallower (−0.02 to −0.29) because the achievable `‖s_eff‖` never reaches the asymptotic regime.
 
-- **Claim 7 (reduction condition `‖μ+s‖ > ‖μ‖`) fails for `qwen_happy` at every scale.** Root cause confirmed by token‑level projection: the `happy_diffmean.gguf` vector was trained on happy‑vs‑sad role-play prompts ("Act as if you're extremely happy/sad"), and FineWeb-Edu's residual mean `μ` is mildly anti-aligned with it (`cos(μ, Σ layer happy) = −0.108`, ~4σ from random). Adding the happy direction deflects `μ` sideways rather than elongating it, so `‖μ + s_eff‖ < ‖μ‖` at small scales. The other four configs (`qwen_style`, `qwen_random`, `llama_creativity`, `llama_random`) pass Claim 7 everywhere.
+- **Claim 7 (reduction condition `‖μ+s‖ > ‖μ‖`) fails for `qwen_happy` at every scale.** Root cause confirmed by token‑level projection: the `happy_diffmean.gguf` vector was trained on happy‑vs‑sad role-play prompts ("Act as if you're extremely happy/sad"), and FineWeb-Edu's residual mean `μ` is mildly anti-aligned with it (`cos(μ, Σ layer happy) = −0.108`, ~4σ from random; see [`scripts/bounds/investigations/03_investigate_happy_data_alignment.py`](../../scripts/bounds/investigations/03_investigate_happy_data_alignment.py) for the re-runnable probe). Adding the happy direction deflects `μ` sideways rather than elongating it, so `‖μ + s_eff‖ < ‖μ‖` at small scales. The other four configs (`qwen_style`, `qwen_random`, `llama_creativity`, `llama_random`) pass Claim 7 everywhere.
 
 ## Historical note
 
@@ -147,3 +147,18 @@ uv run python scripts/bounds/04_visualize.py \
   `_is_tuple_output_architecture(lm)`.
 - **Shape assertions** at every capture-materialization point catch
   silent dimension bugs (see `feedback_assert_tensor_shapes.md` memory).
+
+## How we got here: investigation trail
+
+The production code in `src/bounds/` and `scripts/bounds/` is cleaner
+than the path that built it. Four probes and data-diagnostic scripts
+under [`scripts/bounds/investigations/`](../../scripts/bounds/investigations/)
+preserve the questions, methods, and findings — each maps to a specific
+piece of production code or a number quoted above:
+
+- **[`01_probe_nnsight_api.py`](../../scripts/bounds/investigations/01_probe_nnsight_api.py)** — probed nnsight 0.6's decoder-layer `.input`/`.output`/`.save()` API on tiny-gpt2. Established the `.output[0]` tuple-unpack pattern (correct on GPT-2) that, unfortunately, also silently selected batch element 0 on Qwen2/Llama3 and contaminated the first 5 full runs. Drove `_is_tuple_output_architecture` + shape assertions.
+- **[`02_probe_nnsight_generate.py`](../../scripts/bounds/investigations/02_probe_nnsight_generate.py)** — confirmed that `lm.generate() + with tracer.all(): ...` is the correct pattern to apply a steering intervention on every decode step. Drove `sample_from_steered_model`.
+- **[`03_investigate_happy_data_alignment.py`](../../scripts/bounds/investigations/03_investigate_happy_data_alignment.py)** — computed `cos(μ_unsteered, Σ happy) = −0.108` on FineWeb-Edu + Qwen, and the token-level `lm_head` projection showing the data is tone-neutral (not "sad"). Explains the Claim 7 failure quoted above.
+- **[`04_compare_real_vs_random_norms.py`](../../scripts/bounds/investigations/04_compare_real_vs_random_norms.py)** — measured the ~3× gap between real and random aggregate norms (coherent vs `√n` stacking). Drove `generate_random_steering_vector_aggregate_matched` and the aggregate-matched random control in Experiment 2.
+
+Detail lives in [`scripts/bounds/investigations/README.md`](../../scripts/bounds/investigations/README.md).
