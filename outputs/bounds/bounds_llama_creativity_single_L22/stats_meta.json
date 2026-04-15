@@ -1,0 +1,78 @@
+{
+  "run_name": "bounds_llama_creativity_single_L22",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "steering": {
+    "vector_path": "EasySteer/replications/creative_writing/create.gguf",
+    "random_reference_path": null,
+    "random_seed": null,
+    "target_layers": [
+      22
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 4
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 207993,
+      "trace_cov": 2162.24853515625,
+      "R_bar_norm": 0.3792761266231537,
+      "spherical_variance": 0.6207238733768463,
+      "E_norm": 49.27457046508789,
+      "R": 369.2999572753906
+    },
+    "0.5": {
+      "count": 207993,
+      "trace_cov": 2157.29541015625,
+      "R_bar_norm": 0.3816884756088257,
+      "spherical_variance": 0.6183115243911743,
+      "E_norm": 49.27007293701172,
+      "R": 370.856201171875
+    },
+    "1.0": {
+      "count": 207993,
+      "trace_cov": 2150.9677734375,
+      "R_bar_norm": 0.3847135603427887,
+      "spherical_variance": 0.6152864396572113,
+      "E_norm": 49.264404296875,
+      "R": 370.99554443359375
+    },
+    "2.0": {
+      "count": 207993,
+      "trace_cov": 2134.453369140625,
+      "R_bar_norm": 0.3924862742424011,
+      "spherical_variance": 0.6075137257575989,
+      "E_norm": 49.25079345703125,
+      "R": 368.5828552246094
+    },
+    "4.0": {
+      "count": 207993,
+      "trace_cov": 2087.83642578125,
+      "R_bar_norm": 0.4141843616962433,
+      "spherical_variance": 0.5858156383037567,
+      "E_norm": 49.2258186340332,
+      "R": 361.5142822265625
+    },
+    "8.0": {
+      "count": 207993,
+      "trace_cov": 1952.4898681640625,
+      "R_bar_norm": 0.476110577583313,
+      "spherical_variance": 0.523889422416687,
+      "E_norm": 49.281009674072266,
+      "R": 279.0500183105469
+    }
+  }
+}

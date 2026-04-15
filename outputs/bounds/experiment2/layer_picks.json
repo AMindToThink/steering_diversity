@@ -1,0 +1,54 @@
+{
+  "qwen": {
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "target_layers": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25
+    ],
+    "single_layer_picks": [
+      10,
+      17,
+      25
+    ],
+    "policy": "edge_middle_edge"
+  },
+  "llama": {
+    "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "target_layers": [
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "single_layer_picks": [
+      16,
+      22,
+      29
+    ],
+    "policy": "edge_middle_edge"
+  }
+}

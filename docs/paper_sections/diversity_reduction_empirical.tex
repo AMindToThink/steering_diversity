@@ -1,0 +1,279 @@
+% diversity_reduction_empirical.tex
+% Intended to be \input{} or \include{} into a main paper file, after
+% diversity_reduction_theory.tex, diversity_reduction_geometric.tex,
+% diversity_reduction_conditions.tex, and diversity_reduction_synthesis.tex
+% have introduced the formal claims this file tests empirically.
+%
+% === INTEGRATION NOTES ===
+%
+% Cross-references to labels set in the theory sections:
+%   \Cref{prop:diversity-reduction}   -- Proposition 1 (covariance Taylor bound),
+%                                        in diversity_reduction_theory.tex
+%   \Cref{prop:concentration}         -- Proposition 2 (pole concentration),
+%                                        in diversity_reduction_geometric.tex
+%   \Cref{prop:pairwise}              -- Proposition 3 (Lipschitz contraction),
+%                                        in diversity_reduction_geometric.tex
+%   \Cref{cor:spherical-variance}     -- Corollary 1 (spherical variance bound),
+%                                        in diversity_reduction_geometric.tex
+%   \Cref{cor:pairwise-expected}      -- Corollary 2 (expected pairwise chord),
+%                                        in diversity_reduction_geometric.tex
+%   \Cref{cor:diameter}               -- Corollary 3 (diameter bound),
+%                                        in diversity_reduction_geometric.tex
+%   \Cref{eq:diversity-condition}     -- the reduction gate ||m+s||>||m||,
+%                                        in diversity_reduction_conditions.tex
+%   \Cref{sec:synthesis}              -- the synthesis / scaling-law section
+%
+% Required packages: amsmath, amssymb, amsthm, booktabs, cleveref
+%                    (cleveref for \Cref; booktabs for \toprule/\midrule/\bottomrule).
+%                    If the main paper prefers \ref over \Cref, s/\\Cref/\\ref/g.
+%
+% Required environments: theorem, proposition, definition, remark, proof
+%                        (standard with amsthm, already assumed by the other
+%                        diversity_reduction_*.tex files)
+%
+% Code + raw results for every number reported here live at
+%   https://github.com/AMindToThink/steering_diversity
+% under src/bounds/, scripts/bounds/, and outputs/bounds/. The exact scripts
+% that produced each number are cited inline as \texttt{scripts/bounds/...}.
+%
+% === END NOTES ===
+
+
+\section{Empirical Verification of the Diversity-Reduction Bounds}
+\label{sec:empirical-verification}
+
+We test the nine claims of \Cref{sec:diversity-reduction,sec:geometric-bound,sec:conditions,sec:synthesis} empirically on two open-weight decoder-only transformers, using steering vectors drawn from the public EasySteer library and a broad web-text distribution. The claims divide naturally into three groups: (i) exact global bounds whose validity is a geometric identity independent of the data (\Cref{prop:concentration,prop:pairwise,cor:diameter}); (ii) approximate local or asymptotic predictions whose tightness depends on the relationship between the steering magnitude and the residual-stream scale (\Cref{prop:diversity-reduction,cor:spherical-variance,cor:pairwise-expected}, and the scaling law of \Cref{sec:synthesis}); and (iii) conditions that determine whether the mechanism is even operating, such as the reduction gate of \Cref{eq:diversity-condition}. All three classes are tested against the same empirical scaffolding: run a large number of broad natural-language prompts through the model, intervene on the residual stream at a chosen set of layers, and compute streaming statistics at the final RMSNorm site.
+
+Full source code, configuration files, per-run output, and a master orchestration script for the full protocol are published at
+\url{https://github.com/AMindToThink/steering_diversity}
+under \texttt{src/bounds/}, \texttt{scripts/bounds/}, and \texttt{outputs/bounds/}. Every number reported in this section is reproducible by re-running \texttt{scripts/bounds/experiment2/run.sh}.
+
+\subsection{Setup}
+\label{sec:empirical-setup}
+
+\paragraph{Models.} We use two HuggingFace Transformers checkpoints spanning an order of magnitude in parameter count and architecture-dependent residual-stream norms:
+\begin{itemize}
+  \item \textbf{Qwen2.5-1.5B-Instruct}: hidden size $d = 1536$, $L = 28$ decoder blocks, RMSNorm, RoPE.
+  \item \textbf{Meta-Llama-3-8B-Instruct}: hidden size $d = 4096$, $L = 32$ decoder blocks, RMSNorm, RoPE.
+\end{itemize}
+Both architectures use Rotary Position Embedding applied inside attention (to query and key projections, not additively to the residual stream), so the residual stream never has a positional-embedding term added to it. No additive positional embedding appears in any of the empirical LHS or RHS quantities reported below.
+
+\paragraph{Data.} We use \texttt{HuggingFaceFW/fineweb-edu}, a broad, quality-filtered web-text corpus. Each run streams $1000$ documents from the \texttt{train} split, truncates each to the first $256$ tokens after tokenization, and applies one forward pass per document. Token-level activations (masked for padding) are the statistical unit. The choice of dataset is deliberate: we want a broad input distribution that stresses rather than cherry-picks the bounds, and \texttt{fineweb-edu} is among the broadest and most quality-controlled public pretraining corpora available as of 2025.
+
+\paragraph{Steering vectors.} We use three publicly released control vectors from the EasySteer library
+\footnote{\url{https://github.com/ZJU-REAL/EasySteer}}:
+\begin{itemize}
+  \item \texttt{happy\_diffmean.gguf}: a happy-vs-sad diff-mean vector trained on role-play prompts (``Act as if you are extremely happy/sad'', last-token contrast) on Qwen2.5-1.5B-Instruct, per-layer $L^2$-normalized.
+  \item \texttt{style-probe.gguf} (from the Steerable Chatbot replication): a style direction trained on stylistic contrast, also on Qwen2.5-1.5B-Instruct, covering layers $0$--$27$.
+  \item \texttt{create.gguf} (from the Creative Writing replication): a creativity direction trained on Llama-3-8B-Instruct, covering layers $16$--$29$.
+\end{itemize}
+All three are stored per-layer in GGUF format with unit $L^2$ norm at every layer; at inference time the residual stream at each target layer $\ell$ is updated as $x \leftarrow x + c \cdot s_\ell$ for a global scale $c$.
+
+\paragraph{Control vectors.} We use two random-direction controls:
+\begin{itemize}
+  \item \textbf{Per-layer-matched random.} For each target layer, draw $r_\ell \sim \mathcal{N}(0, I_d)$, then rescale so $\|r_\ell\| = \|s_\ell\|$ (which is $1$ for all three real vectors above). Each per-layer random vector has the same $L^2$ norm as its real counterpart.
+  \item \textbf{Aggregate-matched random.} Same per-layer draws, but rescale all per-layer vectors by a single common factor so that $\|\sum_\ell r_\ell\| = \|\sum_\ell s_\ell\|$ over the target-layer set. Because random unit vectors in high-dimensional space are near-orthogonal, their aggregate norm scales as $\sqrt{n}$ rather than $n$; matching aggregates therefore inflates each per-layer random vector by roughly $\sqrt{n}$. This is the control that isolates \emph{aggregate magnitude} from \emph{semantic direction}.
+\end{itemize}
+
+\paragraph{Pipeline.} For each configuration (model, steering vector, target layers, random-match mode) and each nominal scale $c \in \{0, 0.5, 1, 2, 4, 8\}$, we run $1000$ documents through the model in bfloat16, capture the pre- and post-RMSNorm residual at the final RMSNorm site, mask out padding tokens, and stream two classes of statistic:
+\begin{itemize}
+  \item A full $d\times d$ covariance matrix $\Sigma_x$, accumulated via a batched Chan--Golub--LeVeque Welford update to stay numerically stable in \texttt{float32}.
+  \item A reservoir of $K = 1024$ representative activation vectors, for pairwise claims that cannot be reduced to running statistics.
+\end{itemize}
+Raw activations are never written to disk. The full pipeline, its numerical-stability cross-checks against \texttt{numpy.cov} as ground truth, and the three-level architectural dispatcher required to handle GPT-2-style vs.\ Llama/Qwen-style decoder output layouts live under \texttt{src/bounds/} in the public repository. A hard-gated ``trust no silent steering'' verification step precedes every recording run: the verification script samples from the model both with and without steering and refuses to produce bounds statistics unless the steered samples demonstrably differ from the unsteered ones on both a KL-divergence and a residual-delta-magnitude criterion. This gate caught a batch-indexing regression we discuss in \Cref{sec:empirical-threats}.
+
+\paragraph{Total runs.} The full protocol comprises $19$ recording runs:
+\begin{itemize}
+  \item \textbf{Experiment 1} ($5$ runs): Qwen + \{\texttt{happy}, \texttt{style}, per-layer random matched to \texttt{happy}\}, and Llama + \{\texttt{creativity}, per-layer random matched to \texttt{creativity}\}. Target layers are the full trained range for each real vector.
+  \item \textbf{Experiment 2} ($14$ runs): two aggregate-matched random controls (one per model), plus a single-layer sweep at the edge/middle/edge of each trained layer range (Qwen happy at layers $\{10, 17, 25\}$; Llama creativity at layers $\{16, 22, 29\}$) for both the real and the per-layer-matched random vectors.
+\end{itemize}
+
+\subsection{Notation}
+\label{sec:empirical-notation}
+
+Let $x \in \mathbb{R}^d$ denote the residual-stream activation at the final RMSNorm site for a single token position of a single prompt, drawn from distribution $\mathcal{D}$. Let $s \in \mathbb{R}^d$ be a steering vector injected at the configured target layers. We use:
+\begin{itemize}
+  \item $\mu = \mathbb{E}[x]$ and $\Sigma_x = \operatorname{Cov}(x)$ under the unsteered distribution (nominal scale $c=0$).
+  \item $\mu_c, \Sigma_{x,c}$ under steering at scale $c > 0$.
+  \item $m = \mu + s$ and $\hat{m} = m/\|m\|$ in the idealized setting of the theory.
+  \item $\phi_s(x) = (x+s)/\|x+s\|$ for the unit-normalized steered sample.
+  \item $\bar{R} = \mathbb{E}[\phi_s(x)]$, the mean resultant vector on the unit sphere.
+  \item $V(\phi_s(\mathcal{D})) = 1 - \|\bar{R}\|$, the spherical variance.
+  \item $\Sigma_z = \operatorname{Cov}(\phi_s(x))$, the post-normalization covariance.
+  \item $R = \sup\{\|x\| : x \in \operatorname{supp}(\mathcal{D})\}$, the bounded-support radius.
+  \item $P_{\perp m} = I - \hat{m}\hat{m}^\top$, the projection orthogonal to the steered mean direction.
+\end{itemize}
+
+\paragraph{Effective steering.} The theory in \Cref{sec:diversity-reduction} treats $s$ as if it were added directly at the measured RMSNorm site. In practice $s$ is added at \emph{target layers} (typically middle layers of the decoder stack), and the residual then propagates through additional attention and MLP blocks before reaching the final RMSNorm. Writing out the theoretical relation at the final site requires an ``effective steering'' quantity that accounts for this propagation; we use
+\[
+  s_{\mathrm{eff}} \;:=\; \mu_c - \mu_0,
+\]
+the empirical mean shift of the pre-RMSNorm residual between the steered and unsteered runs at the same scale. By construction, $\|s_\mathrm{eff}\|$ is monotone in $c$ and captures the net effect of the steering after intermediate-block transformations. We report all theoretical RHS quantities using $s_\mathrm{eff}$ in place of $s$. For the three real vectors at their native target-layer ranges on their native models, $\|s_\mathrm{eff}\|$ scales approximately linearly in $c$.
+
+\subsection{Results by Claim}
+\label{sec:empirical-results}
+
+\Cref{tab:empirical-summary} summarizes all nine claims along with the tested quantities and the result across the $19$ recording runs. The remainder of this section discusses each in turn.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Empirical verification of the nine claims of \Cref{sec:diversity-reduction}. All results are aggregated across the $19$ recording runs of \Cref{sec:empirical-setup}.}
+  \label{tab:empirical-summary}
+  \begin{tabular}{@{}llp{0.50\linewidth}@{}}
+    \toprule
+    \# & Claim (condensed) & Result \\
+    \midrule
+    1 & $\operatorname{tr}(\Sigma_z) \approx \bigl(\operatorname{tr}(\Sigma_x) - \hat{m}^\top \Sigma_x \hat{m}\bigr)/\|m\|^2$
+      & Holds up to a loose constant. Empirical $\operatorname{tr}(\Sigma_z) / \mathrm{RHS}$ ratio $\approx 0.1$--$0.5$ across runs; bound is $2$--$10\times$ loose but in the right direction. \\
+    2 & $V \le 2\,\mathbb{E}\|x\| / \|s_{\mathrm{eff}}\|$ (\Cref{cor:spherical-variance})
+      & Passes at every scale on every run. Tightness varies: Llama + \texttt{creativity} at scale $8$ reaches $\mathrm{LHS}/\mathrm{RHS} = 0.19$; Qwen + \texttt{happy} at scale $8$ stays at $0.055$. \\
+    3 & $\max \|\phi_s(x) - \hat{s}\| \le 2\,\|x\|/\|s_{\mathrm{eff}}\|$ (\Cref{prop:concentration})
+      & \textbf{Passes at every scale in every run.} Strict geometric inequality. \\
+    4 & $\|\phi_s(x_1) - \phi_s(x_2)\| \le 2\,\|x_1 - x_2\|/(\|s\|-R)$, valid only for $\|s\|>R$ (\Cref{prop:pairwise})
+      & \textbf{Always inapplicable.} At all measured scales, $\|s_\mathrm{eff}\| < R$ at the final-RMSNorm site, so the bound's precondition is never satisfied. \\
+    5 & $\operatorname{diam}(\phi_s(\mathcal{D})) \le 4R/\|s_{\mathrm{eff}}\|$ (\Cref{cor:diameter})
+      & \textbf{Passes at every scale in every run.} Strict geometric inequality. \\
+    6 & $\mathbb{E}\|\phi_s(x_1) - \phi_s(x_2)\| \le 4\,\mathbb{E}\|x\|/\|s_{\mathrm{eff}}\|$ (\Cref{cor:pairwise-expected})
+      & Passes everywhere, typically loose. \\
+    7 & $\|\mu + s\| > \|\mu\|$ reduction gate (\Cref{eq:diversity-condition})
+      & \textbf{Fails} for Qwen + \texttt{happy} at every scale due to $\cos(\mu, \sum_\ell s_\ell) = -0.108$ on FineWeb-Edu; fails for Qwen single-layer interventions at layers $17$ and $25$ (for \emph{both} real and random directions, a direction-independent position effect). Passes elsewhere. \\
+    8 & Scaling law: $V \sim 1/\|s\|$ (log-log slope $-1$) and $\operatorname{tr}(\Sigma_z) \sim 1/\|s\|^2$ (slope $-2$), asymptotically (\Cref{sec:synthesis})
+      & Architecture- and magnitude-dependent. Manifests cleanly on Llama (empirical slope $V$ as steep as $-1.92$); does not manifest on Qwen at any tested scale. \textbf{At matched aggregate magnitude, random directions match trained directions} (Llama: $-1.85$ for aggregate-matched random vs.\ $-1.92$ for trained creativity). \\
+    9 & Smallest eigenvector of $\Sigma_z$ aligns with $\hat{m}$ (\Cref{sec:synthesis})
+      & Does not hold empirically. $|\cos|$ stays $\approx 0$ across runs with no clear trend. Weakest empirical signal in the study. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsubsection{Claims 3, 5: the exact geometric bounds}
+
+The pole-concentration bound of \Cref{prop:concentration} and the diameter bound of \Cref{cor:diameter} are strict inequalities derived directly from the chordal-distance lemma on the unit sphere. They hold for every value of $s$, every $x$, and every distribution $\mathcal{D}$. As expected, they pass at every scale in every one of the $19$ runs. No run has ever exhibited a violation, and a violation would unambiguously indicate a bug in either the streaming pipeline or the chordal-distance computation.
+
+These two bounds are the most reliable signal that the pipeline is functioning correctly; we verify them on every run as a smoke test before reporting any of the less-direct claims.
+
+\subsubsection{Claim 4: the Lipschitz bound is never applicable}
+\label{sec:claim4-inapplicable}
+
+The pairwise Lipschitz bound of \Cref{prop:pairwise} requires $\|s\| > R$ where $R = \sup \|x\|$. In practice, the effective steering magnitude $\|s_\mathrm{eff}\|$ at the final RMSNorm site is substantially smaller than $R$ at every scale we tested. Concretely, for Qwen + \texttt{happy} at the maximum scale $c=8$, we measured $\|s_\mathrm{eff}\| \approx 125$ and $R \approx 1100$; for Llama + \texttt{creativity} at the same scale, $\|s_\mathrm{eff}\| \approx 120$ and $R$ is similarly large. The bound's precondition is never satisfied, and the reported denominator $\|s\| - R$ would be negative. We therefore report Claim 4 as \emph{always inapplicable} at the final-RMSNorm site under realistic steering magnitudes, rather than reporting a spurious LHS/RHS ratio.
+
+This finding is not an indictment of \Cref{prop:pairwise}; it is an observation that the bound's regime of applicability is narrower than the other global bounds in \Cref{sec:geometric-bound} once one accounts for the distance between the injection site and the measurement site in a real multi-layer architecture. It suggests that the bound is best evaluated at or near the layer where steering is injected rather than at the final RMSNorm.
+
+\subsubsection{Claim 1: the Taylor bound on $\Sigma_z$}
+
+\Cref{prop:diversity-reduction}'s Taylor approximation $\operatorname{tr}(\Sigma_z) \approx (\operatorname{tr}(\Sigma_x) - \hat{m}^\top \Sigma_x \hat{m})/\|m\|^2$ holds in the sense of direction: the predicted RHS is always within $2$--$10\times$ of the empirical LHS across all runs, with ratio $\mathrm{LHS}/\mathrm{RHS}$ typically in $[0.1, 0.5]$. The approximation's looseness is a natural consequence of the truncation: \Cref{prop:diversity-reduction} is a first-order expansion around the steered mean, and the empirical residual stream is not close to a delta at $m$ in any practical sense. We regard Claim 1 as \emph{qualitatively correct} at the final-site measurement, and note that tighter quantitative agreement is not expected without a higher-order expansion.
+
+\subsubsection{Claims 2, 6: global spherical-variance and expected-pairwise bounds}
+
+\Cref{cor:spherical-variance,cor:pairwise-expected} hold everywhere. Their tightness is the scientifically interesting quantity: how close is the empirical spherical variance to its bound? The answer depends strongly on whether the run is in the asymptotic regime of \Cref{sec:synthesis}, which we take up next.
+
+\subsubsection{Claim 8: the $1/\|s\|$ scaling law}
+\label{sec:empirical-scaling}
+
+\Cref{sec:synthesis} predicts that in the asymptotic regime $\|s\| \to \infty$, the spherical variance scales as $V \sim \|s\|^{-1}$ and the post-normalization covariance trace as $\operatorname{tr}(\Sigma_z) \sim \|s\|^{-2}$. On a log-log plot of the empirical LHS against $\|s_\mathrm{eff}\|$, this predicts slopes of $-1$ and $-2$, respectively. We estimate the empirical slopes via log-log linear regression across the scale sweep $c \in \{0.5, 1, 2, 4, 8\}$ for every run.
+
+\Cref{tab:empirical-scaling} collects the results. The finding is striking and departs from the per-vector story one might expect from \Cref{sec:synthesis}.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \caption{Claim 8 empirical slopes. Theoretical prediction: slope $V = -1$, slope $\operatorname{tr}(\Sigma_z) = -2$. Rows grouped by model and sorted by magnitude of slope $V$.}
+  \label{tab:empirical-scaling}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    Run & slope $V$ & slope $\operatorname{tr}(\Sigma_z)$ \\
+    \midrule
+    \multicolumn{3}{l}{\emph{Meta-Llama-3-8B-Instruct:}} \\
+    \texttt{llama\_creativity} (trained, full target range) & $\mathbf{-1.921}$ & $-1.773$ \\
+    \texttt{llama\_random\_agg\_matched} (aggregate-matched random) & $\mathbf{-1.851}$ & $-1.710$ \\
+    \texttt{llama\_random} (per-layer-matched random) & $-0.514$ & $-0.410$ \\
+    \texttt{llama\_creativity\_single\_L16} (single-layer, edge-early) & $-0.060$ & $-0.036$ \\
+    \texttt{llama\_creativity\_single\_L22} (single-layer, middle) & $-0.055$ & $-0.033$ \\
+    \texttt{llama\_creativity\_single\_L29} (single-layer, edge-late) & $-0.029$ & $-0.017$ \\
+    \texttt{llama\_random\_single\_L\{16,22,29\}} & $-0.03$ to $-0.04$ & $-0.02$ \\
+    \midrule
+    \multicolumn{3}{l}{\emph{Qwen2.5-1.5B-Instruct:}} \\
+    \texttt{qwen\_style} & $-0.285$ & $-0.254$ \\
+    \texttt{qwen\_random\_agg\_matched} (aggregate-matched random) & $-0.196$ & $-0.172$ \\
+    \texttt{qwen\_random} (per-layer-matched random) & $-0.035$ & $-0.029$ \\
+    \texttt{qwen\_happy} & $-0.018$ & $-0.015$ \\
+    \texttt{qwen\_happy\_single\_L\{10,17,25\}} & $\approx 0$ & $\approx 0$ \\
+    \texttt{qwen\_random\_single\_L\{10,17,25\}} & $\approx 0$ & $\approx 0$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Two observations dominate.
+
+First, \textbf{on Llama-3-8B, the $1/\|s\|$ asymptotic scaling predicted by \Cref{sec:synthesis} manifests cleanly and even somewhat overshoots}: both the trained \texttt{creativity} vector and the aggregate-matched random control hit slope $V$ values (roughly $-1.9$) steeper than the theoretical $-1$. The overshoot reflects the fact that at the largest tested scales, the model's output is already collapsing into gibberish, pushing the spherical distribution past the regime the first-order asymptotic captures.
+
+Second, \textbf{the aggregate-matched random control nearly reproduces the trained vector's scaling behavior} on Llama ($-1.85$ vs.\ $-1.92$). This is the key finding of Experiment 2: the Claim 8 scaling law is not fundamentally about \emph{semantic direction}; it is about \emph{aggregate steering magnitude} relative to the natural residual-stream scale. In \Cref{sec:empirical-agg-matched} below we unpack how this observation reconciles the apparent ``trained vectors are special'' pattern seen in Experiment 1 alone.
+
+On Qwen2.5-1.5B the picture is different: no tested run reaches the asymptotic regime, and empirical slopes stay in the interval $[-0.3, 0]$. This is consistent with a magnitude argument rather than a model-specific limitation of the theory. Qwen's unsteered residual norm $\|\mu\|$ at the final site is approximately $215$, and its average sample norm $\mathbb{E}\|x\|$ is approximately $300$; even at nominal scale $c = 8$, the maximum $\|s_\mathrm{eff}\| \approx 125$ remains well below this natural scale. The bound of \Cref{cor:spherical-variance} becomes tight in the regime $\|s_\mathrm{eff}\| \gtrsim \mathbb{E}\|x\|$; Qwen never reaches that regime because the model's output becomes unusable well before $c$ grows enough to drive $\|s_\mathrm{eff}\|$ into it.
+
+\subsubsection{Claim 7: the reduction condition is sensitive to direction-distribution alignment}
+\label{sec:empirical-claim7}
+
+The reduction condition of \Cref{eq:diversity-condition} states that $\|m+s\| > \|m\|$ iff $2\,m^\top s + \|s\|^2 > 0$. Equivalently, steering reduces diversity (in the sense of \Cref{prop:diversity-reduction}) iff $\cos(\mu, s) > -\|s\|/(2\|\mu\|)$. This is an algebraic identity whose empirical status depends on the alignment between the steering vector and the unsteered residual-stream mean under the evaluation distribution.
+
+In Experiment 1, four of the five configurations pass Claim 7 at every scale: Qwen + \texttt{style}, Qwen + per-layer random, Llama + \texttt{creativity}, Llama + per-layer random. One configuration, Qwen + \texttt{happy}, \emph{fails} Claim 7 at every scale. The diagnostic for this failure is self-contained and is the subject of a separate investigation documented at \texttt{scripts/bounds/investigations/03\_investigate\_happy\_data\_alignment.py}. The finding: on FineWeb-Edu, $\cos(\mu_\mathrm{unsteered}, \sum_{\ell} s^\mathrm{happy}_\ell) = -0.108$, roughly $4\sigma$ away from the null distribution of random-direction cosines in $1536$-dimensional space (where $\mathbb{E}|\cos| \approx 1/\sqrt{d} \approx 0.026$). The negative alignment is small in absolute value but systematic: $12$ of the $16$ per-layer cosines are negative.
+
+Projecting $\mu_\mathrm{unsteered}$ through Qwen's final RMSNorm and \texttt{lm\_head} shows that the residual mean's dominant contribution is to function words and punctuation, not to emotionally-loaded vocabulary; the data is \emph{tone-neutral}, not ``sad.'' What produces the Claim 7 failure is the fact that the \texttt{happy\_diffmean} vector was trained on a happy-vs-sad role-play contrast, and educational prose at Qwen's representation sits slightly on the ``sad'' side of that axis --- enough to put $\mu \cdot s$ just negative enough that at small steering magnitudes the $2\mu^\top s$ term dominates the $\|s\|^2$ term, flipping the sign of $\|m+s\|^2 - \|m\|^2$.
+
+Experiment 2 produced a second, and less expected, Claim 7 failure pattern. At Qwen single-layer steering sites $L17$ and $L25$, Claim 7 fails at every scale for \emph{both} the real happy direction \emph{and} the random direction. At single-layer site $L10$, Claim 7 passes at every scale for both. This is a direction-independent, position-dependent effect. The most natural interpretation is that steering at early layers gets amplified by the variance-growth pattern of subsequent attention and MLP blocks before reaching the final RMSNorm site, so $\|s_\mathrm{eff}\|$ at the measurement site is large enough that $\|s_\mathrm{eff}\|^2$ dominates $2\mu^\top s_\mathrm{eff}$. Steering at late layers has only two to four blocks of downstream processing, so $\|s_\mathrm{eff}\|$ stays small and the sign of $\mu^\top s_\mathrm{eff}$ determines the outcome.
+
+The practical implication for future work is that \Cref{eq:diversity-condition} should not be assumed; it should be \emph{verified as a precondition} before reporting any of the diversity-reduction claims on a new $(\text{model}, \text{steering vector}, \text{dataset})$ triple. A loaded steering vector acting on a dataset whose residual mean happens to be mildly anti-aligned with its training pool can produce a systematic Claim 7 failure at small scales even when the bound would hold at larger ones.
+
+\subsubsection{Claim 9: the alignment claim is not observed}
+
+\Cref{sec:synthesis} predicts that as $\|s\| \to \infty$, the smallest-eigenvalue eigenvector of $\Sigma_z$ aligns with $\hat{m}$. Empirically, $|\cos|$ between this eigenvector and $\hat{m}$ stays near zero across all $19$ runs with no clear monotone trend in $c$. This is the single empirical claim for which we do not have supporting evidence.
+
+Three explanations are plausible and we do not presently distinguish between them. First, the reservoir-based estimate of $\Sigma_z$ may be too noisy in high dimension to recover the smallest eigenvector reliably --- even with $K = 1024$ samples, the smallest eigenvectors of a $d = 1536$ or $d = 4096$ covariance matrix are difficult to pin down. Second, the theoretical $\hat{m}$ is the raw steering direction added at the target layers, but the \emph{effective} direction at the final RMSNorm site is a propagated and rotated version of this quantity; the predicted axis may be wrong by an unknown rotation. Third, \Cref{sec:synthesis}'s alignment claim is the least direct of the nine and may simply fail under the realistic distributional conditions of these experiments. Future work should attempt to evaluate this claim at the layer \emph{where the steering is injected}, where the theoretical $\hat{m}$ is most clearly identified.
+
+\subsection{Experiment 2: Isolating Direction from Magnitude}
+\label{sec:empirical-agg-matched}
+
+A naive reading of the Experiment 1 results (restricted to the three trained vectors and the two per-layer-matched random controls) suggests that \emph{trained steering directions are special}: they drive the Claim 8 scaling law much harder than random directions do, even at matched per-layer magnitude. Experiment 2 was designed to separate two hypotheses that Experiment 1 confounds:
+\begin{enumerate}
+  \item \textbf{Direction-semantics hypothesis.} Trained steering vectors point along a privileged direction in representation space that matters for the bounds. Random directions fail because they are not this direction.
+  \item \textbf{Magnitude hypothesis.} Trained steering vectors stack \emph{coherently} across target layers (because they are trained to encode a single semantic attribute at every layer), so $\|\sum_\ell s_\ell\|$ grows roughly linearly in the number of target layers. Random directions are near-orthogonal in high-dimensional space, so their aggregate grows only as $\sqrt{n}$. The ``trained vs.\ random'' gap in Experiment 1 is essentially the difference between a $n$-scaling and a $\sqrt{n}$-scaling in aggregate steering magnitude, applied at the same nominal scale $c$.
+\end{enumerate}
+
+The two hypotheses make opposite predictions for the aggregate-matched random control, in which we rescale per-layer random vectors so their aggregate norm $\|\sum_\ell r_\ell\|$ equals the trained vector's aggregate norm $\|\sum_\ell s_\ell\|$. Under the direction-semantics hypothesis, the aggregate-matched random control should still behave like random (shallow slopes, little asymptotic behavior) because the direction is still wrong. Under the magnitude hypothesis, the aggregate-matched random control should behave like the trained vector, because the only relevant quantity is aggregate magnitude and we have just equated it.
+
+\Cref{tab:empirical-scaling} shows that Experiment 2 strongly supports the magnitude hypothesis. On Llama-3-8B, the trained \texttt{creativity} vector has slope $V = -1.921$; the aggregate-matched random control has slope $V = -1.851$. The difference of $0.07$ is at the level of regression noise and does not support a direction-semantics effect. On Qwen2.5-1.5B the equivalent comparison --- \texttt{qwen\_random\_agg\_matched} at slope $-0.196$ against the nearest trained-vector analogue \texttt{qwen\_style} at slope $-0.285$ --- similarly fails to show a direction advantage, although it is harder to evaluate cleanly because Qwen does not reach the asymptotic regime.
+
+We conclude that the Claim 8 scaling law is essentially \emph{insensitive to direction} in the asymptotic regime: any direction that achieves comparable aggregate steering magnitude produces comparable spherical concentration. The apparent ``trained vectors drive the bound harder'' pattern of Experiment 1 was almost entirely an artifact of how per-layer-matched random controls underestimate the aggregate magnitude.
+
+This has two practical implications. First, the bounds of \Cref{sec:synthesis} are a statement about \emph{aggregate magnitude} rather than about privileged semantic directions: if all we care about is whether the post-normalization distribution concentrates, any sufficiently-large direction will do. Second, evaluating the bounds requires accounting for the stacking behavior of the steering vector --- a per-layer-matched random control, at the same nominal scale $c$, delivers less aggregate steering than a coherently-trained vector and therefore underestimates the tightness of the bound on an apples-to-apples basis. Future empirical work on these bounds should report results against an aggregate-matched random baseline rather than a per-layer-matched one.
+
+The single-layer sweeps in Experiment 2 tell a complementary story. Intervening at only one layer gives much less aggregate steering than a full target-range intervention; the resulting $\|s_\mathrm{eff}\|$ at the final site is correspondingly much smaller, and slopes collapse toward zero. On Qwen, single-layer slopes are indistinguishable from zero for all six single-layer runs (three layers, real and random). On Llama, single-layer slopes are in $[-0.06, -0.03]$ with no meaningful difference between real and random at the same layer. Both patterns are consistent with the magnitude-based interpretation: less aggregate steering means less asymptotic behavior.
+
+\subsection{Meta-findings and threats to validity}
+\label{sec:empirical-threats}
+
+Three non-theoretical findings shaped the final form of the experiments and merit note.
+
+\paragraph{A silent batch-indexing bug contaminated the first run of Experiment 1.}
+In HuggingFace Transformers version $\geq 4.40$, the \texttt{forward} method of Qwen2 and Llama3 decoder layers returns the hidden state as a bare $[B, T, d]$ tensor rather than as a $1$-tuple $(h,)$. An intervention helper in our original \texttt{nnsight}-based steering path used \texttt{layer.output[0][:] = layer.output[0] + s}, intending to unpack the tuple; on these architectures, this expression instead \emph{indexes into the batch dimension}, steering only prompt $0$ of each batch. The bug was silent in the sense that it produced no error, the verification harness's KL-divergence gate still passed (because prompt $0$ did shift), and the pipeline ran to completion. We discovered the bug only when writing a per-layer diagnostic that emitted a shape mismatch. CPU unit tests on \texttt{tiny-gpt2} passed throughout because GPT-2 still returns a $1$-tuple. The fix adds an architecture-dispatching helper and shape assertions at every capture-materialization point; a dedicated regression test now verifies that every batch element sees the intervention. All results reported in this section are from after the fix; the contaminated results are preserved at \texttt{discarded/corrupted\_bounds\_batch\_bug/} in the repository for audit.
+
+\paragraph{The \texttt{welford-torch} library has a numerical-stability issue in float32.}
+Our streaming covariance accumulators initially delegated to the public \texttt{welford-torch} library. A cross-check against \texttt{numpy.cov} on synthetic data with $\mu \approx 1000$ and $\sigma \approx 0.01$ revealed that \texttt{welford-torch}'s \texttt{OnlineCovariance.add\_all} loses more than $100\%$ relative accuracy on the trace of the covariance matrix in \texttt{float32}, due to catastrophic cancellation in its two-step delta formulation for small-batch updates in a large-mean regime. The bounds pipeline uses a hand-rolled Chan--Golub--LeVeque batched Welford merge instead, which stays numerically stable in the same regime. We filed an upstream bug report and documented a reproducer at \texttt{docs/upstream\_bug\_reports/welford\_torch\_big\_mean\_drift/} in the repository.
+
+\paragraph{The choice of steering-vector training pool affects \Cref{eq:diversity-condition}.}
+As discussed in \Cref{sec:empirical-claim7}, the failure of Claim 7 for Qwen + \texttt{happy} is driven by a systematic but small anti-alignment between the training-pool difference direction and the evaluation-distribution residual mean. This is not a finding about the \emph{theory} of \Cref{sec:conditions} --- \Cref{eq:diversity-condition} is an algebraic identity --- but about the \emph{empirical preconditions} under which the bound can be applied. The lesson is that the reduction gate should always be explicitly checked on the evaluation distribution before reporting downstream bound results.
+
+\subsection{Summary}
+\label{sec:empirical-summary}
+
+The empirical picture is consistent with the theory of \Cref{sec:diversity-reduction,sec:geometric-bound,sec:conditions,sec:synthesis} modulo two nuances.
+
+First, the \emph{exact} geometric bounds of \Cref{prop:concentration,cor:diameter} hold in every run we have performed and are the most reliable signal that the theory is a correct geometric identity rather than an empirical claim. \Cref{prop:pairwise}'s Lipschitz contraction, while also exact, is inapplicable at the final-RMSNorm measurement site under realistic steering magnitudes, because the precondition $\|s\|>R$ is not met.
+
+Second, the \emph{approximate} and \emph{asymptotic} bounds of \Cref{prop:diversity-reduction} and \Cref{sec:synthesis} are correct in direction but their tightness depends strongly on aggregate steering magnitude relative to the natural residual-stream scale. They manifest cleanly on Llama-3-8B at scales the model can tolerate and do \emph{not} manifest on Qwen2.5-1.5B because the residual-stream norm is too large to let any tested scale push into the asymptotic regime.
+
+Third, Experiment 2's aggregate-matched random control provides a clean disentanglement of direction from magnitude: \emph{the bounds depend on aggregate magnitude, not semantic direction}. Random unit vectors with matched aggregate norm drive the Claim 8 scaling law essentially as hard as trained vectors. This is the single most important empirical finding of the paper's empirical component, and it should shape how future work reports ``random baseline'' controls for steering-bound evaluation.
+
+Fourth, the reduction condition of \Cref{eq:diversity-condition} is sensitive to an incidental anti-alignment between the steering vector's training direction and the evaluation distribution's residual mean. This is not a flaw in the theory but a precondition-checking requirement: applications of these bounds to new $(\text{model}, \text{vector}, \text{dataset})$ combinations should verify $\|m+s\| > \|m\|$ empirically before trusting downstream numbers.
+
+Finally, Claim 9's alignment prediction lacks empirical support at the measurement site used here. We recommend future work evaluate it at the steering-injection layer rather than at the final RMSNorm.

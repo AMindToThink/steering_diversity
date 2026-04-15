@@ -246,4 +246,15 @@ outputs/bounds/bounds_*/verification/*
 !outputs/bounds/bounds_*/verification/FAILED
 !outputs/bounds/bounds_*/verification/scale_*.json
 
+# Also track the experiment 2 orchestration artifacts (per-layer
+# diagnostic, layer picks, summary table, run log). These are small
+# JSON/log files that let a reviewer see what the run decided without
+# having to re-execute it.
+!outputs/bounds/experiment2/
+!outputs/bounds/experiment2/summary.md
+!outputs/bounds/experiment2/layer_picks.json
+!outputs/bounds/experiment2/diagnostic_qwen.json
+!outputs/bounds/experiment2/diagnostic_llama.json
+!outputs/bounds/experiment2/run.log
+
 .claude/settings.local.json

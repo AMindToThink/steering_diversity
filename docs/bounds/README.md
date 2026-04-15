@@ -40,6 +40,90 @@ Across all 5 runs at the project's operating scales `[0, 0.5, 1, 2, 4, 8]`:
 
 - **Claim 7 (reduction condition `‖μ+s‖ > ‖μ‖`) fails for `qwen_happy` at every scale.** Root cause confirmed by token‑level projection: the `happy_diffmean.gguf` vector was trained on happy‑vs‑sad role-play prompts ("Act as if you're extremely happy/sad"), and FineWeb-Edu's residual mean `μ` is mildly anti-aligned with it (`cos(μ, Σ layer happy) = −0.108`, ~4σ from random; see [`scripts/bounds/investigations/03_investigate_happy_data_alignment.py`](../../scripts/bounds/investigations/03_investigate_happy_data_alignment.py) for the re-runnable probe). Adding the happy direction deflects `μ` sideways rather than elongating it, so `‖μ + s_eff‖ < ‖μ‖` at small scales. The other four configs (`qwen_style`, `qwen_random`, `llama_creativity`, `llama_random`) pass Claim 7 everywhere.
 
+## Experiment 2: aggregate-matched random + single-layer sweep
+
+After Experiment 1's "scaling law manifests on Llama but not Qwen" finding,
+two controls were added to disentangle competing explanations:
+
+1. **Aggregate-matched random (2 runs)** — drop the per-layer L2 matching
+   and instead rescale random vectors uniformly so ``‖Σ r_i‖`` equals
+   ``‖Σ h_i‖`` over the target layers. The original per-layer match
+   produced aggregate random ``~√n`` smaller than real (because random
+   directions don't stack coherently), confounding "direction matters"
+   with "aggregate magnitude matters."
+2. **Single-layer sweep (12 runs)** — intervene at a single layer per
+   prompt, picked edge/middle/edge of the target range (Qwen happy at
+   L10/L17/L25, Llama creativity at L16/L22/L29), with a matched random
+   control at each picked layer.
+
+### Key result: aggregate magnitude dominates semantic direction for Claim 8
+
+| Run | slope V | slope tr(Σ) |
+|---|---:|---:|
+| `bounds_llama_creativity` (real, from Experiment 1) | **−1.921** | −1.773 |
+| [`bounds_llama_random_agg_matched`](../../outputs/bounds/bounds_llama_random_agg_matched/plots/) | **−1.851** | −1.710 |
+| `bounds_llama_random` (per-layer matched, Experiment 1) | −0.514 | −0.410 |
+
+At matched aggregate ``‖Σ s_i‖``, a **random** steering direction drives
+Llama's spherical-variance scaling almost as hard as the trained creativity
+direction does (−1.85 vs −1.92). The Experiment 1 "random has a shallow
+slope" finding was almost entirely explained by the ~3× aggregate-norm gap
+between per-layer-matched random and the real vector. With that gap closed,
+**the Claim-8 scaling law isn't really about semantic direction, it's
+about aggregate magnitude in the asymptotic regime**.
+
+Qwen shows the same *pattern* in miniature: `bounds_qwen_random_agg_matched`
+has slope_V = **−0.196**, clearly negative and ~5× more asymptotic than
+per-layer-matched random (−0.035). It's still far from the theoretical
+−1 because Qwen2.5-1.5B's residual stream norms are so large that even
+the aggregate-matched magnitude can't push into the asymptotic regime.
+
+![llama_random_agg_matched scaling law](../../outputs/bounds/bounds_llama_random_agg_matched/plots/scaling_law.png)
+
+### Single-layer: the intervention mostly doesn't bite
+
+Single-layer slopes are near zero on both models — the effective
+``‖s_eff‖`` from a one-layer intervention is too small to reach asymptotic
+behavior. The detailed numbers:
+
+| Run | slope V | slope tr(Σ) | Claim 7 |
+|---|---:|---:|:---:|
+| `bounds_qwen_happy_single_L10` | −0.004 | −0.004 | all pass |
+| `bounds_qwen_happy_single_L17` | +0.005 | +0.004 | **all fail** |
+| `bounds_qwen_happy_single_L25` | +0.003 | +0.002 | **all fail** |
+| `bounds_qwen_random_single_L10` | −0.004 | −0.003 | all pass |
+| `bounds_qwen_random_single_L17` | +0.003 | +0.002 | **all fail** |
+| `bounds_qwen_random_single_L25` | +0.000 | +0.000 | mixed |
+| `bounds_llama_creativity_single_L16` | −0.060 | −0.036 | mixed |
+| `bounds_llama_creativity_single_L22` | −0.055 | −0.033 | all pass |
+| `bounds_llama_creativity_single_L29` | −0.029 | −0.017 | all pass |
+| `bounds_llama_random_single_L16` | −0.039 | −0.023 | all pass |
+| `bounds_llama_random_single_L22` | −0.043 | −0.026 | all pass |
+| `bounds_llama_random_single_L29` | −0.031 | −0.018 | all pass |
+
+### New finding: single-layer Claim 7 failures at late layers on Qwen, even for random
+
+`qwen_happy_single_L17` and `_L25` fail Claim 7 at every scale — but so do
+the **random** versions at the same layers (`qwen_random_single_L17` fully
+fails, `_L25` is mixed). This is NOT the "happy is anti-aligned with μ"
+story from Experiment 1 (that failure was specific to the happy direction).
+It's a position-dependent effect that affects any direction.
+
+Probable mechanism: single-layer steering at L10 has 15 more decoder
+blocks downstream to amplify the intervention via the variance-growth
+effect. By the final-site measurement, ``‖s_eff‖`` is large enough that
+``‖s‖²`` dominates ``2μ·s`` and Claim 7 passes. Late single-layer
+steering at L25 doesn't have time to amplify (only layers 26, 27 left),
+so ``‖s_eff‖`` stays small and the sign of ``μ·s`` matters — which
+fluctuates near zero for both directions and tips negative more often
+than not.
+
+The Experiment 2 orchestration script + configs are at
+[`scripts/bounds/experiment2/`](../../scripts/bounds/experiment2/) and
+[`configs/bounds/experiment2/`](../../configs/bounds/experiment2/). Full
+per-run details live in
+[`outputs/bounds/experiment2/summary.md`](../../outputs/bounds/experiment2/summary.md).
+
 ## Historical note
 
 Results were re-run end-to-end after a batch‑indexing bug in

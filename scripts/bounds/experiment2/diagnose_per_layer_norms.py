@@ -75,7 +75,10 @@ def run_diagnostic(
 
         embed = None
         layer_outs: list = []
-        with lm.trace(enc):
+        # ``torch.inference_mode()`` prevents the gradient graph from being
+        # held across the trace. Without this, saving all 32 Llama layers
+        # simultaneously blows up to >44 GB (OOM on a Quadro RTX 8000).
+        with torch.inference_mode(), lm.trace(enc):
             embed = lm.model.embed_tokens.output.save()
             for i in range(n_layers):
                 if tuple_output:

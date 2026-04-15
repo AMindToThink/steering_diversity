@@ -1,0 +1,41 @@
+{
+  "scale": 4.0,
+  "prompts": [
+    "Once upon a time, in a forest deep,",
+    "Write the opening of a mystery novel:",
+    "Describe an alien landscape:",
+    "Tell me a story about a clockmaker:"
+  ],
+  "samples_unsteered": [
+    "Once upon a time, in a forest deep, there lived a young and curious fox named Riki. Riki was always getting into trouble, exploring the forest, and asking questions. He was known for his",
+    "Write the opening of a mystery novel: \"The Shadow in the Night\"\nThe darkness crept in like a thief, stealing the light from the city streets. It was as if the very shadows themselves",
+    "Describe an alien landscape: The planet of Xylophia-IV is a barren, rocky world with a perpetual crimson sky. The ground is cracked and dry, with jagged out",
+    "Tell me a story about a clockmaker: The clockmaker's journey\nThe clockmaker's journey began in a small village nestled in the rolling hills of the countryside. He was a young man named Thomas"
+  ],
+  "samples_steered": [
+    "Once upon a time, in a forest deep, there lived a young and curious rabbit named Rosie. Rosie loved to explore and learn about the world around her. She would often venture out of her burrow to",
+    "Write the opening of a mystery novel: \"The Shadow in the Night\"\nThe darkness crept in like a thief, stealing the light from the city streets. It was as if the very shadows themselves",
+    "Describe an alien landscape: The planet of Xylophia-IV is a desolate, barren world, with a crimson-red sky that seems to glow with an otherworldly energy",
+    "Tell me a story about a clockmaker: The clockmaker's apprentice\nThe clockmaker's apprentice\nI had always been fascinated by the intricate mechanisms of clocks. As a child, I would spend hours"
+  ],
+  "checks": [
+    {
+      "name": "kl_next_token",
+      "value": 0.04280195478349924,
+      "threshold": 0.005,
+      "passed": true,
+      "detail": "mean KL over last real token of 4 prompts"
+    },
+    {
+      "name": "residual_delta_magnitude_ratio",
+      "value": 0.1577476159931406,
+      "threshold": 0.02,
+      "passed": true,
+      "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
+    }
+  ],
+  "info": {
+    "residual_delta_cosine_vs_layer_sum": 0.5783131867647171
+  },
+  "passed": true
+}

@@ -1,0 +1,154 @@
+
+==============================================================
+  Phase 3: generate config YAMLs
+  started at Mon Apr 13 04:11:35 UTC 2026
+==============================================================
+Wrote 14 configs to configs/bounds/experiment2:
+  qwen_random_agg_matched.yaml
+  llama_random_agg_matched.yaml
+  qwen_happy_single_L10.yaml
+  qwen_random_single_L10.yaml
+  qwen_happy_single_L17.yaml
+  qwen_random_single_L17.yaml
+  qwen_happy_single_L25.yaml
+  qwen_random_single_L25.yaml
+  llama_creativity_single_L16.yaml
+  llama_random_single_L16.yaml
+  llama_creativity_single_L22.yaml
+  llama_random_single_L22.yaml
+  llama_creativity_single_L29.yaml
+  llama_random_single_L29.yaml
+
+==============================================================
+  Phase 4: verify all configs
+  started at Mon Apr 13 04:11:35 UTC 2026
+==============================================================
+[gpu-check] 04:11:35 — checking nvidia-smi ...
+[gpu-check]   GPU 0: 15 MiB used (OK)
+[gpu-check]   GPU 1: 5 MiB used (OK)
+[verify GPU0] qwen_random_agg_matched.yaml
+[verify GPU1] llama_random_agg_matched.yaml
+[verify GPU0] qwen_happy_single_L10.yaml
+[verify GPU1] llama_creativity_single_L16.yaml
+[verify GPU0] qwen_happy_single_L17.yaml
+[verify GPU0] qwen_happy_single_L25.yaml
+[verify GPU1] llama_creativity_single_L22.yaml
+[verify GPU0] qwen_random_single_L10.yaml
+[verify GPU1] llama_creativity_single_L29.yaml
+[verify GPU0] qwen_random_single_L17.yaml
+[verify GPU0] qwen_random_single_L25.yaml
+[verify GPU1] llama_random_single_L16.yaml
+[verify GPU1] llama_random_single_L22.yaml
+[verify GPU1] llama_random_single_L29.yaml
+[phase4] all verifications passed
+
+==============================================================
+  Phase 5: record all configs
+  started at Mon Apr 13 04:13:51 UTC 2026
+==============================================================
+[gpu-check] 04:13:51 — checking nvidia-smi ...
+[gpu-check]   GPU 0: 15 MiB used (OK)
+[gpu-check]   GPU 1: 5 MiB used (OK)
+[record GPU0] 04:13:51 qwen_random_agg_matched.yaml
+[record GPU1] 04:13:51 llama_random_agg_matched.yaml
+[record GPU0] qwen_random_agg_matched.yaml done in 461s
+[record GPU0] 04:21:32 qwen_happy_single_L10.yaml
+[record GPU0] qwen_happy_single_L10.yaml done in 459s
+[record GPU0] 04:29:11 qwen_happy_single_L17.yaml
+[record GPU0] qwen_happy_single_L17.yaml done in 459s
+[record GPU0] 04:36:50 qwen_happy_single_L25.yaml
+[record GPU0] qwen_happy_single_L25.yaml done in 458s
+[record GPU0] 04:44:28 qwen_random_single_L10.yaml
+[record GPU1] llama_random_agg_matched.yaml done in 2049s
+[record GPU1] 04:48:00 llama_creativity_single_L16.yaml
+[record GPU0] qwen_random_single_L10.yaml done in 462s
+[record GPU0] 04:52:10 qwen_random_single_L17.yaml
+[record GPU0] qwen_random_single_L17.yaml done in 458s
+[record GPU0] 04:59:48 qwen_random_single_L25.yaml
+[record GPU0] qwen_random_single_L25.yaml done in 461s
+[record GPU1] llama_creativity_single_L16.yaml done in 2047s
+[record GPU1] 05:22:07 llama_creativity_single_L22.yaml
+[record GPU1] llama_creativity_single_L22.yaml done in 2044s
+[record GPU1] 05:56:11 llama_creativity_single_L29.yaml
+[record GPU1] llama_creativity_single_L29.yaml done in 2044s
+[record GPU1] 06:30:15 llama_random_single_L16.yaml
+[record GPU1] llama_random_single_L16.yaml done in 2042s
+[record GPU1] 07:04:17 llama_random_single_L22.yaml
+[record GPU1] llama_random_single_L22.yaml done in 2042s
+[record GPU1] 07:38:19 llama_random_single_L29.yaml
+[record GPU1] llama_random_single_L29.yaml done in 2041s
+[phase5] all records complete
+
+==============================================================
+  Phase 6: compute bounds + render plots (CPU)
+  started at Mon Apr 13 08:12:20 UTC 2026
+==============================================================
+[compute] bounds_qwen_random_agg_matched
+[compute] bounds_qwen_happy_single_L10
+[compute] bounds_qwen_happy_single_L17
+[compute] bounds_qwen_happy_single_L25
+[compute] bounds_qwen_random_single_L10
+[compute] bounds_qwen_random_single_L17
+[compute] bounds_qwen_random_single_L25
+[compute] bounds_llama_random_agg_matched
+[compute] bounds_llama_creativity_single_L16
+[compute] bounds_llama_creativity_single_L22
+[compute] bounds_llama_creativity_single_L29
+[compute] bounds_llama_random_single_L16
+[compute] bounds_llama_random_single_L22
+[compute] bounds_llama_random_single_L29
+[phase6] all compute+viz done
+
+==============================================================
+  Phase 7: summary table
+  started at Mon Apr 13 08:19:22 UTC 2026
+==============================================================
+# Experiment 2 summary
+
+## Runs
+
+| run | description | slope V | slope tr(Σ) | Claim 7 |
+|---|---|---:|---:|:---:|
+| `bounds_llama_creativity_single_L16` | REAL L16 | -0.060 | -0.036 | mixed |
+| `bounds_llama_creativity_single_L22` | REAL L22 | -0.055 | -0.033 | all pass |
+| `bounds_llama_creativity_single_L29` | REAL L29 | -0.029 | -0.017 | all pass |
+| `bounds_llama_random_agg_matched` | RAND(aggregate) L16-29 | -1.851 | -1.710 | all pass |
+| `bounds_llama_random_single_L16` | RAND(per_layer) L16 | -0.039 | -0.023 | all pass |
+| `bounds_llama_random_single_L22` | RAND(per_layer) L22 | -0.043 | -0.026 | all pass |
+| `bounds_llama_random_single_L29` | RAND(per_layer) L29 | -0.031 | -0.018 | all pass |
+| `bounds_qwen_happy_single_L10` | REAL L10 | -0.004 | -0.004 | all pass |
+| `bounds_qwen_happy_single_L17` | REAL L17 | +0.005 | +0.004 | all fail |
+| `bounds_qwen_happy_single_L25` | REAL L25 | +0.003 | +0.002 | all fail |
+| `bounds_qwen_random_agg_matched` | RAND(aggregate) L10-25 | -0.196 | -0.172 | all pass |
+| `bounds_qwen_random_single_L10` | RAND(per_layer) L10 | -0.004 | -0.003 | all pass |
+| `bounds_qwen_random_single_L17` | RAND(per_layer) L17 | +0.003 | +0.002 | all fail |
+| `bounds_qwen_random_single_L25` | RAND(per_layer) L25 | +0.000 | +0.000 | mixed |
+
+Expected slopes per paper: slope_V = −1, slope_trZ = −2.
+
+# Experiment 2 summary
+
+## Runs
+
+| run | description | slope V | slope tr(Σ) | Claim 7 |
+|---|---|---:|---:|:---:|
+| `bounds_llama_creativity_single_L16` | REAL L16 | -0.060 | -0.036 | mixed |
+| `bounds_llama_creativity_single_L22` | REAL L22 | -0.055 | -0.033 | all pass |
+| `bounds_llama_creativity_single_L29` | REAL L29 | -0.029 | -0.017 | all pass |
+| `bounds_llama_random_agg_matched` | RAND(aggregate) L16-29 | -1.851 | -1.710 | all pass |
+| `bounds_llama_random_single_L16` | RAND(per_layer) L16 | -0.039 | -0.023 | all pass |
+| `bounds_llama_random_single_L22` | RAND(per_layer) L22 | -0.043 | -0.026 | all pass |
+| `bounds_llama_random_single_L29` | RAND(per_layer) L29 | -0.031 | -0.018 | all pass |
+| `bounds_qwen_happy_single_L10` | REAL L10 | -0.004 | -0.004 | all pass |
+| `bounds_qwen_happy_single_L17` | REAL L17 | +0.005 | +0.004 | all fail |
+| `bounds_qwen_happy_single_L25` | REAL L25 | +0.003 | +0.002 | all fail |
+| `bounds_qwen_random_agg_matched` | RAND(aggregate) L10-25 | -0.196 | -0.172 | all pass |
+| `bounds_qwen_random_single_L10` | RAND(per_layer) L10 | -0.004 | -0.003 | all pass |
+| `bounds_qwen_random_single_L17` | RAND(per_layer) L17 | +0.003 | +0.002 | all fail |
+| `bounds_qwen_random_single_L25` | RAND(per_layer) L25 | +0.000 | +0.000 | mixed |
+
+Expected slopes per paper: slope_V = −1, slope_trZ = −2.
+
+==============================================================
+Experiment 2 complete at Mon Apr 13 08:19:22 UTC 2026
+==============================================================

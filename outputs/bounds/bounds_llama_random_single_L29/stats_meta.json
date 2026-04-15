@@ -1,0 +1,78 @@
+{
+  "run_name": "bounds_llama_random_single_L29",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "steering": {
+    "vector_path": null,
+    "random_reference_path": "EasySteer/replications/creative_writing/create.gguf",
+    "random_seed": 0,
+    "target_layers": [
+      29
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 4
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 207993,
+      "trace_cov": 2162.24853515625,
+      "R_bar_norm": 0.3792761266231537,
+      "spherical_variance": 0.6207238733768463,
+      "E_norm": 49.27457046508789,
+      "R": 369.2999572753906
+    },
+    "0.5": {
+      "count": 207993,
+      "trace_cov": 2165.02587890625,
+      "R_bar_norm": 0.3800259530544281,
+      "spherical_variance": 0.6199740469455719,
+      "E_norm": 49.323509216308594,
+      "R": 368.75238037109375
+    },
+    "1.0": {
+      "count": 207993,
+      "trace_cov": 2167.455322265625,
+      "R_bar_norm": 0.38119640946388245,
+      "spherical_variance": 0.6188035905361176,
+      "E_norm": 49.37788391113281,
+      "R": 367.8930358886719
+    },
+    "2.0": {
+      "count": 207993,
+      "trace_cov": 2171.25048828125,
+      "R_bar_norm": 0.38477829098701477,
+      "spherical_variance": 0.6152217090129852,
+      "E_norm": 49.50281524658203,
+      "R": 365.25201416015625
+    },
+    "4.0": {
+      "count": 207993,
+      "trace_cov": 2174.45703125,
+      "R_bar_norm": 0.39665237069129944,
+      "spherical_variance": 0.6033476293087006,
+      "E_norm": 49.81653594970703,
+      "R": 356.36541748046875
+    },
+    "8.0": {
+      "count": 207993,
+      "trace_cov": 2162.532470703125,
+      "R_bar_norm": 0.43605056405067444,
+      "spherical_variance": 0.5639494359493256,
+      "E_norm": 50.68832778930664,
+      "R": 325.7451171875
+    }
+  }
+}

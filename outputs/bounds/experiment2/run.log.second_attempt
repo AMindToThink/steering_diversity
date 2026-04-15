@@ -1,0 +1,133 @@
+
+==============================================================
+  Phase 1: per-layer diagnostic (parallel on both GPUs)
+  started at Mon Apr 13 03:55:51 UTC 2026
+==============================================================
+[gpu-check] 03:55:51 — checking nvidia-smi ...
+[gpu-check]   GPU 0: 15 MiB used (OK)
+[gpu-check]   GPU 1: 5 MiB used (OK)
+[phase1] launched qwen (PID 1855265) + llama (PID 1855266)
+[phase1] both diagnostics done
+
+==============================================================
+  Phase 2: pick layers (edge/middle/edge of target range)
+  started at Mon Apr 13 03:56:50 UTC 2026
+==============================================================
+
+=== Qwen/Qwen2.5-1.5B-Instruct ===
+ site  layer     E[|x|]       |mu|    tr(Sigma)  cos(h,mu_hat)
+------------------------------------------------------------------
+    0    emb       0.96       0.22         0.89            n/a
+    1     L0      18.94       7.18       314.95        -0.0426
+    2     L1      48.77      29.41    130216.83        +0.0378
+    3     L2      82.25      55.79    566254.75        +0.0173
+    4     L3      88.72      57.39    587908.94        -0.0367
+    5     L4      93.58      58.88    600549.25        -0.0377
+    6     L5      94.49      58.91    616221.94        -0.0789
+    7     L6      97.40      60.06    616675.25        -0.0634
+    8     L7     100.13      61.16    617172.75        -0.0589
+    9     L8     101.56      61.54    617469.94        -0.0817
+   10     L9     103.66      62.36    618048.62        -0.0471
+   11    L10     104.47      62.92    618142.06        -0.1074  ← PICKED
+   12    L11     106.97      64.49    618046.00        +0.0588
+   13    L12     108.01      64.82    617968.31        -0.0117
+   14    L13     111.12      66.88    618059.31        +0.0325
+   15    L14     110.65      66.31    618006.81        +0.0332
+   16    L15     112.97      68.17    617754.81        +0.0460
+   17    L16     115.03      69.05    617672.25        -0.0520
+   18    L17     118.59      70.04    617791.12        -0.0770  ← PICKED
+   19    L18     124.31      73.44    618166.88        -0.0540
+   20    L19     133.26      76.56    618991.06        -0.1293
+   21    L20     141.99      79.36    619632.44        -0.1199
+   22    L21     163.59      93.82    621044.81        -0.0579
+   23    L22     185.97     106.87    622987.94        -0.1095
+   24    L23     216.18     128.89    625814.75        -0.0895
+   25    L24     252.89     159.62    626339.69        -0.0140
+   26    L25     289.24     192.21    629214.19        -0.0345  ← PICKED
+   27    L26     290.77     226.60     34051.62        -0.0183
+   28    L27     302.32     214.70     49000.95        -0.1324
+
+Qwen happy — edge/middle/edge of [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]: [10, 17, 25]
+
+=== meta-llama/Meta-Llama-3-8B-Instruct ===
+ site  layer     E[|x|]       |mu|    tr(Sigma)  cos(h,mu_hat)
+------------------------------------------------------------------
+    0    emb       0.46       0.13         0.21            n/a
+    1     L0       0.90       0.36         0.98        +0.0847
+    2     L1       3.12       1.85       711.02        +0.0050
+    3     L2       3.69       1.93       712.75        +0.0188
+    4     L3       4.33       2.04       715.42        +0.0472
+    5     L4       4.94       2.15       718.78        +0.0704
+    6     L5       5.49       2.29       722.37        +0.0240
+    7     L6       5.99       2.41       726.13        -0.0291
+    8     L7       6.43       2.48       730.11        +0.0206
+    9     L8       6.78       2.59       733.18        +0.0146
+   10     L9       7.20       2.78       736.69        +0.0073
+   11    L10       7.46       2.81       745.35        +0.0702
+   12    L11       7.67       2.88       747.56        +0.0084
+   13    L12       8.17       3.26       751.78        +0.0572
+   14    L13       8.69       3.45       757.59        +0.0341
+   15    L14       9.27       3.59       765.21        +0.0680
+   16    L15      10.19       3.81       778.21        +0.0554
+   17    L16      11.20       4.29       792.73        +0.0429  ← PICKED
+   18    L17      12.38       4.48       815.49        +0.0226
+   19    L18      13.54       4.90       837.83        -0.0039
+   20    L19      14.70       5.55       860.06        -0.0257
+   21    L20      15.82       5.85       887.25        -0.0427
+   22    L21      17.67       6.52       935.74        -0.0936
+   23    L22      19.33       7.33       981.45        -0.0869  ← PICKED
+   24    L23      21.19       8.47      1034.20        -0.1017
+   25    L24      22.94       9.69      1085.22        -0.0838
+   26    L25      24.73      10.66      1146.26        -0.0292
+   27    L26      27.23      12.91      1217.94        -0.0112
+   28    L27      29.58      14.67      1295.85        +0.0142
+   29    L28      32.57      16.74      1408.85        +0.0258
+   30    L29      35.84      18.65      1553.43        +0.0682  ← PICKED
+   31    L30      39.74      19.75      1782.39        +0.0420
+   32    L31      49.10      18.92      2180.15        +0.0067
+
+Llama creativity — edge/middle/edge of [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]: [16, 22, 29]
+
+Layer picks written to outputs/bounds/experiment2/layer_picks.json
+
+==============================================================
+  Phase 3: generate config YAMLs
+  started at Mon Apr 13 03:56:50 UTC 2026
+==============================================================
+Wrote 14 configs to configs/bounds/experiment2:
+  qwen_random_agg_matched.yaml
+  llama_random_agg_matched.yaml
+  qwen_happy_single_L10.yaml
+  qwen_random_single_L10.yaml
+  qwen_happy_single_L17.yaml
+  qwen_random_single_L17.yaml
+  qwen_happy_single_L25.yaml
+  qwen_random_single_L25.yaml
+  llama_creativity_single_L16.yaml
+  llama_random_single_L16.yaml
+  llama_creativity_single_L22.yaml
+  llama_random_single_L22.yaml
+  llama_creativity_single_L29.yaml
+  llama_random_single_L29.yaml
+
+==============================================================
+  Phase 4: verify all configs
+  started at Mon Apr 13 03:56:51 UTC 2026
+==============================================================
+[gpu-check] 03:56:51 — checking nvidia-smi ...
+[gpu-check]   GPU 0: 15 MiB used (OK)
+[gpu-check]   GPU 1: 5 MiB used (OK)
+[verify GPU0] qwen_random_agg_matched.yaml
+[verify GPU1] llama_random_agg_matched.yaml
+[verify GPU0] qwen_happy_single_L10.yaml
+[verify GPU1] llama_creativity_single_L16.yaml
+[verify GPU0] qwen_happy_single_L17.yaml
+[verify GPU1] llama_creativity_single_L22.yaml
+[verify GPU0] qwen_happy_single_L25.yaml
+[verify GPU1] llama_creativity_single_L29.yaml
+[verify GPU0] FAILED on qwen_happy_single_L25.yaml — see outputs/bounds/experiment2/verify_gpu0.log
+[phase4] qwen verification chain failed
+[verify GPU1] llama_random_single_L16.yaml
+[verify GPU1] llama_random_single_L22.yaml
+[verify GPU1] llama_random_single_L29.yaml
+[verify GPU1] FAILED on llama_random_single_L29.yaml — see outputs/bounds/experiment2/verify_gpu1.log

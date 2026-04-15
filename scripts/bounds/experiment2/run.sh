@@ -95,14 +95,20 @@ if [[ "$FROM_PHASE" -le 1 ]]; then
         --model "$QWEN_MODEL" \
         --vector "$QWEN_VECTOR" \
         --out "$DIAGNOSTIC_DIR/diagnostic_qwen.json" \
-        --num-prompts 100 > "$DIAGNOSTIC_DIR/diagnostic_qwen.log" 2>&1 &
+        --num-prompts 100 \
+        --batch-size 8 > "$DIAGNOSTIC_DIR/diagnostic_qwen.log" 2>&1 &
     QWEN_PID=$!
 
+    # Llama's diagnostic saves all 32 layer outputs inside one trace,
+    # which is much heavier than the main recording path (2 tensors).
+    # Use batch size 1 to stay under the 44 GB VRAM budget even with
+    # inference_mode fully disabling the grad graph.
     CUDA_VISIBLE_DEVICES=1 uv run python scripts/bounds/experiment2/diagnose_per_layer_norms.py \
         --model "$LLAMA_MODEL" \
         --vector "$LLAMA_VECTOR" \
         --out "$DIAGNOSTIC_DIR/diagnostic_llama.json" \
-        --num-prompts 100 > "$DIAGNOSTIC_DIR/diagnostic_llama.log" 2>&1 &
+        --num-prompts 100 \
+        --batch-size 1 > "$DIAGNOSTIC_DIR/diagnostic_llama.log" 2>&1 &
     LLAMA_PID=$!
 
     echo "[phase1] launched qwen (PID $QWEN_PID) + llama (PID $LLAMA_PID)"

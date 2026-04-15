@@ -65,7 +65,27 @@ LLAMA = {
 
 
 def _base(run_name: str, model_meta: dict, target_layers: list[int],
-          verification_scale: float) -> dict:
+          verification_scale: float, *, is_single_layer: bool = False) -> dict:
+    """Build a base bounds config.
+
+    ``is_single_layer`` relaxes the KL verification threshold by ~16× for
+    single-layer runs. The default threshold of 0.05 nats was calibrated
+    against the 16-layer multi-layer recordings; for single-layer runs
+    the effective per-token distributional shift is roughly 1/n smaller
+    where n is the number of layers that would normally be steered, so
+    at the project scale 4 the KL can fall below 0.05 even when the
+    intervention is clearly landing. We use 0.005 nats for single-layer
+    (1/10 of the multi-layer threshold) and keep magnitude_ratio_threshold
+    at 0.02 — that one is the primary "did anything happen?" gate and is
+    already well-calibrated at both scales.
+    """
+    kl_threshold = 0.005 if is_single_layer else 0.05
+    # Single-layer runs get a longer escalation ladder in case the
+    # initial verification_scale produces too little distributional shift.
+    if is_single_layer:
+        escalate = [4.0, 8.0, 16.0, 32.0]
+    else:
+        escalate = model_meta["auto_escalate_scales"]
     return {
         "run_name": run_name,
         "seed": 0,
@@ -91,10 +111,10 @@ def _base(run_name: str, model_meta: dict, target_layers: list[int],
             "enabled": True,
             "sample_prompts": model_meta["verification_prompts"],
             "verification_scale": verification_scale,
-            "kl_threshold": 0.05,
+            "kl_threshold": kl_threshold,
             "magnitude_ratio_threshold": 0.02,
             "cosine_threshold": 0.1,
-            "auto_escalate_scales": model_meta["auto_escalate_scales"],
+            "auto_escalate_scales": escalate,
             "max_new_tokens": 32,
             "do_sample": True,
             "sample_temperature": 1.0,
@@ -116,7 +136,8 @@ def build_agg_matched_config(model_meta: dict, vector_path: str,
 def build_single_layer_real_config(
     model_meta: dict, vector_path: str, layer: int, run_name: str
 ) -> dict:
-    cfg = _base(run_name, model_meta, target_layers=[layer], verification_scale=4.0)
+    cfg = _base(run_name, model_meta, target_layers=[layer],
+                verification_scale=4.0, is_single_layer=True)
     cfg["steering"]["vector_path"] = vector_path
     return cfg
 
@@ -124,7 +145,8 @@ def build_single_layer_real_config(
 def build_single_layer_random_config(
     model_meta: dict, vector_path: str, layer: int, run_name: str
 ) -> dict:
-    cfg = _base(run_name, model_meta, target_layers=[layer], verification_scale=4.0)
+    cfg = _base(run_name, model_meta, target_layers=[layer],
+                verification_scale=4.0, is_single_layer=True)
     cfg["steering"]["random_reference_path"] = vector_path
     cfg["steering"]["random_seed"] = 0
     cfg["steering"]["random_match"] = "per_layer"  # trivially == aggregate for 1 layer

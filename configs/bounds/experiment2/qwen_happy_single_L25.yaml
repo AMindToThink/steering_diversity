@@ -1,0 +1,46 @@
+run_name: bounds_qwen_happy_single_L25
+seed: 0
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  model_type: qwen2.5
+  gpu_memory_utilization: 0.9
+steering:
+  target_layers:
+  - 25
+  scale_sweep:
+  - 0.0
+  - 0.5
+  - 1.0
+  - 2.0
+  - 4.0
+  - 8.0
+  vector_path: EasySteer/vectors/happy_diffmean.gguf
+dataset:
+  name: HuggingFaceFW/fineweb-edu
+  num_prompts: 1000
+  max_seq_len: 256
+  batch_size: 8
+capture_specs:
+- site: final
+  tier: full
+steering_verification:
+  enabled: true
+  sample_prompts:
+  - Today I am feeling
+  - 'Describe in a few words how you feel about your life:'
+  - My mood right now is
+  - 'Write a short diary entry about your day:'
+  verification_scale: 4.0
+  kl_threshold: 0.005
+  magnitude_ratio_threshold: 0.02
+  cosine_threshold: 0.1
+  auto_escalate_scales:
+  - 4.0
+  - 8.0
+  - 16.0
+  - 32.0
+  max_new_tokens: 32
+  do_sample: true
+  sample_temperature: 1.0
+reservoir_size: 1024
+dtype: bfloat16

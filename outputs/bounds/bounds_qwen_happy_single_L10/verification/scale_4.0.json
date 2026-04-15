@@ -1,0 +1,41 @@
+{
+  "scale": 4.0,
+  "prompts": [
+    "Today I am feeling",
+    "Describe in a few words how you feel about your life:",
+    "My mood right now is",
+    "Write a short diary entry about your day:"
+  ],
+  "samples_unsteered": [
+    "Today I am feeling a bit tired. Which of the following words best describes my current state?\nA. Tired\nB. Healthy\nC. Happy\nD. Excited",
+    "Describe in a few words how you feel about your life: happy, sad, angry, scared, etc.\nAs an AI language model, I don't have feelings or emotions like humans do. However, I am programmed",
+    "My mood right now is very low, and I am not sure how to improve it. Can you suggest some ways for me to boost my mood? Certainly! Here are a few suggestions",
+    "Write a short diary entry about your day: I woke up feeling very tired and groggy. I had to get dressed quickly, as I was running late for work. The traffic was terrible today,"
+  ],
+  "samples_steered": [
+    "Today I am feeling a bit confused about the following:\n\nIn the first example, we have\n\n```\n1) x <- 3\n2) y <- x + 4",
+    "Describe in a few words how you feel about your life: happy, sad, angry, scared, etc.\nAs an AI language model, I don't have feelings or emotions like humans do. However, I'm here",
+    "My mood right now is very good, and I want to go on a trip. However, I'm not sure where to start planning it. Can you help me with that? Sure",
+    "Write a short diary entry about your day: I woke up feeling refreshed and ready to start my day. After a quick shower, I dressed in comfortable clothes for work. I headed out the door with my"
+  ],
+  "checks": [
+    {
+      "name": "kl_next_token",
+      "value": 0.02635259018279612,
+      "threshold": 0.005,
+      "passed": true,
+      "detail": "mean KL over last real token of 4 prompts"
+    },
+    {
+      "name": "residual_delta_magnitude_ratio",
+      "value": 0.06385317097933581,
+      "threshold": 0.02,
+      "passed": true,
+      "detail": "mean(\u2016delta\u2016 / \u2016pre_unsteered\u2016) over last real tokens"
+    }
+  ],
+  "info": {
+    "residual_delta_cosine_vs_layer_sum": 0.15824073553085327
+  },
+  "passed": true
+}

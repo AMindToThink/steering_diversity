@@ -1,0 +1,78 @@
+{
+  "run_name": "bounds_llama_creativity_single_L16",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "steering": {
+    "vector_path": "EasySteer/replications/creative_writing/create.gguf",
+    "random_reference_path": null,
+    "random_seed": null,
+    "target_layers": [
+      16
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 4
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 207993,
+      "trace_cov": 2162.24853515625,
+      "R_bar_norm": 0.3792761266231537,
+      "spherical_variance": 0.6207238733768463,
+      "E_norm": 49.27457046508789,
+      "R": 369.2999572753906
+    },
+    "0.5": {
+      "count": 207993,
+      "trace_cov": 2156.87744140625,
+      "R_bar_norm": 0.3794633448123932,
+      "spherical_variance": 0.6205366551876068,
+      "E_norm": 49.2061882019043,
+      "R": 377.2010803222656
+    },
+    "1.0": {
+      "count": 207993,
+      "trace_cov": 2147.683349609375,
+      "R_bar_norm": 0.38034215569496155,
+      "spherical_variance": 0.6196578443050385,
+      "E_norm": 49.109188079833984,
+      "R": 384.7699890136719
+    },
+    "2.0": {
+      "count": 207993,
+      "trace_cov": 2117.6904296875,
+      "R_bar_norm": 0.3843546509742737,
+      "spherical_variance": 0.6156453490257263,
+      "E_norm": 48.83232116699219,
+      "R": 397.4366149902344
+    },
+    "4.0": {
+      "count": 207993,
+      "trace_cov": 2012.30419921875,
+      "R_bar_norm": 0.4029901623725891,
+      "spherical_variance": 0.5970098376274109,
+      "E_norm": 47.974239349365234,
+      "R": 412.666259765625
+    },
+    "8.0": {
+      "count": 207993,
+      "trace_cov": 1644.177490234375,
+      "R_bar_norm": 0.4938667416572571,
+      "spherical_variance": 0.5061332583427429,
+      "E_norm": 45.49372863769531,
+      "R": 309.7688293457031
+    }
+  }
+}

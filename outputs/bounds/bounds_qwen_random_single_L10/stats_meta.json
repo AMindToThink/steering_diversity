@@ -1,0 +1,78 @@
+{
+  "run_name": "bounds_qwen_random_single_L10",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "steering": {
+    "vector_path": null,
+    "random_reference_path": "EasySteer/vectors/happy_diffmean.gguf",
+    "random_seed": 0,
+    "target_layers": [
+      10
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 8
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 210576,
+      "trace_cov": 46122.28125,
+      "R_bar_norm": 0.7203431725502014,
+      "spherical_variance": 0.2796568274497986,
+      "E_norm": 300.8354187011719,
+      "R": 1220.113037109375
+    },
+    "0.5": {
+      "count": 210576,
+      "trace_cov": 46134.765625,
+      "R_bar_norm": 0.7204597592353821,
+      "spherical_variance": 0.2795402407646179,
+      "E_norm": 300.9195251464844,
+      "R": 1219.9637451171875
+    },
+    "1.0": {
+      "count": 210576,
+      "trace_cov": 46145.2578125,
+      "R_bar_norm": 0.7205885052680969,
+      "spherical_variance": 0.2794114947319031,
+      "E_norm": 301.0021667480469,
+      "R": 1219.803955078125
+    },
+    "2.0": {
+      "count": 210576,
+      "trace_cov": 46160.21875,
+      "R_bar_norm": 0.7208839058876038,
+      "spherical_variance": 0.27911609411239624,
+      "E_norm": 301.16375732421875,
+      "R": 1219.44970703125
+    },
+    "4.0": {
+      "count": 210576,
+      "trace_cov": 46165.8125,
+      "R_bar_norm": 0.7216348648071289,
+      "spherical_variance": 0.2783651351928711,
+      "E_norm": 301.47528076171875,
+      "R": 1218.61083984375
+    },
+    "8.0": {
+      "count": 210576,
+      "trace_cov": 46077.453125,
+      "R_bar_norm": 0.7238587141036987,
+      "spherical_variance": 0.27614128589630127,
+      "E_norm": 302.07379150390625,
+      "R": 1216.404296875
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "run_name": "bounds_llama_random_single_L16",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "steering": {
+    "vector_path": null,
+    "random_reference_path": "EasySteer/replications/creative_writing/create.gguf",
+    "random_seed": 0,
+    "target_layers": [
+      16
+    ],
+    "scale_sweep": [
+      0.0,
+      0.5,
+      1.0,
+      2.0,
+      4.0,
+      8.0
+    ]
+  },
+  "dataset": {
+    "name": "HuggingFaceFW/fineweb-edu",
+    "num_prompts": 1000,
+    "max_seq_len": 256,
+    "batch_size": 4
+  },
+  "reservoir_size": 1024,
+  "seed": 0,
+  "per_scale_scalar_summary": {
+    "0.0": {
+      "count": 207993,
+      "trace_cov": 2162.24853515625,
+      "R_bar_norm": 0.3792761266231537,
+      "spherical_variance": 0.6207238733768463,
+      "E_norm": 49.27457046508789,
+      "R": 369.2999572753906
+    },
+    "0.5": {
+      "count": 207993,
+      "trace_cov": 2163.119384765625,
+      "R_bar_norm": 0.3795400559902191,
+      "spherical_variance": 0.6204599440097809,
+      "E_norm": 49.28567123413086,
+      "R": 358.99566650390625
+    },
+    "1.0": {
+      "count": 207993,
+      "trace_cov": 2161.404296875,
+      "R_bar_norm": 0.3803197145462036,
+      "spherical_variance": 0.6196802854537964,
+      "E_norm": 49.27852249145508,
+      "R": 356.53826904296875
+    },
+    "2.0": {
+      "count": 207993,
+      "trace_cov": 2150.36376953125,
+      "R_bar_norm": 0.38347363471984863,
+      "spherical_variance": 0.6165263652801514,
+      "E_norm": 49.212406158447266,
+      "R": 368.9056701660156
+    },
+    "4.0": {
+      "count": 207993,
+      "trace_cov": 2099.5869140625,
+      "R_bar_norm": 0.39665868878364563,
+      "spherical_variance": 0.6033413112163544,
+      "E_norm": 48.899078369140625,
+      "R": 353.0712890625
+    },
+    "8.0": {
+      "count": 207993,
+      "trace_cov": 1879.060302734375,
+      "R_bar_norm": 0.4546124041080475,
+      "spherical_variance": 0.5453875958919525,
+      "E_norm": 47.597084045410156,
+      "R": 301.9931640625
+    }
+  }
+}

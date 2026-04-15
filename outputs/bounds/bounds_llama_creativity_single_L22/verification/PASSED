@@ -1,0 +1,13 @@
+{
+  "run_name": "bounds_llama_creativity_single_L22",
+  "model": "meta-llama/Meta-Llama-3-8B-Instruct",
+  "vector_path": "EasySteer/replications/creative_writing/create.gguf",
+  "random_reference_path": null,
+  "target_layers": [
+    22
+  ],
+  "passed_at_scale": 4.0,
+  "tried_scales": [
+    4.0
+  ]
+}
