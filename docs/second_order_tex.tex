@@ -1,0 +1,304 @@
+ty_reduction_second_order.tex [NEW]
+% Second-order Taylor expansion of the sphere projection under steering.
+% Supplements the first-order analysis in diversity_reduction_theory.tex.
+%
+% Intended to appear as a subsection after the first-order covariance
+% derivation, e.g. as Section X.3.1 "Second-order corrections."
+%
+% === NOTES ===
+%
+% The main payoffs of the second-order analysis are:
+%   1. The mean resultant length is strictly < 1, connecting the Taylor
+%      framework to the spherical variance from the geometric analysis.
+%   2. The O(1/||m||^3) covariance correction vanishes for symmetric
+%      distributions (e.g. Gaussian inputs), so the first-order covariance
+%      is actually accurate to O(1/||m||^4) in that case.
+%   3. The radial-perpendicular coupling term captures the "magnifying
+%      glass" effect near the origin as a perturbative correction.
+%
+% This section is optional for the main paper and could be deferred to
+% an appendix if space is tight. The key results that matter for the
+% paper's claims are already in the first-order analysis; this section
+% provides rigor and connects the two proof strategies.
+%
+% === END NOTES ===
+
+\subsubsection{Second-Order Corrections}
+\label{sec:second-order}
+
+The first-order expansion of Section~\ref{sec:covariance} gives the
+leading behavior but leaves open the question of how large the
+approximation error is.
+We now compute the second-order correction, which reveals additional
+structure and confirms consistency with the global geometric bounds
+of Section~\ref{sec:geometric-bound}.
+
+\paragraph{The Hessian of the sphere projection.}
+
+We require the second derivatives of $g_i(v) = v_i / \|v\|$.
+Starting from the Jacobian entry derived in Lemma~\ref{lem:jacobian}:
+%
+\begin{equation}
+  \frac{\partial g_i}{\partial v_j}
+  = \frac{\delta_{ij}}{\|v\|} - \frac{v_i v_j}{\|v\|^3},
+\end{equation}
+%
+we differentiate with respect to $v_k$.
+The first term contributes $-\delta_{ij}\,v_k / \|v\|^3$ via
+$\partial_{v_k}(\|v\|^{-1}) = -v_k / \|v\|^3$.
+The second term contributes, by the product and chain rules:
+%
+\begin{equation}
+  -\frac{\delta_{ik}\,v_j + v_i\,\delta_{jk}}{\|v\|^3}
+  + \frac{3\,v_i\,v_j\,v_k}{\|v\|^5}.
+\end{equation}
+%
+Combining:
+%
+\begin{equation}
+  \frac{\partial^2 g_i}{\partial v_j \partial v_k}
+  = -\frac{\delta_{ij}\,v_k + \delta_{ik}\,v_j + v_i\,\delta_{jk}}{\|v\|^3}
+  + \frac{3\,v_i\,v_j\,v_k}{\|v\|^5}.
+  \label{eq:hessian-components}
+\end{equation}
+
+\paragraph{Contracting with $\delta$.}
+
+The second-order term in the Taylor expansion is
+$\frac{1}{2}\sum_{j,k} \frac{\partial^2 g_i}{\partial v_j \partial v_k}\big|_{v=m} \delta_j\,\delta_k$.
+Evaluating \eqref{eq:hessian-components} at $v = m$ and summing over
+$j$ and $k$, the four groups yield:
+%
+\begin{align}
+  -\frac{\delta_{ij}\,m_k\,\delta_j\,\delta_k}{\|m\|^3}
+  &= -\frac{\delta_i\,(\hat{m}^\top\delta)}{\|m\|^2},
+  \label{eq:hess-term1}\\[4pt]
+  -\frac{\delta_{ik}\,m_j\,\delta_j\,\delta_k}{\|m\|^3}
+  &= -\frac{(\hat{m}^\top\delta)\,\delta_i}{\|m\|^2},
+  \label{eq:hess-term2}\\[4pt]
+  -\frac{m_i\,\delta_{jk}\,\delta_j\,\delta_k}{\|m\|^3}
+  &= -\frac{\hat{m}_i\,\|\delta\|^2}{\|m\|^2},
+  \label{eq:hess-term3}\\[4pt]
+  \frac{3\,m_i\,m_j\,m_k\,\delta_j\,\delta_k}{\|m\|^5}
+  &= \frac{3\,\hat{m}_i\,(\hat{m}^\top\delta)^2}{\|m\|^2}.
+  \label{eq:hess-term4}
+\end{align}
+%
+Summing and writing in vector form:
+%
+\begin{equation}
+  H_g(m)[\delta,\delta]
+  = \frac{1}{\|m\|^2}\Big[
+    -2(\hat{m}^\top\delta)\,\delta
+    - \|\delta\|^2\,\hat{m}
+    + 3(\hat{m}^\top\delta)^2\,\hat{m}
+  \Big].
+  \label{eq:hessian-vector}
+\end{equation}
+
+\paragraph{Decomposition into radial and perpendicular components.}
+
+Let $\alpha = \hat{m}^\top\delta$ denote the radial component of $\delta$
+(its projection onto $\hat{m}$), and let
+$\delta_\perp = P_{\perp m}\,\delta = \delta - \alpha\,\hat{m}$
+denote the perpendicular component.
+Then $\|\delta\|^2 = \alpha^2 + \|\delta_\perp\|^2$, and substituting
+into \eqref{eq:hessian-vector}:
+%
+\begin{align}
+  H_g(m)[\delta,\delta]
+  &= \frac{1}{\|m\|^2}\Big[
+    -2\alpha\,(\alpha\,\hat{m} + \delta_\perp)
+    - (\alpha^2 + \|\delta_\perp\|^2)\,\hat{m}
+    + 3\alpha^2\,\hat{m}
+  \Big]
+  \notag\\
+  &= \frac{1}{\|m\|^2}\Big[
+    \underbrace{(-2\alpha^2 - \alpha^2 - \|\delta_\perp\|^2 + 3\alpha^2)}_{=\;-\|\delta_\perp\|^2}\,\hat{m}
+    - 2\alpha\,\delta_\perp
+  \Big]
+  \notag\\
+  &= \frac{1}{\|m\|^2}\Big[
+    -\|\delta_\perp\|^2\,\hat{m}
+    - 2\alpha\,\delta_\perp
+  \Big].
+  \label{eq:hessian-simplified}
+\end{align}
+%
+The $\alpha^2$ terms in the $\hat{m}$ direction cancel exactly.
+
+\paragraph{Full second-order expansion.}
+
+Combining the first-order term from \eqref{eq:taylor} with
+$\frac{1}{2}H_g(m)[\delta,\delta]$:
+%
+\begin{equation}
+  z \approx \hat{m}
+  + \frac{1}{\|m\|}\,\delta_\perp
+  + \frac{1}{2\|m\|^2}\Big[
+    -\|\delta_\perp\|^2\,\hat{m}
+    - 2\alpha\,\delta_\perp
+  \Big]
+  + O\!\left(\frac{\|\delta\|^3}{\|m\|^3}\right).
+  \label{eq:taylor-second}
+\end{equation}
+%
+Regrouping by direction:
+%
+\begin{equation}
+  \boxed{
+  z \approx
+  \left(1 - \frac{\|\delta_\perp\|^2}{2\|m\|^2}\right)\hat{m}
+  \;+\;
+  \left(\frac{1}{\|m\|} - \frac{\alpha}{\|m\|^2}\right)\delta_\perp
+  \;+\;
+  O\!\left(\frac{\|\delta\|^3}{\|m\|^3}\right).
+  }
+  \label{eq:taylor-second-grouped}
+\end{equation}
+%
+Two effects appear at second order:
+%
+\begin{enumerate}
+  \item \textbf{Radial pullback.}
+    The coefficient of $\hat{m}$ decreases from $1$ by
+    $\|\delta_\perp\|^2 / (2\|m\|^2)$.
+    This is the sphere curvature: spreading perpendicular to the pole
+    pulls the projection inward, reducing the mean resultant length.
+    This is precisely the mechanism underlying the spherical variance
+    bound of Corollary~\ref{cor:spherical-variance}.
+
+  \item \textbf{Radial-perpendicular coupling.}
+    The coefficient of $\delta_\perp$ acquires a correction
+    $-\alpha / \|m\|^2$ that depends on the radial fluctuation
+    $\alpha = \hat{m}^\top\delta$.
+    Points with $\alpha > 0$ (further from the origin) receive
+    \emph{less} angular spread; points with $\alpha < 0$ (closer to
+    the origin) receive \emph{more}.
+    This is the perturbative manifestation of the magnifying-glass
+    effect discussed in Section~\ref{sec:anti-pole}: the normalization
+    map amplifies angular variation near the origin.
+\end{enumerate}
+
+\paragraph{Second-order mean.}
+
+Taking expectations using $\mathbb{E}[\delta] = 0$ (and therefore
+$\mathbb{E}[\alpha] = 0$, $\mathbb{E}[\delta_\perp] = 0$):
+%
+\begin{equation}
+  \mathbb{E}[z]
+  \approx \hat{m}
+  - \frac{\mathbb{E}[\|\delta_\perp\|^2]}{2\|m\|^2}\,\hat{m}
+  - \frac{\mathbb{E}[\alpha\,\delta_\perp]}{\|m\|^2}.
+  \label{eq:mean-second}
+\end{equation}
+%
+For the first correction:
+$\mathbb{E}[\|\delta_\perp\|^2]
+= \mathrm{tr}(P_{\perp m}\,\Sigma_x\,P_{\perp m})
+= \mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\,\hat{m}$,
+which is the perpendicular variance from
+Proposition~\ref{prop:diversity-reduction}.
+For the second correction:
+$\mathbb{E}[\alpha\,\delta_\perp]
+= \mathbb{E}[(\hat{m}^\top\delta)\,P_{\perp m}\,\delta]
+= P_{\perp m}\,\Sigma_x\,\hat{m}$,
+which is the cross-covariance between the radial and perpendicular
+components of $\delta$.
+This vanishes when $\hat{m}$ is an eigenvector of $\Sigma_x$
+or when $\Sigma_x$ is isotropic.
+
+The mean resultant length is therefore:
+%
+\begin{equation}
+  \|\mathbb{E}[z]\|
+  \approx 1
+  - \frac{\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\,\hat{m}}{2\|m\|^2}
+  + O\!\left(\frac{\|\Sigma_x\|^2}{\|m\|^4}\right),
+  \label{eq:resultant-length}
+\end{equation}
+%
+where the cross-covariance term contributes only at $O(1/\|m\|^4)$
+to the norm (since it is perpendicular to the leading $\hat{m}$ term).
+The spherical variance is thus:
+%
+\begin{equation}
+  V \coloneqq 1 - \|\mathbb{E}[z]\|
+  \approx \frac{\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\,\hat{m}}{2\|m\|^2},
+  \label{eq:spherical-variance-taylor}
+\end{equation}
+%
+which scales as $O(1/\|m\|^2) = O(1/\|s\|^2)$ in the strong-steering
+regime, consistent with the $O(1/\|s\|)$ chordal bound from
+Corollary~\ref{cor:spherical-variance} (since spherical variance scales
+as the square of the chordal spread for concentrated distributions).
+
+\paragraph{Second-order covariance.}
+
+The fluctuation around the corrected mean is, to second order:
+%
+\begin{equation}
+  \varepsilon = z - \mathbb{E}[z]
+  = \frac{1}{\|m\|}\,\delta_\perp
+  - \frac{1}{\|m\|^2}\Big[\alpha\,\delta_\perp
+    - \mathbb{E}[\alpha\,\delta_\perp]\Big]
+  - \frac{1}{2\|m\|^2}\Big[\|\delta_\perp\|^2
+    - \mathbb{E}[\|\delta_\perp\|^2]\Big]\,\hat{m}
+  + O\!\left(\frac{\|\delta\|^3}{\|m\|^3}\right).
+  \label{eq:fluctuation-second}
+\end{equation}
+%
+The covariance $\Sigma_z = \mathbb{E}[\varepsilon\,\varepsilon^\top]$
+has three tiers:
+%
+\begin{enumerate}
+  \item \textbf{Leading term}, $O(1/\|m\|^2)$:
+    $\frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}$,
+    exactly as in Proposition~\ref{prop:diversity-reduction}.
+
+  \item \textbf{Cross terms}, $O(1/\|m\|^3)$:
+    these involve third central moments of $\delta$, specifically
+    $\mathbb{E}[\delta_\perp \cdot \alpha\,\delta_\perp^\top]$
+    and its transpose.
+    \emph{These vanish for any distribution symmetric about $\mu$.}
+    In particular, for Gaussian inputs the first-order covariance is
+    accurate to $O(1/\|m\|^4)$, not merely $O(1/\|m\|^3)$.
+
+  \item \textbf{Quadratic terms}, $O(1/\|m\|^4)$:
+    these involve fourth central moments such as
+    $\mathbb{E}[\alpha^2\,\delta_\perp\,\delta_\perp^\top]$
+    and $\mathbb{E}[\|\delta_\perp\|^4]$.
+    For Gaussian inputs these can be expressed via Isserlis' theorem
+    in terms of $\Sigma_x$, but the resulting expressions are
+    cumbersome and we omit them.
+\end{enumerate}
+
+\paragraph{Summary.}
+The second-order analysis confirms and sharpens the first-order results:
+%
+\begin{center}
+\begin{tabular}{lcc}
+  \toprule
+  \textbf{Quantity} & \textbf{First-order} & \textbf{Second-order correction} \\
+  \midrule
+  Mean direction & $\hat{m}$ & unchanged \\[4pt]
+  Mean resultant length & $1$ &
+    $1 - \dfrac{\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\hat{m}}{2\|m\|^2}$ \\[10pt]
+  Spherical variance & $0$ (trivially) &
+    $\dfrac{\mathrm{tr}(\Sigma_x) - \hat{m}^\top\Sigma_x\hat{m}}{2\|m\|^2}$ \\[10pt]
+  Covariance &
+    $\dfrac{P_{\perp m}\,\Sigma_x\,P_{\perp m}}{\|m\|^2}$ &
+    same $+ O(1/\|m\|^4)$ for symmetric $\delta$ \\[6pt]
+  \bottomrule
+\end{tabular}
+\end{center}
+%
+\noindent
+The key takeaway is that for symmetric input distributions (including
+Gaussian), the first-order covariance formula from
+Proposition~\ref{prop:diversity-reduction} is more accurate than its
+derivation might suggest: the next correction is $O(1/\|m\|^4)$, not
+$O(1/\|m\|^3)$.
+For asymmetric distributions, third-moment effects enter at
+$O(1/\|m\|^3)$ and can either increase or decrease the covariance
+depending on the skewness structure.
