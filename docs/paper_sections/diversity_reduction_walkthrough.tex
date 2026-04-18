@@ -1,788 +1,216 @@
 % diversity_reduction_walkthrough.tex
 %
-% Self-contained walk-through of the diversity-reduction theory and the
-% experiments that test it. Designed to be readable by someone with no prior
-% exposure to the project. Includes all relevant math (with intuitive
-% glosses; full proofs live in the dedicated theory sections) and a complete
-% description of the experiments, their numerical results, and what they
-% mean.
+% Wrapper that assembles the diversity-reduction theory and experiments into
+% a single self-contained document, designed to be read straight through by
+% someone with no prior exposure to the project.
 %
-% This file is written as a single \section with subsections so it can be
-% \input{} into a main paper as a stand-alone chapter, OR be promoted to a
-% top-level chapter that supersedes the more compact diversity_reduction_*
-% sections. After integration, the author can decide which proofs to migrate
-% to an appendix.
+% This file is *only* glue. The math and the experiments live in their own
+% modular section files (so editing one of them updates this document
+% automatically, with no risk of drift):
 %
-% === INTEGRATION NOTES ===
+%     diversity_reduction_theory.tex        -- first-order Taylor analysis
+%     diversity_reduction_geometric.tex     -- exact global bounds
+%     diversity_reduction_second_order.tex  -- second-order Taylor refinement
+%     diversity_reduction_conditions.tex    -- when does steering reduce diversity?
+%     diversity_reduction_synthesis.tex     -- local + global picture put together
+%     diversity_reduction_empirical.tex     -- 19-run empirical verification
 %
-% Cross-references to other paper sections are written defensively: each
-% \ref{...} is paired with a parenthetical context phrase so the document
-% remains readable even if the referenced section is moved or renumbered.
+% The two pieces this wrapper adds on top of the existing files are:
+%   1. A brief opening (\subsection*{Reading Guide}) that frames the
+%      document for a less-contextualized reader.
+%   2. A new \subsection (Second-Order Consistency Check) at the end of the
+%      empirical section, summarizing the parabola-on-log-log finding from
+%      docs/bounds/second_order_consistency.md.
 %
 % Required packages: amsmath, amssymb, amsthm, booktabs, hyperref
 % Required environments: theorem, proposition, corollary, lemma, definition,
 %                        remark, proof (standard with amsthm)
+% Same citation keys as the modular files (see their headers).
 %
-% Citation keys assumed to exist in the bibliography:
-%   turntrout2023steering, turntrout2023norms, brody2023expressivity,
-%   sinii2025small, mardia2000directional
-% (Same keys as diversity_reduction_theory.tex / _geometric.tex.)
-%
-% Code, configs, and per-run outputs for every empirical number reported here
-% live in the project repository:
+% Code, configs, and per-run outputs for every empirical number reported
+% here live in the project repository:
 %   https://github.com/AMindToThink/steering_diversity
 % under src/bounds/, scripts/bounds/, and outputs/bounds/.
 %
-% === END NOTES ===
+% NOTE on \input{} paths: the lines below assume the wrapper is compiled
+% from a directory where the modular files are visible by name. If the main
+% paper imports this wrapper from a different directory, prefix each
+% \input{} with the appropriate relative path.
 
 
-\section{Activation Steering and Diversity: A Walk-Through}
-\label{sec:walkthrough}
+% ------------------------------------------------------------------
+% 0. Reading guide for the less-contextualized reader.
+% ------------------------------------------------------------------
+%
+% This is wrapper-local material; it does not appear in any modular file.
+% Strip / shorten / move to a separate front matter file as needed.
 
-This section is a self-contained guide to the theory of steering-induced
-diversity reduction and the experiments that test it. The reader is assumed
-to know what a transformer is and what the residual stream is, but nothing
-about steering vectors or the bounds in this paper. We develop the
-mathematical picture from scratch, state and explain each claim, and then
-walk through the experimental setup and results. Detailed proofs and a
-small number of technical refinements live in the more compact
-companion sections (Sections~\ref{sec:diversity-reduction},
-\ref{sec:geometric-bound}, \ref{sec:conditions}, \ref{sec:synthesis}); we
-refer to them inline.
+\section*{Reading Guide}
+\label{sec:walk-guide}
 
-\subsection{The Question}
-\label{sec:walk-question}
-
-\emph{Activation steering} is the practice of adding a fixed vector
-$s \in \mathbb{R}^d$ to a transformer's residual stream at one or more
-chosen layers, in order to bias the model's behaviour without retraining.
-A steering vector trained to encode ``be more honest,'' ``be happier,''
-or ``be more creative'' is added once per forward pass, then propagates
-through the rest of the stack via the residual connections \citep{turntrout2023steering}.
-
-Steering is cheap, training-free, and surprisingly effective at moving a
-model's distribution of outputs in a desired direction. But practitioners
-have repeatedly observed that as the steering strength is turned up, the
-model's outputs become not just biased but \emph{narrow}: the same phrasings,
-the same plot beats, the same fixed answer. Diversity collapses.
-
-The question this paper answers is: \emph{why?} Specifically, we ask
-whether the diversity collapse is a property of the architecture rather
-than of any particular training procedure or steering vector. We show that
-it is. Every transformer has normalization layers (LayerNorm or RMSNorm)
-in every block, and these layers project the residual stream onto a sphere
-of fixed radius. Adding a constant offset before this projection
-\emph{must} concentrate the resulting representations toward a particular
-``pole'' on that sphere, with the concentration tightening as the steering
-magnitude grows. The mechanism is geometric, not behavioural.
-
-The remainder of this section makes that intuition rigorous, derives
-nine concrete bounds (some exact, some asymptotic), and tests all nine
-on two open-weight models with three trained steering vectors and two
-random-direction controls.
-
-\subsection{Setup and Notation}
-\label{sec:walk-setup}
-
-Fix a transformer with hidden dimension $d$. Let $x \in \mathbb{R}^d$
-denote the residual stream activation at a single token position of a
-single prompt, drawn from some natural-language distribution $\mathcal{D}$.
-We write
-\[
-  \mu \coloneqq \mathbb{E}_{x \sim \mathcal{D}}[x], \qquad
-  \Sigma_x \coloneqq \mathbb{E}\!\left[(x - \mu)(x - \mu)^\top\right],
-\]
-for the unsteered mean and covariance. A steering intervention adds a
-fixed vector $s \in \mathbb{R}^d$ to the residual stream, producing
-$x' = x + s$, which is then passed through the next normalization step.
-
-We focus on RMSNorm, which is what modern open-weight models (Llama,
-Qwen, Mistral, etc.) use. RMSNorm is, up to a learned diagonal rescaling,
-just \emph{projection onto a sphere}: it sends $v \mapsto v/\|v\|$
-followed by multiplication by $\sqrt{d}$ and an elementwise gain vector
-$\gamma$. Because the gain $\gamma$ is data-independent and the radius
-$\sqrt{d}$ is a constant scale, the rank and angular structure of the
-output are determined entirely by the bare projection
-\begin{equation}
-  g(v) \coloneqq \frac{v}{\|v\|}, \qquad g \colon \mathbb{R}^d \setminus \{0\} \to S^{d-1},
-  \label{eq:walk-projection}
-\end{equation}
-which is what we analyze throughout. For LayerNorm, the only difference
-is an additional projection that removes the all-ones component; this is
-a second rank-reducing projection that does not change the qualitative
-picture (see~\citealp{brody2023expressivity}).
-
-It will be convenient to introduce one further piece of notation: the
-\emph{shifted mean}
-\begin{equation}
-  m \coloneqq \mu + s, \qquad \hat{m} \coloneqq m / \|m\|,
-\end{equation}
-and its perpendicular projector
-\begin{equation}
-  P_{\perp m} \coloneqq I_d - \hat{m}\hat{m}^\top,
-\end{equation}
-which annihilates the radial direction $\hat{m}$ and leaves the
-$(d-1)$-dimensional tangent space alone.
-
-We also use the shorthand $\phi_s(x) \coloneqq \widehat{x + s} = (x+s)/\|x+s\|$
-for the unit-normalized steered sample. The pushforward distribution
-$\phi_s(\mathcal{D})$ lives on the unit sphere $S^{d-1}$. Two scalar
-summary statistics will be central:
-\begin{itemize}
-  \item the \textbf{mean resultant vector} $\bar{R} \coloneqq \mathbb{E}[\phi_s(x)]$, of length $\|\bar{R}\| \in [0,1]$;
-  \item the \textbf{spherical variance} $V \coloneqq 1 - \|\bar{R}\|$ \citep{mardia2000directional}.
-\end{itemize}
-$V = 0$ means the post-normalization distribution is a delta at one point on
-the sphere; $V$ close to $1$ means the distribution is essentially uniform.
-
-\subsection{The Geometric Picture}
-\label{sec:walk-geometric}
-
-The simplest and most robust statements come from a single elementary
-lemma about how far apart the projections of two vectors can be.
-
-\begin{lemma}[Chordal contraction]
-\label{lem:walk-chordal}
-For any nonzero $u, v \in \mathbb{R}^d$,
-\begin{equation}
-  \|\hat{u} - \hat{v}\|
-  \;\le\;
-  \frac{2\,\|u - v\|}{\max(\|u\|, \|v\|)}.
-  \label{eq:walk-chordal}
-\end{equation}
-\end{lemma}
-
-The proof is a one-line decomposition followed by the reverse triangle
-inequality (full version in Section~\ref{sec:geometric-bound}, Lemma in
-context). The takeaway: \emph{the chordal distance between two normalized
-points is at most twice the Euclidean distance between the originals,
-divided by their length}. Long vectors that differ by a fixed amount
-project to nearby points on the sphere; short vectors that differ by the
-same amount can project anywhere.
-
-Apply this with $u = x + s$ and $v = s$ to compare a steered point to
-the steering direction itself:
-
-\begin{proposition}[Concentration around the pole; \textbf{Claim 3}]
-\label{prop:walk-pole}
-For any $x$ and any nonzero $s$,
-\begin{equation}
-  \|\phi_s(x) - \hat{s}\|
-  \;\le\;
-  \frac{2\,\|x\|}{\|s\|}.
-  \label{eq:walk-pole}
-\end{equation}
-\end{proposition}
-
-\begin{proof}
-Setting $u = x+s$, $v = s$ in Lemma~\ref{lem:walk-chordal} gives
-$\|\hat{u} - \hat{v}\| \le 2\|u-v\|/\max(\|u\|,\|v\|) = 2\|x\|/\max(\|x+s\|,\|s\|) \le 2\|x\|/\|s\|$.
-\end{proof}
-
-This is the geometric core of the whole story: \emph{every} post-steering
-representation lies in a spherical cap around the pole $\hat{s}$, and the
-cap shrinks linearly in $1/\|s\|$. The bound is exact, holds for every $x$
-and every $\mathcal{D}$, and requires no distributional assumption.
-
-The same lemma, applied with $u = x_1 + s$ and $v = x_2 + s$ (where
-$s$ cancels in the numerator), gives a Lipschitz-style pairwise bound:
-
-\begin{proposition}[Pairwise bound; \textbf{Claim 4}]
-\label{prop:walk-pair}
-If $\|s\| > R \coloneqq \max(\|x_1\|, \|x_2\|)$, then
-\begin{equation}
-  \|\phi_s(x_1) - \phi_s(x_2)\|
-  \;\le\;
-  \frac{2\,\|x_1 - x_2\|}{\|s\| - R}.
-  \label{eq:walk-pair}
-\end{equation}
-\end{proposition}
-
-The numerator $\|x_1 - x_2\|$ is the unsteered Euclidean distance: the
-steering vector cancels. The denominator grows linearly in $\|s\|$, so
-$\phi_s$ becomes a strict contraction on the unsteered support whenever
-$\|s\|$ exceeds $R$ by enough. The catch is the precondition $\|s\| > R$:
-if $\|s\|$ does not exceed the largest sample norm, the bound is vacuous
-(the denominator is non-positive). We will see in
-Section~\ref{sec:walk-results} that for realistic steering magnitudes at
-the final-RMSNorm site this precondition is essentially never satisfied.
-
-Three distribution-level corollaries follow immediately from
-Proposition~\ref{prop:walk-pole}, by taking expectations and applying
-the triangle inequality.
-
-\begin{corollary}[Spherical variance bound; \textbf{Claim 2}]
-\label{cor:walk-V}
-\begin{equation}
-  V(\phi_s(\mathcal{D}))
-  \;\le\;
-  \frac{2\,\mathbb{E}[\|x\|]}{\|s\|}.
-  \label{eq:walk-V}
-\end{equation}
-\end{corollary}
-
-\begin{corollary}[Expected pairwise distance; \textbf{Claim 6}]
-\label{cor:walk-pair}
-\begin{equation}
-  \mathbb{E}\!\left[\|\phi_s(x_1) - \phi_s(x_2)\|\right]
-  \;\le\;
-  \frac{4\,\mathbb{E}[\|x\|]}{\|s\|}.
-  \label{eq:walk-pair-exp}
-\end{equation}
-\end{corollary}
-
-\begin{corollary}[Spherical diameter; \textbf{Claim 5}]
-\label{cor:walk-diam}
-For $\mathcal{D}$ supported on the ball of radius $R$,
-\begin{equation}
-  \operatorname{diam}\!\left(\phi_s(\mathcal{D})\right)
-  \;\le\;
-  \frac{4R}{\|s\|}.
-  \label{eq:walk-diam}
-\end{equation}
-\end{corollary}
-
-All four results (Claims 2, 3, 5, 6) come from the same one-line lemma.
-They are exact upper bounds, distribution-free up to bounded support, and
-all scale as $O(1/\|s\|)$.
-
-\subsection{The Local Picture: Linearizing Around the Shifted Mean}
-\label{sec:walk-local}
-
-The geometric bounds are robust and exact, but they are scalar bounds:
-they tell us how far things can be on the sphere, not \emph{which directions}
-of variation are compressed. For that we need a local analysis, obtained
-by Taylor-expanding the projection $g$ around $m = \mu + s$. Write
-$x + s = m + \delta$ where $\delta = x - \mu$ has $\mathbb{E}[\delta] = 0$
-and $\operatorname{Cov}(\delta) = \Sigma_x$.
-
-A direct computation (Lemma~\ref{lem:jacobian} in
-Section~\ref{sec:diversity-reduction}) gives the Jacobian of the
-projection at $m$:
-\begin{equation}
-  J_g(m) = \frac{1}{\|m\|}\,P_{\perp m}.
-  \label{eq:walk-jacobian}
-\end{equation}
-The Jacobian is precisely a rescaling by $1/\|m\|$ followed by projection
-onto the tangent space at $\hat{m}$. Two effects pop out:
-\begin{itemize}
-  \item $P_{\perp m}$ \emph{annihilates the radial direction} $\hat{m}$.
-  \item Everything that survives is \emph{rescaled by $1/\|m\|$}.
-\end{itemize}
-First-order in $\delta$, the Taylor expansion gives
-\begin{equation}
-  z = g(m + \delta) \approx \hat{m} + \frac{1}{\|m\|}\,P_{\perp m}\,\delta,
-  \label{eq:walk-taylor1}
-\end{equation}
-so the steered output has mean approximately $\hat{m}$ and fluctuation
-$P_{\perp m}\delta / \|m\|$. The output covariance is therefore
-\begin{equation}
-  \Sigma_z \approx \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}.
-  \label{eq:walk-output-cov}
-\end{equation}
-
-Two consequences fall out by direct algebra (Proposition~\ref{prop:diversity-reduction} in Section~\ref{sec:diversity-reduction}):
-
-\begin{proposition}[Local covariance under steering; \textbf{Claim 1}]
-\label{prop:walk-local}
-Under the first-order approximation \eqref{eq:walk-taylor1},
-\begin{enumerate}
-  \item \textup{(Rank reduction)}
-    $\operatorname{rank}(\Sigma_z) \le \min(\operatorname{rank}(\Sigma_x), d-1)$.
-    If $\hat{m}^\top \Sigma_x \hat{m} > 0$, then $\operatorname{rank}(\Sigma_z) \le \operatorname{rank}(\Sigma_x) - 1$.
-  \item \textup{(Total variance shrinks as $1/\|m\|^2$)}
-    $\operatorname{tr}(\Sigma_z) = \dfrac{\operatorname{tr}(\Sigma_x) - \hat{m}^\top \Sigma_x \hat{m}}{\|m\|^2}$.
-\end{enumerate}
-\end{proposition}
-
-The numerator is the unsteered total variance \emph{minus the variance
-along the steered direction}; this is non-negative because $\hat{m}^\top \Sigma_x \hat{m}$
-is bounded above by the largest eigenvalue of $\Sigma_x$. The denominator
-grows as $\|m\|^2$, which in the strong-steering regime ($\|s\| \gg \|\mu\|$)
-is approximately $\|s\|^2$. So the local bound predicts
-$\operatorname{tr}(\Sigma_z) = O(1/\|s\|^2)$.
-
-This is consistent with the global bound's $O(1/\|s\|)$ on chordal distance
-because, for distributions concentrated near a pole, chordal distance
-$\theta$ scales linearly with angular displacement and variance scales as
-$\theta^2$. Squaring $O(1/\|s\|)$ gives $O(1/\|s\|^2)$. The two analyses
-are not in tension; they are dual lenses on the same phenomenon.
-
-\subsection{Second-Order Refinement: Where the Parabola Comes From}
-\label{sec:walk-second-order}
-
-The first-order expansion treats the projection $g$ as if it were exactly
-linear. It is not: the sphere is curved, and the correction matters when
-the input variation $\delta$ is not negligibly small relative to $\|m\|$.
-A second-order Taylor expansion (full derivation in
-Section~\ref{sec:second-order} of the appendix) gives, after the
-$\alpha^2$ terms cancel,
-\begin{equation}
-  z \;\approx\; \left(1 - \frac{\|\delta_\perp\|^2}{2\|m\|^2}\right)\hat{m}
-  \;+\; \left(\frac{1}{\|m\|} - \frac{\alpha}{\|m\|^2}\right)\delta_\perp,
-  \label{eq:walk-taylor2}
-\end{equation}
-where $\alpha = \hat{m}^\top \delta$ is the radial component of $\delta$
-and $\delta_\perp = P_{\perp m}\,\delta$ is the perpendicular component.
-Two effects appear:
-\begin{enumerate}
-  \item \emph{Sphere curvature} pulls the radial coefficient below $1$
-    by $\|\delta_\perp\|^2 / (2\|m\|^2)$ --- the perpendicular spread
-    causes the mean resultant vector to retreat from the surface of the
-    sphere. This is the \emph{quadratic} term in the variance.
-  \item \emph{Radial-perpendicular coupling}: if a sample is further from
-    the origin ($\alpha > 0$), its angular displacement is suppressed;
-    if it is closer ($\alpha < 0$), it is amplified. This is the
-    perturbative manifestation of the magnifying-glass effect we will
-    discuss in Section~\ref{sec:walk-conditions}.
-\end{enumerate}
-Taking expectations yields
-\begin{equation}
-  V \;\approx\; \frac{\operatorname{tr}(\Sigma_x) - \hat{m}^\top \Sigma_x \hat{m}}{2\|m\|^2}.
-  \label{eq:walk-V-second-order}
-\end{equation}
-This refines Corollary~\ref{cor:walk-V}: the spherical variance is not
-just $\le 2\mathbb{E}\|x\|/\|s\|$, it is approximately equal to a specific
-quadratic form divided by $2\|m\|^2$. Substituting $m = \mu + s$ gives
-\begin{equation}
-  \|m\|^2 \;=\; s^2 \|v_{\mathrm{eff}}\|^2 \;+\; 2 s\, (v_{\mathrm{eff}} \cdot \mu) \;+\; \|\mu\|^2,
-  \label{eq:walk-m-quadratic}
-\end{equation}
-where $v_{\mathrm{eff}}$ is the per-unit-scale steering direction. So
-$\|m(s)\|^2$ is a \emph{quadratic} in $s$, with floor $\|\mu\|^2$ at
-$s = 0$. On a log--log plot of $V$ vs $s$, this denominator structure
-produces a smooth crossover: a flat shelf at $s \ll \|\mu\|/\|v_{\mathrm{eff}}\|$,
-a slope $-2$ tail at $s \gg \|\mu\|/\|v_{\mathrm{eff}}\|$, and a
-``parabolic-looking'' bend in between. We will return to this in
-Section~\ref{sec:walk-second-order-check}, where it lets us \emph{recover}
-the unsteered mean norm $\|\mu\|$ from the curvature of $V(s)$.
-
-\subsection{When Does Steering Actually Reduce Diversity?}
-\label{sec:walk-conditions}
-
-The bounds above tell us how concentrated the post-steering distribution
-is on the sphere. They do not, by themselves, say whether this is
-\emph{less} concentrated than the unsteered distribution. For that we
-need to compare $\|m\|$ to $\|\mu\|$. The first-order trace formula is
-$\operatorname{tr}(\Sigma_z) \propto 1/\|m\|^2$, so steering reduces
-diversity (in this sense) when
-\begin{equation}
-  \|\mu + s\| > \|\mu\|.
-  \label{eq:walk-condition}
-\end{equation}
-Squaring and rearranging:
-\begin{equation}
-  2\,\mu^\top s + \|s\|^2 > 0,
-  \qquad\text{equivalently}\qquad
-  \cos\angle(\mu, s) > -\frac{\|s\|}{2\|\mu\|}.
-\end{equation}
-This is a very weak condition. The right-hand side is always negative,
-so the condition is automatic whenever $s$ is in the same hemisphere as
-$\mu$, and even tolerates obtuse angles up to
-$\arccos(-\|s\|/2\|\mu\|)$. Only an $s$ that is both nearly anti-parallel
-to $\mu$ \emph{and} small relative to $\|\mu\|$ can violate it.
-
-When the condition is violated, $\|m\|$ is small and the projection
-becomes a magnifying glass: small Euclidean differences become large
-angular differences, and the diversity \emph{increases} rather than
-decreases. This anti-pole regime is analyzed in
-Section~\ref{sec:conditions} (companion to this walkthrough).
-
-In high dimensions, $\cos\angle(\mu, s)$ tends to be small in absolute
-value for any pair of structured vectors that are not deliberately aligned;
-combined with the typical residual-stream norm growth across layers
-\citep{turntrout2023norms}, the condition is generically satisfied. But
-``generically'' is not ``always'' --- one of our experiments
-(Section~\ref{sec:walk-claim7}) lands on the wrong side of the condition
-in a way that has practical consequences for how steering vectors are
-deployed. We highlight it as the most important
-``check before applying'' caveat in the entire bounds story.
-
-\subsection{Asymptotic Scaling Law and Eigenstructure}
-\label{sec:walk-scaling}
-
-Two final predictions are corollaries of the local analysis combined with
-the relationship between chordal and angular spread on the sphere
-(Section~\ref{sec:synthesis}):
+This document develops a theoretical account of why activation steering
+collapses the diversity of a transformer's outputs, and tests the
+account empirically on two open-weight models. It is written so a reader
+with no prior exposure to the project can follow it linearly. The
+structure is:
 
 \begin{enumerate}
-  \item \textbf{Scaling law (Claim 8).} As $\|s\| \to \infty$,
-    $V \sim 1/\|s\|$ and $\operatorname{tr}(\Sigma_z) \sim 1/\|s\|^2$.
-    On a log--log plot, slopes of $-1$ and $-2$ respectively.
-  \item \textbf{Alignment (Claim 9).} The smallest-eigenvalue eigenvector
-    of $\Sigma_z$ aligns with $\hat{m}$, since $\Sigma_z$'s null direction
-    \emph{is} $\hat{m}$ in the first-order picture.
+  \item \textbf{First-order theory} (Section~\ref{sec:diversity-reduction}).
+    Taylor-expand the RMSNorm projection around the steered mean. Result: an
+    explicit formula for the post-normalization covariance, with two terms ---
+    a rank-reducing projection orthogonal to the steered mean direction, and a
+    variance-shrinking factor of $1/\|\mu+s\|^2$.
+  \item \textbf{Global geometric bounds} (Section~\ref{sec:geometric-bound}).
+    Use only an elementary chordal-contraction lemma to derive distribution-free
+    upper bounds on spherical variance, expected pairwise distance, and
+    spherical diameter. These bounds are exact, not approximations.
+  \item \textbf{Second-order corrections} (Section~\ref{sec:second-order}).
+    Refine the Taylor expansion to second order. Two new effects appear: sphere
+    curvature pulls the mean resultant length below $1$, and a radial-perpendicular
+    coupling encodes the magnifying-glass effect near the origin. The refined
+    formula is what predicts the parabolic shape we observe in the empirical
+    $V(s)$ curves.
+  \item \textbf{When the bounds bite} (Section~\ref{sec:conditions}).
+    Identify the algebraic condition $\|\mu+s\| > \|\mu\|$ under which the
+    bounds correspond to a genuine reduction relative to the unsteered baseline,
+    discuss what happens when it fails (the anti-pole regime), and argue that
+    it is generically satisfied in practice.
+  \item \textbf{Synthesis} (Section~\ref{sec:synthesis}).
+    Reconcile the local and global analyses, show they agree on scaling, and
+    enumerate the testable empirical predictions.
+  \item \textbf{Experiments} (Section~\ref{sec:empirical-verification}).
+    Test all nine claims on Qwen2.5-1.5B-Instruct and Llama-3-8B-Instruct, with
+    three trained EasySteer vectors and two random-direction controls. The
+    headline finding: the scaling law is a statement about \emph{aggregate
+    steering magnitude}, not semantic direction; random vectors with matched
+    aggregate magnitude reproduce trained-vector behaviour on Llama
+    (slope $V = -1.85$ vs $-1.92$).
+  \item \textbf{Second-order consistency check} (Section~\ref{sec:walk-second-order-check}).
+    The parabolic shape of $V(s)$ on log--log axes is exactly the second-order
+    prediction: $V(s) \propto 1/\|m(s)\|^2$ with $\|m(s)\|^2$ a quadratic in
+    $s$. Fitting the quadratic recovers $\|\mu\|$ to within $\pm 10\%$ across
+    all runs.
 \end{enumerate}
 
-These are the most direct empirical predictions: a single regression on
-the log--log plot tests Claim 8, and a single eigendecomposition tests
-Claim 9. We test both in Section~\ref{sec:walk-results}.
+\noindent
+Proofs are interleaved with the statements throughout; readers focused on
+empirical claims may safely skim Sections~\ref{sec:diversity-reduction}--\ref{sec:second-order}
+for the formulas in shaded boxes and proceed directly to
+Section~\ref{sec:empirical-verification}. We refer to the nine quantitative
+predictions as ``Claim 1'' through ``Claim 9''; the mapping between claim
+numbers and theorems is summarized in the empirical section's headline
+table.
 
-\subsection{Summary of the Nine Claims}
 
-For convenience, Table~\ref{tab:walk-claims} restates the nine bounds in
-one place. Numbers refer to the order in which they were originally derived
-in the project; we also indicate whether the claim is exact (a strict
-inequality from Lemma~\ref{lem:walk-chordal}) or asymptotic (relies on
-truncating a Taylor expansion).
+% ------------------------------------------------------------------
+% 1. First-order Taylor analysis (theory.tex provides \section).
+% ------------------------------------------------------------------
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{The nine claims tested empirically.}
-  \label{tab:walk-claims}
-  \begin{tabular}{@{}clp{0.55\linewidth}l@{}}
-    \toprule
-    \# & Quantity bounded & Bound & Type \\
-    \midrule
-    1 & $\operatorname{tr}(\Sigma_z)$ & $\approx (\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m}) / \|m\|^2$ & Taylor 1st order \\
-    2 & $V$ & $\le 2\,\mathbb{E}\|x\| / \|s\|$ & exact \\
-    3 & $\max_x \|\phi_s(x) - \hat{s}\|$ & $\le 2\|x\| / \|s\|$ & exact \\
-    4 & $\|\phi_s(x_1) - \phi_s(x_2)\|$ & $\le 2\|x_1-x_2\| / (\|s\|-R)$, $\|s\|>R$ & exact \\
-    5 & $\operatorname{diam} \phi_s(\mathcal{D})$ & $\le 4R / \|s\|$ & exact \\
-    6 & $\mathbb{E}\|\phi_s(x_1) - \phi_s(x_2)\|$ & $\le 4\,\mathbb{E}\|x\| / \|s\|$ & exact \\
-    7 & ``Reduction gate'' & $\|m+s\| > \|m\|$ ($\Leftrightarrow \cos > -\|s\|/2\|\mu\|$) & algebraic \\
-    8 & Scaling law & $V \sim 1/\|s\|$, $\operatorname{tr}\Sigma_z \sim 1/\|s\|^2$ as $\|s\| \to \infty$ & asymptotic \\
-    9 & Eigenalignment & smallest eigvec of $\Sigma_z$ $\parallel$ $\hat{m}$ & asymptotic \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\input{diversity_reduction_theory.tex}
 
-\subsection{Experimental Setup}
-\label{sec:walk-setup-empirical}
 
-\paragraph{Models.} We use two open-weight checkpoints that span an order
-of magnitude in size:
-\begin{itemize}
-  \item Qwen2.5-1.5B-Instruct: $d = 1536$, $L = 28$ blocks, RMSNorm + RoPE.
-  \item Meta-Llama-3-8B-Instruct: $d = 4096$, $L = 32$ blocks, RMSNorm + RoPE.
-\end{itemize}
-RoPE applies positional information \emph{inside attention} (rotating Q
-and K), not additively to the residual stream, so the residual stream
-itself never carries a positional embedding. None of our quantities are
-contaminated by a positional bias.
+% ------------------------------------------------------------------
+% 2. Global geometric bounds (\subsection inside theory's \section).
+% ------------------------------------------------------------------
 
-\paragraph{Data.} Each run streams $1000$ documents from
-\texttt{HuggingFaceFW/fineweb-edu} (a quality-filtered web-text corpus),
-truncates each to $256$ tokens, and runs one forward pass per document.
-Token-level activations (with padding masked) are the unit of statistics.
-We deliberately use a broad input distribution rather than a domain-matched
-one, to stress rather than cherry-pick the bounds.
+\input{diversity_reduction_geometric.tex}
 
-\paragraph{Steering vectors.} We test three publicly released vectors
-from the EasySteer
-library\footnote{\url{https://github.com/ZJU-REAL/EasySteer}}, plus two
-random controls:
-\begin{itemize}
-  \item \texttt{happy\_diffmean.gguf} (Qwen): happy-vs-sad diff-mean from role-play prompts.
-  \item \texttt{style-probe.gguf} (Qwen): a stylistic-contrast direction.
-  \item \texttt{create.gguf} (Llama): a creativity direction trained on Llama-3-8B.
-  \item \textbf{Per-layer-matched random}: at each target layer $\ell$, draw
-    $r_\ell \sim \mathcal{N}(0, I_d)$ and rescale so $\|r_\ell\| = \|s_\ell\|$.
-  \item \textbf{Aggregate-matched random}: same draws, but rescale all
-    per-layer vectors by a single common factor so that
-    $\|\sum_\ell r_\ell\| = \|\sum_\ell s_\ell\|$ over the target layers.
-\end{itemize}
-The two random controls differ in a way that turns out to be central
-(Section~\ref{sec:walk-agg-matched}). Random unit vectors in high
-dimensions are near-orthogonal, so $\|\sum r_\ell\|$ scales as $\sqrt{n}$;
-trained vectors stack coherently so $\|\sum s_\ell\|$ scales as $n$.
-Per-layer matching at the same nominal scale therefore delivers
-\emph{less} aggregate steering for random than for trained.
 
-\paragraph{Pipeline.} For each (model, vector, target layers, random-mode)
-configuration and each nominal scale $c \in \{0, 0.5, 1, 2, 4, 8\}$, the
-pipeline:
-\begin{enumerate}
-  \item runs $1000$ documents through the model in bfloat16,
-    intervening at the chosen target layers using \texttt{nnsight};
-  \item captures the pre- and post-RMSNorm residual at the final
-    RMSNorm site, masking padding tokens;
-  \item streams a full $d \times d$ covariance $\Sigma_x$ via a batched
-    Chan--Golub--LeVeque Welford update (in float32, validated against
-    \texttt{numpy.cov} as ground truth);
-  \item maintains a reservoir of $K = 1024$ representative activation
-    vectors (Vitter Algorithm R) for pairwise statistics;
-  \item produces \texttt{stats.pt} and \texttt{stats\_meta.json}, which
-    feed the per-claim verification step.
-\end{enumerate}
-A hard ``trust no silent steering'' verification step runs before any
-recording: the verifier samples from the model with and without steering
-and refuses to record statistics unless the steered samples differ from
-the unsteered ones on both KL-divergence and residual-delta-magnitude
-criteria. This gate caught the batch-indexing bug discussed in
-Section~\ref{sec:walk-threats}.
+% ------------------------------------------------------------------
+% 3. Second-order corrections (\subsection inside theory's \section).
+% ------------------------------------------------------------------
 
-\paragraph{Two experiments.} The full protocol is $19$ recording runs:
-\begin{itemize}
-  \item \textbf{Experiment 1} ($5$ runs): Qwen + \{happy, style, per-layer
-    random matched to happy\}; Llama + \{creativity, per-layer random
-    matched to creativity\}. Target layers are the full trained range
-    for each real vector.
-  \item \textbf{Experiment 2} ($14$ runs): two aggregate-matched random
-    controls (one per model), plus a single-layer sweep at edge/middle/edge
-    of each trained range (Qwen happy at layers $\{10, 17, 25\}$; Llama
-    creativity at layers $\{16, 22, 29\}$) for both real and per-layer
-    random vectors. This experiment is what teases apart aggregate
-    magnitude from semantic direction.
-\end{itemize}
+\input{diversity_reduction_second_order.tex}
 
-\paragraph{Effective steering.} The theory above treats $s$ as if it were
-added directly at the measurement layer. In practice $s$ is added at
-target layers (typically middle layers), and the residual then propagates
-through additional blocks before reaching the final RMSNorm. Writing the
-theoretical RHS in terms of the residual at the measurement layer
-requires an ``effective steering'' quantity. We use
-\[
-  s_{\mathrm{eff}} \coloneqq \mu_c - \mu_0,
-\]
-the empirical mean shift of the pre-RMSNorm residual between the steered
-and unsteered runs at the same scale. By construction $\|s_{\mathrm{eff}}\|$
-is monotone in $c$. All theoretical RHS quantities are reported using
-$s_{\mathrm{eff}}$ in place of $s$.
 
-\subsection{Results, Claim by Claim}
-\label{sec:walk-results}
+% ------------------------------------------------------------------
+% 4. When the bounds bite (\subsection inside theory's \section).
+% ------------------------------------------------------------------
 
-Table~\ref{tab:walk-summary} collects the headline result for every claim.
-The remainder of this section discusses the noteworthy ones in turn. Per-run
-plots of every LHS-vs-RHS curve are in
-\texttt{outputs/bounds/<run\_name>/plots/} in the repository.
+\input{diversity_reduction_conditions.tex}
 
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{Summary of empirical findings, aggregated across all $19$ runs.}
-  \label{tab:walk-summary}
-  \begin{tabular}{@{}llp{0.55\linewidth}@{}}
-    \toprule
-    \# & Status & Detail \\
-    \midrule
-    1 & qualitative & Empirical ratio LHS/RHS $\approx 0.1$--$0.5$; right direction, $2$--$10\times$ loose. \\
-    2 & holds & Passes at every scale on every run. Tightness varies. \\
-    3 & holds & Passes everywhere; strict geometric identity. \\
-    4 & inapplicable & Precondition $\|s_{\mathrm{eff}}\| > R$ never met at the final-RMSNorm site. \\
-    5 & holds & Passes everywhere. \\
-    6 & holds & Passes everywhere; typically loose. \\
-    7 & \textbf{fails on Qwen + happy} & At every scale; also fails for Qwen single-layer at $L17, L25$ (direction-independent). \\
-    8 & \textbf{magnitude not direction} & Manifests on Llama; fails to manifest on Qwen at any tested scale. \emph{Aggregate-matched random matches trained}. \\
-    9 & not observed & $|\cos|$ between smallest eigenvector of $\Sigma_z$ and $\hat{m}$ stays $\approx 0$ across all runs. \\
-    \bottomrule
-  \end{tabular}
-\end{table}
 
-\subsubsection{The exact bounds (Claims 3, 5)}
+% ------------------------------------------------------------------
+% 5. Synthesis (\subsection inside theory's \section).
+% ------------------------------------------------------------------
 
-Proposition~\ref{prop:walk-pole} (concentration around the pole) and
-Corollary~\ref{cor:walk-diam} (spherical diameter) are strict inequalities
-derived from Lemma~\ref{lem:walk-chordal}. They hold for every $x$, every
-$s$, and every distribution. As expected, they pass at every scale in
-every run and would only fail in the presence of a pipeline bug. We use
-them as a smoke test before reporting any other claim.
+\input{diversity_reduction_synthesis.tex}
 
-\subsubsection{The Lipschitz bound (Claim 4) is never applicable}
 
-The pairwise bound of Proposition~\ref{prop:walk-pair} requires
-$\|s\| > R$. At the final-RMSNorm site, $R$ (the largest sample norm in
-the support) is on the order of hundreds for both models, while
-$\|s_{\mathrm{eff}}\|$ at the maximum tested scale is around $120$. The
-precondition is never satisfied, so we report Claim 4 as
-\emph{always inapplicable} rather than reporting an LHS/RHS ratio with a
-negative denominator.
+% ------------------------------------------------------------------
+% 6. Empirical verification (new \section).
+% ------------------------------------------------------------------
 
-This is not an indictment of the proposition --- it remains an exact
-inequality whenever the precondition holds. It does suggest that the
-right place to evaluate the pairwise bound is the steering-injection
-layer, not the final RMSNorm.
+\input{diversity_reduction_empirical.tex}
 
-\subsubsection{The first-order trace bound (Claim 1) is loose but right-direction}
 
-Proposition~\ref{prop:walk-local} predicts
-$\operatorname{tr}(\Sigma_z) \approx (\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m}) / \|m\|^2$.
-Empirically, the ratio LHS/RHS is in $[0.1, 0.5]$ across runs. The
-prediction is loose because we are at a measurement site many blocks
-downstream of the steering site; intermediate attention and MLP blocks
-re-shape the distribution. The direction of the prediction is correct,
-which is what we should expect from a first-order Taylor truncation; we
-get a tighter, asymptotically-correct prediction from the second-order
-analysis, which we test directly in Section~\ref{sec:walk-second-order-check}.
-
-\subsubsection{The reduction gate (Claim 7) fails for Qwen + happy and at single layers}
-\label{sec:walk-claim7}
-
-The reduction gate of \eqref{eq:walk-condition} states
-$\|\mu + s\| > \|\mu\|$. It is an algebraic identity and so cannot fail
-``in theory''; it can fail \emph{in practice} when the empirical
-$\mu \cdot s$ is just-negative-enough to dominate $\|s\|^2/2$ at small
-$\|s\|$.
-
-In Experiment 1, four of the five configurations pass at every scale.
-One configuration --- Qwen + \texttt{happy} --- \textbf{fails at every
-scale}. A diagnostic
-(\texttt{scripts/bounds/investigations/03\_investigate\_happy\_data\_alignment.py})
-revealed why: on FineWeb-Edu,
-$\cos(\mu_{\mathrm{unsteered}}, \sum_\ell s^{\mathrm{happy}}_\ell) = -0.108$,
-about $4\sigma$ from the null distribution of random-direction cosines in
-$d = 1536$. Twelve of $16$ per-layer cosines are negative. The
-\texttt{happy\_diffmean} vector was trained on a happy-vs-sad role-play
-contrast, and educational prose at Qwen's representation lives slightly
-on the sad side of that axis. The result is that $2\mu^\top s$ remains
-just-large-enough negative to flip the sign of $\|m\|^2 - \|\mu\|^2$ at
-all tested scales.
-
-Experiment 2 produced a second, more surprising failure pattern. At Qwen
-single-layer steering at \emph{layers $L17$ and $L25$}, Claim 7 fails for
-both real and random directions. At single-layer $L10$, it passes for
-both. This is direction-independent and position-dependent. The natural
-interpretation is that early-layer steering has many downstream blocks to
-amplify $\|s_{\mathrm{eff}}\|$, late-layer steering does not, and at small
-effective magnitude the sign of $\mu \cdot s_{\mathrm{eff}}$ decides.
-
-The practical lesson is sharp: the reduction gate is a \emph{precondition}
-that should be checked empirically before applying any of the
-diversity-reduction bounds to a new $(\text{model}, \text{vector}, \text{dataset})$
-triple.
-
-\subsubsection{The scaling law (Claim 8) and the magnitude-vs-direction story}
-\label{sec:walk-agg-matched}
-
-Claim 8 predicts log--log slope $-1$ for $V(\|s\|)$ and slope $-2$ for
-$\operatorname{tr}(\Sigma_z)(\|s\|)$ in the asymptotic regime. We
-estimate slopes by log--log linear regression across $c \in \{0.5, 1, 2, 4, 8\}$
-for every run.
-
-\begin{table}[htbp]
-  \centering
-  \small
-  \caption{Empirical slopes from Claim 8 regressions. Predictions: slope $V = -1$, slope $\operatorname{tr}(\Sigma_z) = -2$.}
-  \label{tab:walk-scaling}
-  \begin{tabular}{@{}lrr@{}}
-    \toprule
-    Run & slope $V$ & slope $\operatorname{tr}(\Sigma_z)$ \\
-    \midrule
-    \multicolumn{3}{l}{\emph{Llama-3-8B-Instruct:}} \\
-    \texttt{llama\_creativity} (trained, full target range) & $\mathbf{-1.92}$ & $-1.77$ \\
-    \texttt{llama\_random\_agg\_matched} (aggregate-matched random) & $\mathbf{-1.85}$ & $-1.71$ \\
-    \texttt{llama\_random} (per-layer-matched random) & $-0.51$ & $-0.41$ \\
-    \texttt{llama\_creativity\_single\_L\{16,22,29\}} & $\approx -0.05$ & $\approx -0.03$ \\
-    \texttt{llama\_random\_single\_L\{16,22,29\}} & $\approx -0.04$ & $\approx -0.02$ \\
-    \midrule
-    \multicolumn{3}{l}{\emph{Qwen2.5-1.5B-Instruct:}} \\
-    \texttt{qwen\_style} & $-0.29$ & $-0.25$ \\
-    \texttt{qwen\_random\_agg\_matched} (aggregate-matched random) & $-0.20$ & $-0.17$ \\
-    \texttt{qwen\_random} (per-layer-matched random) & $-0.04$ & $-0.03$ \\
-    \texttt{qwen\_happy} & $-0.02$ & $-0.02$ \\
-    \texttt{qwen\_*\_single\_L\{10,17,25\}} & $\approx 0$ & $\approx 0$ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-Two findings dominate Table~\ref{tab:walk-scaling}.
-
-\paragraph{Llama hits the scaling regime; Qwen does not.}
-On Llama, both the trained creativity vector and the aggregate-matched
-random control hit slope-$V$ values steeper than the predicted $-1$
-($-1.92$ and $-1.85$ respectively). The overshoot reflects the fact that
-at $c = 4, 8$ Llama is already well into the regime where its outputs
-collapse into gibberish, pushing the spherical distribution past where
-the first-order asymptotic captures the behaviour.
-
-On Qwen no run reaches the asymptotic regime. The reason is a magnitude
-mismatch: Qwen's $\|\mu\|$ at the final RMSNorm site is approximately
-$218$ and $\mathbb{E}\|x\| \approx 300$, whereas $\|s_{\mathrm{eff}}\|$ at
-$c = 8$ is only about $125$. The bounds become tight when
-$\|s_{\mathrm{eff}}\|$ overtakes the natural scale of the residual stream;
-Qwen is an architecture for which this never happens at scales we can
-push the model through without destroying its outputs.
-
-\paragraph{Aggregate magnitude beats semantic direction.}
-The cleanest finding of the paper is the side-by-side comparison on Llama:
-trained creativity has slope $V = -1.92$; aggregate-matched random has
-slope $V = -1.85$. The difference of $0.07$ is at the level of regression
-noise. \textbf{Random directions, when given matched aggregate magnitude,
-drive the scaling law just as hard as trained directions.}
-
-This contradicts the obvious reading of Experiment 1 alone, where the
-per-layer-matched random had slope $-0.51$ and the trained vector had
-slope $-1.92$. That apparent ``trained vectors are special'' gap was an
-artifact of how the per-layer-matched random under-delivers aggregate
-steering: with $14$ near-orthogonal random unit vectors, the aggregate
-norm $\|\sum_\ell r_\ell\|$ grows as $\sqrt{14} \approx 3.7$, whereas the
-trained vectors stack coherently so $\|\sum_\ell s_\ell\|$ grows as $14$.
-At the same nominal scale $c$, per-layer random delivers $\sim 4\times$
-less aggregate steering.
-
-The implication for the bounds: \emph{Claim 8 is a statement about
-aggregate steering magnitude, not about semantic direction}. Any
-direction with sufficient aggregate magnitude reproduces the scaling.
-And the implication for empirical practice: random-direction baselines
-should be \emph{aggregate-matched}, not per-layer-matched, on pain of
-underestimating how hard the bound is being driven.
-
-The single-layer sweeps tell a complementary story: with only one
-intervention layer, the aggregate magnitude is much smaller, so slopes
-collapse toward zero (single-layer Llama runs are all in
-$[-0.06, -0.03]$, single-layer Qwen runs are indistinguishable from
-zero). Real and random are indistinguishable at matched single-layer
-magnitude.
-
-\subsubsection{The eigenalignment claim (Claim 9) is not observed}
-
-Across all $19$ runs, the absolute cosine between the smallest-eigenvalue
-eigenvector of $\Sigma_z$ and $\hat{m}$ stays close to zero with no
-monotone trend in $c$. Three explanations are plausible: (i) the
-reservoir-based estimate of $\Sigma_z$ ($K = 1024$ samples in
-$d = 1536$ or $4096$) is too noisy to pin down the smallest eigenvector;
-(ii) the theoretical $\hat{m}$ is the steering direction at the
-\emph{injection layer}, but at the final-RMSNorm measurement site the
-relevant axis is a propagated and rotated version of this; (iii) the
-prediction may simply not survive realistic distributional conditions.
-We do not currently distinguish between these and recommend that future
-work test the alignment claim at the injection layer rather than the
-measurement layer.
+% ------------------------------------------------------------------
+% 7. Second-order consistency check.
+%
+% Wrapper-local subsection: this content lives at
+% docs/bounds/second_order_consistency.md in the repo and is summarized
+% here. Numbers come from
+%   scripts/bounds/second_order_consistency_check.py
+% over the seven multi-layer runs in outputs/bounds/.
+% ------------------------------------------------------------------
 
 \subsection{Second-Order Consistency Check: The Parabola Has a Meaning}
 \label{sec:walk-second-order-check}
 
-The log--log plots of $V(s)$ in our scale sweeps are not straight lines.
-They are smooth curves --- ``parabola-like'' on log--log axes. The
-second-order theory of Section~\ref{sec:walk-second-order} predicts
-exactly this shape. From \eqref{eq:walk-V-second-order} and
-\eqref{eq:walk-m-quadratic}:
+The log--log plots of $V(s)$ in the scale sweeps of
+Section~\ref{sec:empirical-scaling} are not straight lines. They are smooth
+curves with a knee --- ``parabola-like'' on log--log axes. The first-order
+slope-$-1$ prediction of Claim 8 captures the asymptotic tail but not the
+shape of the bend. We check directly whether the second-order theory of
+Section~\ref{sec:second-order} accounts for it.
+
+From the second-order spherical-variance formula
+\eqref{eq:spherical-variance-taylor},
 \begin{equation}
-  V(s) \;\approx\; \frac{\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m}}{2\|m(s)\|^2},
-  \qquad
-  \|m(s)\|^2 = a s^2 + b s + c,
-  \quad c = \|\mu\|^2.
-  \label{eq:walk-V-parabola}
+  V(s) \;\approx\; \frac{\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m}}{2\,\|m(s)\|^2}.
+  \label{eq:walk-V-second-order-recap}
 \end{equation}
-This makes two independent, falsifiable predictions:
+Substituting $m(s) = \mu + s\,v_{\mathrm{eff}}$, the denominator is a strict
+algebraic quadratic in $s$:
+\begin{equation}
+  \|m(s)\|^2
+  \;=\; s^2\,\|v_{\mathrm{eff}}\|^2
+  \;+\; 2 s\,(v_{\mathrm{eff}} \cdot \mu)
+  \;+\; \|\mu\|^2.
+  \label{eq:walk-m-quadratic}
+\end{equation}
+This makes two falsifiable predictions:
+
 \begin{enumerate}
-  \item $\|m(s)\|^2$ is a perfect quadratic in $s$ when expanded around
-    the measurement-site residual. Fitting $a s^2 + b s + c$ to the
-    measured $\|m(s)\|^2$ at $s > 0$ and \emph{extrapolating to $s = 0$}
-    must recover $\sqrt{c} = \|\mu\|$ measured directly at $s = 0$.
-  \item In the deep-asymptotic regime where the second-order Taylor
-    expansion has converged, the constant
-    $V \cdot \|m\|^2$ should equal $(\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m})/2$.
+  \item \textbf{Quadratic intercept.} Fitting $\|m(s)\|^2 = a s^2 + b s + c$
+    to the measured $\|m(s)\|^2$ at $s > 0$ and \emph{extrapolating to
+    $s = 0$} must recover $\sqrt{c} = \|\mu\|$ measured directly at the
+    unsteered scale. The independently measured $\|\mu\|$ is the norm of
+    the raw mean residual at $s = 0$ (available from \texttt{stats.pt});
+    no fitting is involved.
+  \item \textbf{Asymptotic constant.} In the deep-asymptotic regime where
+    the second-order Taylor expansion has converged, the product
+    $V(s) \cdot \|m(s)\|^2$ should equal
+    $(\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m})/2$.
 \end{enumerate}
 
-We test both directly. The script
-\texttt{scripts/bounds/second\_order\_consistency\_check.py} extracts
+Both predictions are tested by
+\texttt{scripts/bounds/second\_order\_consistency\_check.py}, which extracts
 $(s, V, \|m\|, \operatorname{tr}\Sigma_x, \hat{m}^\top \Sigma_x \hat{m})$
-from each \texttt{stats.pt} file, fits the quadratic, and writes the table
-below. The independently-measured $\|\mu\|$ is read off the raw
-\texttt{mean} vector at $s = 0$ in the same \texttt{stats.pt}, with no
-fitting involved.
+from each \texttt{stats.pt} file in \texttt{outputs/bounds/} and writes the
+results to \texttt{outputs/bounds/second\_order\_check/}.
+
+\paragraph{Quadratic intercept (Prediction 1).}
+Table~\ref{tab:walk-sqrtc} shows the result for each multi-layer run.
 
 \begin{table}[htbp]
   \centering
   \small
-  \caption{Second-order consistency check: the quadratic intercept $\sqrt{c}$ recovers $\|\mu\|$ to within ~1--9\% across all runs where the model is valid in the small-$s$ regime.}
+  \caption{Fit of $\|m(s)\|^2 = a s^2 + b s + c$ over $s \in \{0.5, 1, 2, 4, 8\}$ for each multi-layer run, compared to the independently-measured $\|\mu\|$ at $s = 0$. Six of seven runs land within $\pm 10\%$ of unity in the rightmost column.}
   \label{tab:walk-sqrtc}
   \begin{tabular}{@{}lrrrr@{}}
     \toprule
-    Run & R$^2$ of $\|m\|^2$ fit & $\sqrt{c}$ & $\|\mu\|$ measured & $\sqrt{c} / \|\mu\|$ \\
+    Run & $R^2$ of fit & $\sqrt{c}$ & $\|\mu\|$ measured & $\sqrt{c} / \|\mu\|$ \\
     \midrule
     \texttt{llama\_creativity} & $0.9998$ & $20.80$ & $19.16$ & $1.085$ \\
     \texttt{llama\_random} & $0.9996$ & $18.31$ & $19.16$ & $0.956$ \\
@@ -797,125 +225,44 @@ fitting involved.
   {\footnotesize
   $^\dagger$ For aggregate-matched random on Llama, the per-layer vectors are
   rescaled large enough that even $s = 0.5$ is past the quadratic's turning
-  point; the local quadratic fit is excellent (R$^2 = 0.9998$) but
-  extrapolates to a negative intercept.}
+  point; the local quadratic fit is excellent ($R^2 = 0.9998$) but extrapolates
+  to a negative intercept. The global model has the wrong shape in this
+  region; the local fit captures the curvature.}
 \end{table}
 
-Six of seven runs land within $\pm 10\%$ of the diagonal. \texttt{qwen\_random}
-matches to four decimal places. The fit qualities are R$^2 \ge 0.9947$,
-meaning the quadratic shape is essentially exact within the measured range.
-The interpretation is direct: \emph{the parabola-on-log-log shape that was
-visible in our $V(s)$ plots is the quadratic structure of $\|m(s)\|^2$,
-and that quadratic bottoms out at $\|\mu\|^2$, which we recover}.
+The intercept-recovery test passes cleanly. \texttt{qwen\_random} matches
+$\|\mu\|$ to four decimal places. The shape of the $V(s)$ log--log curve
+\emph{is} the quadratic structure of $\|m(s)\|^2$, and that quadratic bottoms
+out at $\|\mu\|^2$ --- which is the unsteered residual mean norm at the
+measurement site, recovered without any prior knowledge from a fit on
+$s > 0$ data.
 
-The second prediction --- that $V \cdot \|m\|^2 \to (\operatorname{tr}\Sigma_x - \hat{m}^\top \Sigma_x \hat{m})/2$
-in the asymptotic regime --- is also borne out, but only on Llama where
-the asymptotic regime is reachable. At $c = 8$ on Llama with creativity,
-$V_{\mathrm{pred}}/V_{\mathrm{measured}} = 0.97$; on the aggregate-matched
-random, $0.96$. On Qwen the same ratio plateaus around $1.5$ at all scales,
-because Qwen's residual stream is large enough that even $c = 8$ does not
-reach the asymptotic regime --- the same finding as Claim 8, restated
-through the second-order lens.
+\paragraph{Asymptotic constant (Prediction 2).}
+The ratio $V_{\mathrm{predicted}} / V_{\mathrm{measured}}$ should approach
+$1$ as the Taylor expansion converges. On Llama, this ratio drops from
+$\approx 4$ at $s = 0.5$ to $0.97$ at $s = 8$ for the trained creativity
+vector and to $0.96$ for the aggregate-matched random control --- the
+asymptotic prediction is quantitatively correct in the high-$s$ tail of
+both runs. On Qwen, the ratio plateaus at approximately $1.5$ across all
+scales, because Qwen's natural residual-stream norm is large enough that
+even $s = 8$ does not push $\|m(s)\|^2$ deep into the asymptotic regime.
+This is the same finding as Claim 8's failure to manifest on Qwen, restated
+through the second-order lens: \emph{the parabola does not flatten into a
+slope-$-1$ asymptote within the scales the model can tolerate}.
 
-The headline lesson is that the gap between the global $O(1/\|s\|)$ bound
-and the observed $V(s)$ shape is not a failure of the theory. It is the
-theory: \emph{at the scales we probe, we are in the crossover region of a
-quadratic denominator with a $\|\mu\|^2$ floor}, and the theory predicts
-exactly that shape. The slope $-1$ asymptote of Claim 8 is recovered only
-once $s \gg \|\mu\|/\|v_{\mathrm{eff}}\|$.
+\paragraph{What this changes about Claim 8.}
+The first-order slope-$-1$ prediction of Claim 8 is the asymptote of the
+second-order curve; it is not the curve itself. The deviation from a clean
+slope-$-1$ at moderate $s$ is not a failure of the theory but its prediction:
+$V(s) \propto 1/\|m(s)\|^2 = 1/(a s^2 + b s + c)$, which on log--log axes
+crosses smoothly from a flat shelf at $s \ll \|\mu\|/\|v_{\mathrm{eff}}\|$
+to slope $-2$ at $s \gg \|\mu\|/\|v_{\mathrm{eff}}\|$. The slope-$-1$
+behaviour for $V$ (rather than $-2$) emerges only after combining this with
+the chordal-vs-spherical-variance scaling correspondence of
+Section~\ref{sec:synthesis}; both predictions agree once the regime is deep
+enough.
 
-\subsection{Threats to Validity and Meta-Findings}
-\label{sec:walk-threats}
-
-Three non-theoretical findings shaped the final form of the experiments
-and merit explicit note.
-
-\paragraph{A silent batch-indexing bug contaminated the first run.}
-In HuggingFace Transformers $\ge 4.40$, the \texttt{forward} of
-Qwen2/Llama3 decoder layers returns a \emph{bare} hidden-state tensor
-$[B, T, d]$, not a $1$-tuple $(h,)$ as in GPT-2. An intervention helper
-that did \texttt{layer.output[0][:] = layer.output[0] + s}, intending to
-unpack the tuple, instead indexed into the batch dimension and steered
-only the zeroth prompt of every batch. The bug was silent: no error, no
-KL-gate failure (prompt $0$ did shift), CPU unit tests on \texttt{tiny-gpt2}
-all passed (because GPT-2 still returns a tuple). It surfaced when a
-per-layer diagnostic emitted a shape mismatch. The fix adds an
-architecture-dispatching helper and shape assertions at every
-capture-materialization point; a regression test verifies that all batch
-elements see the intervention. All numbers reported here are post-fix;
-contaminated runs are preserved at \texttt{discarded/} for audit.
-
-\paragraph{The \texttt{welford-torch} library is unsafe in our regime.}
-Our streaming covariance accumulators initially used the public
-\texttt{welford-torch} library. Cross-checking against \texttt{numpy.cov}
-on synthetic data with $\mu \approx 1000$ and $\sigma \approx 0.01$
-revealed >$100\%$ relative error in the trace of the covariance, due to
-catastrophic cancellation in a two-step delta formulation. We
-hand-rolled a Chan--Golub--LeVeque batched Welford merge that stays
-stable in float32. A reproducer is documented at
-\texttt{docs/upstream\_bug\_reports/welford\_torch\_big\_mean\_drift/}.
-
-\paragraph{The training pool affects the reduction gate.}
-The Claim 7 failure for Qwen + happy is driven by a small but systematic
-anti-alignment between the training-pool diff direction and FineWeb-Edu's
-residual mean. This is not a flaw in the theory --- the gate itself is
-algebraic --- but a precondition that practitioners must check before
-trusting downstream bounds. We recommend reporting
-$\cos(\mu, \sum_\ell s_\ell)$ as a routine diagnostic in any future work
-applying these bounds.
-
-\subsection{What to Take Away}
-\label{sec:walk-takeaway}
-
-The empirical picture matches the theory, with two important nuances.
-
-\paragraph{Exact bounds always hold.}
-Propositions~\ref{prop:walk-pole}, \ref{prop:walk-pair} (where applicable),
-and Corollaries~\ref{cor:walk-V}, \ref{cor:walk-pair}, \ref{cor:walk-diam}
-are strict inequalities derived from a single chordal-contraction lemma.
-They hold in every run. Verifying them is a smoke test for the pipeline.
-
-\paragraph{Asymptotic predictions hold when the scales are large enough.}
-Proposition~\ref{prop:walk-local} (the local trace bound) and Claim 8 (the
-$1/\|s\|$ scaling law) are correct in direction always, but their
-quantitative tightness depends on whether $\|s_{\mathrm{eff}}\|$ is large
-relative to the natural residual-stream scale. On Llama-3-8B at scales
-the model can tolerate, the slope-$-1$ behaviour manifests cleanly. On
-Qwen2.5-1.5B it never does, because Qwen's residual stream is too large
-to be dominated by any tested steering magnitude.
-
-\paragraph{Aggregate magnitude, not direction, drives the scaling.}
-The single most important empirical finding is that random directions
-matched in \emph{aggregate} magnitude reproduce the scaling slope of
-trained vectors (Llama: $-1.85$ vs $-1.92$; Qwen as well as can be told
-without an asymptotic regime). The scaling law is a statement about how
-much steering you are doing, not what direction you are steering in.
-Future empirical work on these bounds should report results against an
-aggregate-matched random baseline rather than a per-layer-matched one.
-
-\paragraph{The reduction gate is a precondition, not a theorem.}
-The condition $\|m + s\| > \|m\|$ is algebraic; it can fail empirically
-when a steering vector is mildly anti-aligned with the evaluation
-distribution's residual mean. We saw this on Qwen + happy and on Qwen
-single-layer interventions at L17 and L25. Practitioners applying these
-bounds to a new $(\text{model}, \text{vector}, \text{dataset})$ triple
-should verify the gate empirically before trusting downstream numbers.
-
-\paragraph{The parabola on log--log has a name.}
-The visible curvature of $V(s)$ is not a failure of the slope-$-1$
-prediction; it is the correct second-order Taylor shape, with
-$V(s) \propto 1/\|m(s)\|^2$ and $\|m(s)\|^2$ a quadratic in $s$ with
-floor $\|\mu\|^2$. Fitting the quadratic recovers $\sqrt{c} = \|\mu\|$
-within $1$--$9\%$ across every run with a valid local fit. The slope-$-1$
-asymptote is what one sees only deep into the regime
-$\|s_{\mathrm{eff}}\| \gg \|\mu\|$.
-
-\paragraph{Open: the eigenalignment claim.}
-Claim 9's prediction --- that the smallest-eigenvalue eigenvector of
-$\Sigma_z$ aligns with $\hat{m}$ --- is the one prediction in the paper
-that we do not currently see in the data. We do not yet know whether the
-issue is statistical (noisy estimate of the smallest eigenvector with
-$K = 1024$ samples in high dimension), structural (the propagated
-$\hat{m}$ at the measurement layer is rotated relative to the injection
-direction), or substantive. Future work that evaluates Claim 9 at the
-injection layer is the natural next step.
+In summary, the second-order theory survives an independent quantitative
+test that the first-order theory cannot make: it predicts the
+\emph{shape} of $V(s)$, not just its asymptote, and that prediction lets
+us recover the unsteered $\|\mu\|$ from the curvature of $V(s)$ alone.
