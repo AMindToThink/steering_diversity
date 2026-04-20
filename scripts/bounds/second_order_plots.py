@@ -37,47 +37,90 @@ def plot_run(run: dict, out_dir: Path) -> None:
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.2))
 
-    # ---- 1. V(s) on log-log ----
+    # ---- 1. V(s) on log-log: measured points vs direct second-order prediction ----
+    # Plot V_measured against V_pred(s) = (tr Sigma - m_hat^T Sigma m_hat) / (2 ||m||^2),
+    # where all quantities are measured per-scale. This is the literal second-order
+    # formula evaluated at the data, not a shape fit to V.
     ax = axes[0]
-    ax.loglog(s_pos, V_all[pos], "o", label="V measured", color="C0")
-    s_dense = np.geomspace(max(s_pos.min() * 0.5, 1e-3), s_pos.max() * 2, 200)
-    if np.isfinite(V_fit["A"]) and np.isfinite(V_fit["B"]) and np.isfinite(V_fit["C"]):
-        V_fit_curve = V_fit["A"] / (s_dense * s_dense + V_fit["B"] * s_dense + V_fit["C"])
-        V_fit_curve = np.where(V_fit_curve > 0, V_fit_curve, np.nan)
-        ax.loglog(
-            s_dense,
-            V_fit_curve,
-            "--",
-            color="C1",
-            label=f"A/(s²+Bs+C),  √C={run['sqrt_C_from_V_fit']:.2f}",
-        )
+    V_pred_all = 0.5 * (tr_all - quad_all) / (m_all ** 2)
+    ax.loglog(s_pos, V_all[pos], "o", label="V measured", color="C0", markersize=8)
+    ax.loglog(
+        s_pos,
+        V_pred_all[pos],
+        "x--",
+        color="C1",
+        label=r"V$_{\mathrm{pred}}$ = (tr Σ − m̂ᵀΣm̂) / (2‖m‖²)",
+        markersize=10,
+        markeredgewidth=2,
+    )
     ax.set_xlabel("scale s")
     ax.set_ylabel("V(s)")
-    ax.set_title(f"{name}: V(s)")
+    ax.set_title(f"{name}: V(s) vs second-order prediction")
     ax.grid(True, which="both", alpha=0.3)
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=8, loc="best")
 
     # ---- 2. ‖m(s)‖² with parabolic fit ----
     ax = axes[1]
-    ax.loglog(s_pos, m_all[pos] ** 2, "o", label="‖m(s)‖² measured", color="C0")
+    # Evaluate the fit on two ranges:
+    #   - in-data: covers the measured s values, where R² is meaningful
+    #   - extrapolation-to-s0: only shown if the fit is physically sensible
+    #                          (a > 0 and c > 0), so the reader can see the
+    #                          parabola pass near the measured ‖μ‖² marker
+    s_in = np.geomspace(s_pos.min(), s_pos.max(), 120)
+    m_fit_in = m_fit["a"] * s_in * s_in + m_fit["b"] * s_in + m_fit["c"]
+    m_fit_in = np.where(m_fit_in > 0, m_fit_in, np.nan)
+
+    ax.loglog(s_pos, m_all[pos] ** 2, "o", label="‖m(s)‖² measured", color="C0", markersize=8)
+
+    # Plot the measured ‖μ‖² at s=0 as a reference marker. Since the axis is
+    # log in s, place it at a small positive value with a short horizontal bar.
+    mu_marker_x = max(s_pos.min() * 0.02, 1e-3)
     ax.loglog(
-        [s_all[0] + 1e-3],
+        [mu_marker_x],
         [m_all[0] ** 2],
         "s",
         color="C2",
         label=f"‖μ‖²_meas at s=0 = {m_all[0]**2:.1f}",
+        markersize=10,
     )
-    m_fit_curve = m_fit["a"] * s_dense * s_dense + m_fit["b"] * s_dense + m_fit["c"]
-    m_fit_curve = np.where(m_fit_curve > 0, m_fit_curve, np.nan)
+
     c_label = (
         f"√c={run['sqrt_c_from_m_sq_fit']:.2f}"
         if np.isfinite(run["sqrt_c_from_m_sq_fit"])
         else "√c undefined (c<0)"
     )
     ax.loglog(
-        s_dense, m_fit_curve, "--", color="C1",
-        label=f"a s² + b s + c  ({c_label})",
+        s_in,
+        m_fit_in,
+        "--",
+        color="C1",
+        label=f"a s² + b s + c fit  ({c_label})",
     )
+
+    # If the quadratic is physical (a > 0, c > 0), show the extrapolation back
+    # to s ≈ 0 so the reader can see the curve passing near the green μ marker.
+    if m_fit["a"] > 0 and m_fit["c"] > 0:
+        s_ext = np.geomspace(mu_marker_x, s_pos.min(), 80)
+        m_fit_ext = m_fit["a"] * s_ext * s_ext + m_fit["b"] * s_ext + m_fit["c"]
+        m_fit_ext = np.where(m_fit_ext > 0, m_fit_ext, np.nan)
+        ax.loglog(s_ext, m_fit_ext, ":", color="C1", alpha=0.6, label="fit extrapolated to s→0")
+
+    # Always plot the fit's intercept value c (if positive) at the μ marker's
+    # x-coordinate, so the reader can compare √c to ‖μ‖ visually even when the
+    # dotted extrapolation line is suppressed (case a<0).
+    if m_fit["c"] > 0:
+        ax.loglog(
+            [mu_marker_x],
+            [m_fit["c"]],
+            "*",
+            color="C1",
+            markersize=14,
+            markeredgecolor="black",
+            markeredgewidth=0.6,
+            label=f"fit intercept: c = {m_fit['c']:.1f}",
+            zorder=6,
+        )
+
     ax.set_xlabel("scale s")
     ax.set_ylabel("‖m(s)‖²")
     ax.set_title(f"{name}: ‖m(s)‖²  (R²={m_fit['r_squared']:.4f})")
@@ -103,7 +146,12 @@ def plot_run(run: dict, out_dir: Path) -> None:
 
 
 def overview_plot(all_results: list[dict], out_dir: Path) -> None:
-    """Scatter sqrt(c) vs ||mu||_measured across runs."""
+    """Scatter sqrt(c) vs ||mu||_measured across runs.
+
+    Multiple runs (especially the four Qwen runs) cluster at nearly identical
+    (||mu||, sqrt(c)) coordinates, so we put run names in the legend rather
+    than annotating each point — avoiding the unreadable pile-up of text.
+    """
     names = []
     sqrt_c = []
     mu_meas = []
@@ -114,18 +162,29 @@ def overview_plot(all_results: list[dict], out_dir: Path) -> None:
         mu_meas.append(r["mu_norm_measured_at_s0"])
         r2.append(r["fit_m_squared_vs_s"]["r_squared"])
 
-    fig, ax = plt.subplots(figsize=(7, 7))
+    fig, ax = plt.subplots(figsize=(8.5, 7))
     lo = 1.0
     hi = max(max(v for v in sqrt_c if np.isfinite(v)), max(mu_meas)) * 1.15
-    ax.plot([lo, hi], [lo, hi], "k--", alpha=0.5, label="y = x (perfect)")
-    ax.plot([lo, hi], [1.1 * lo, 1.1 * hi], ":", color="gray", alpha=0.5, label="±10%")
-    ax.plot([lo, hi], [0.9 * lo, 0.9 * hi], ":", color="gray", alpha=0.5)
+    ax.plot([lo, hi], [lo, hi], "k--", alpha=0.6, label="y = x (perfect)", zorder=1)
+    ax.plot([lo, hi], [1.1 * lo, 1.1 * hi], ":", color="gray", alpha=0.5, label="±10%", zorder=1)
+    ax.plot([lo, hi], [0.9 * lo, 0.9 * hi], ":", color="gray", alpha=0.5, zorder=1)
 
-    for name, sc, mu in zip(names, sqrt_c, mu_meas):
+    markers = ["o", "s", "^", "D", "v", "P", "X", "<", ">", "*"]
+    cmap = plt.get_cmap("tab10")
+    for idx, (name, sc, mu) in enumerate(zip(names, sqrt_c, mu_meas)):
+        short = name.replace("bounds_", "")
         if not np.isfinite(sc):
-            continue  # skip c<0 entries (can't take sqrt)
-        ax.scatter(mu, sc, s=80, zorder=5)
-        ax.annotate(name.replace("bounds_", ""), (mu, sc), xytext=(5, 5), textcoords="offset points", fontsize=8)
+            # Mark the omitted (c<0) run in the legend so the reader knows why
+            # it is absent from the scatter.
+            ax.scatter([], [], marker=markers[idx % len(markers)], s=80,
+                       color=cmap(idx % 10),
+                       label=f"{short}  [omitted: c<0]")
+            continue
+        ax.scatter(mu, sc, s=110, zorder=5,
+                   marker=markers[idx % len(markers)],
+                   color=cmap(idx % 10),
+                   edgecolors="black", linewidths=0.7,
+                   label=f"{short}  (√c/‖μ‖ = {sc/mu:.3f})")
 
     ax.set_xlabel("‖μ‖ measured at s=0 (from stats.pt mean)")
     ax.set_ylabel("√c from parabola fit of ‖m(s)‖²")
@@ -135,7 +194,7 @@ def overview_plot(all_results: list[dict], out_dir: Path) -> None:
     ax.set_ylim(lo, hi)
     ax.set_title("Consistency check: √c ≈ ‖μ‖ across runs")
     ax.grid(True, which="both", alpha=0.3)
-    ax.legend()
+    ax.legend(loc="lower right", fontsize=8, framealpha=0.95)
     fig.tight_layout()
     fig.savefig(out_dir / "overview_sqrtc_vs_mu.png", dpi=140)
     plt.close(fig)

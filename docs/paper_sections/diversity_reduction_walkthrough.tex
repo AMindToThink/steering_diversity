@@ -198,7 +198,93 @@ Both predictions are tested by
 \texttt{scripts/bounds/second\_order\_consistency\_check.py}, which extracts
 $(s, V, \|m\|, \operatorname{tr}\Sigma_x, \hat{m}^\top \Sigma_x \hat{m})$
 from each \texttt{stats.pt} file in \texttt{outputs/bounds/} and writes the
-results to \texttt{outputs/bounds/second\_order\_check/}.
+results to \texttt{outputs/bounds/second\_order\_check/}. The exemplar
+figures below visualize the two predictions at three levels of detail:
+a single run where the asymptote is reached
+(Figure~\ref{fig:walk-so-llama}), a single run where it is not
+(Figure~\ref{fig:walk-so-qwen}), and the summary across all runs
+(Figure~\ref{fig:walk-so-overview}).
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/second_order_llama_creativity.png}
+  \caption{%
+    Second-order consistency check on Llama-3-8B with the trained
+    \texttt{creativity} vector --- the regime where the Taylor expansion
+    converges within the scales tested.
+    \emph{Left:} measured spherical variance $V(s)$ (blue dots) against
+    the direct second-order prediction $V_{\mathrm{pred}}(s) = (\operatorname{tr}\Sigma_x - \hat{m}^\top\Sigma_x\hat{m}) / (2\|m(s)\|^2)$
+    (orange ``$\times$'', dashed), with all quantities on the RHS computed
+    from the measured $\Sigma_x$ and $\|m\|$ at that scale. At $s = 0.5$
+    the prediction overshoots by $\approx 4\times$ because the Taylor
+    expansion is not yet valid (the concentration parameter
+    $\operatorname{tr}\Sigma / \|m\|^2$ is large); by $s = 4, 8$ the points
+    sit on the prediction to within a few percent. This is what
+    ``the second-order theory holds'' looks like quantitatively.
+    \emph{Middle:} measured $\|m(s)\|^2$ (blue dots), parabolic fit
+    $a s^2 + b s + c$ (dashed, in-data; dotted, extrapolated back to
+    $s \to 0$), the measured $\|\mu\|^2 = 367.2$ at $s = 0$ (green
+    square), and the fitted intercept $c = 432.5$ (orange star). The
+    green square and the orange star are directly visually comparable
+    and sit close on the log axis; their ratio $\sqrt{c} / \|\mu\| = 1.085$
+    is Prediction 1: the quadratic's intercept recovers the unsteered
+    mean norm to $+8.5\%$ without ever observing the $s = 0$ point.
+    \emph{Right:} $V(s) \cdot \|m(s)\|^2$ (blue, measured) vs
+    $(\operatorname{tr}\Sigma_x - \hat{m}^\top\Sigma_x\hat{m}) / 2$
+    (orange, theory). The two converge at high $s$, which is
+    Prediction 2.
+    }
+  \label{fig:walk-so-llama}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{figures/second_order_qwen_style.png}
+  \caption{%
+    Second-order consistency check on Qwen2.5-1.5B with the trained
+    \texttt{style} vector --- the regime where the asymptote is
+    \emph{not} reached. Axes match Figure~\ref{fig:walk-so-llama}. In
+    the left panel, the direct prediction line tracks the \emph{shape}
+    of $V(s)$ but is offset above the measured points by a roughly
+    constant factor of $\approx 1.5$ at every scale, because Qwen's
+    natural residual-stream norm ($\|\mu\| \approx 218$) dominates
+    $\|s\cdot v_{\mathrm{eff}}\|$ at every scale we can push through
+    without destroying the model's outputs. The middle panel still
+    recovers the intercept: the orange-star marker (fit's $c = 45{,}371$)
+    sits immediately adjacent to the green square (measured
+    $\|\mu\|^2 = 47{,}501$). The ratio $\sqrt{c} / \|\mu\| = 0.977$
+    is Prediction 1 passing to $-2.3\%$. Prediction 1 is independent of
+    whether the Taylor expansion has converged, because it is about the
+    algebraic structure of $\|m(s)\|^2$, not the truncation error in $V$.
+    (The dotted extrapolation-to-$s \to 0$ line from
+    Figure~\ref{fig:walk-so-llama} is suppressed here because this run's
+    fit has $a < 0$; extrapolation beyond the measured range would curve
+    misleadingly downward.) The right panel shows the same
+    ``constant offset, same shape'' signature from a different angle.
+    }
+  \label{fig:walk-so-qwen}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.7\linewidth]{figures/second_order_overview.png}
+  \caption{%
+    Summary across all seven multi-layer runs.
+    Each dot is one run: $x$-axis is $\|\mu\|$ measured directly from
+    the $s = 0$ mean residual, $y$-axis is $\sqrt{c}$ from fitting
+    $\|m(s)\|^2 = a s^2 + b s + c$ on $s > 0$ measurements. The dashed
+    diagonal is $y = x$; the dotted lines are $\pm 10\%$. Six of the
+    seven runs land within the $\pm 10\%$ band; \texttt{qwen\_random}
+    matches to four decimal places. The aggregate-matched Llama random
+    run is omitted because its fit gives $c < 0$ (its per-layer
+    vectors are rescaled large enough that even $s = 0.5$ is past the
+    quadratic's local turning point; see the footnote to
+    Table~\ref{tab:walk-sqrtc}). The plot confirms that the second-order
+    theory's Prediction 1 holds across every run where the quadratic
+    model is valid at small $s$.
+    }
+  \label{fig:walk-so-overview}
+\end{figure}
 
 \paragraph{Quadratic intercept (Prediction 1).}
 Table~\ref{tab:walk-sqrtc} shows the result for each multi-layer run.
