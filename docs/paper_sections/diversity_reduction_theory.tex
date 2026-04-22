@@ -134,19 +134,17 @@ Second-order corrections are of order $O(\|\delta\|^2 / \|m\|^2)$.
 \label{sec:covariance}
 
 From \eqref{eq:taylor}, the output has mean $\mathbb{E}[z] \approx \hat{m}$ and fluctuation $z - \hat{m} \approx \frac{1}{\|m\|}P_{\perp m}\,\delta$.
-The output covariance is therefore:
+The output covariance is therefore, using the fact that $P_{\perp m}$ is
+symmetric\footnote{%
+  $P_{\perp m}^\top = (I - \hat{m}\hat{m}^\top)^\top = I - \hat{m}\hat{m}^\top = P_{\perp m}$,
+  because $\hat{m}\hat{m}^\top$ is an outer product of a vector with itself.%
+}:
 %
 \begin{equation}
   \Sigma_z
-  = \mathbb{E}\!\left[(z - \hat{m})(z - \hat{m})^\top\right]
-  \approx \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}^\top.
-  \label{eq:output-cov}
-\end{equation}
-%
-Since $P_{\perp m}$ is symmetric ($P_{\perp m}^\top = P_{\perp m}$, because $\hat{m}\hat{m}^\top$ is an outer product of a vector with itself), this simplifies to:
-%
-\begin{equation}
-  \Sigma_z \approx \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}.
+  \;=\; \mathbb{E}\!\left[(z - \hat{m})(z - \hat{m})^\top\right]
+  \;\approx\; \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}^\top
+  \;=\; \frac{1}{\|m\|^2}\,P_{\perp m}\,\Sigma_x\,P_{\perp m}.
   \label{eq:output-cov-simplified}
 \end{equation}
 
