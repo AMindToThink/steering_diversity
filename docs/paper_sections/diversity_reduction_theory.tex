@@ -126,7 +126,18 @@ where $P_{\perp m} \coloneqq I - \hat{m}\hat{m}^\top$ is the orthogonal projecto
 
 \paragraph{Validity of the approximation.}
 The expansion \eqref{eq:taylor} is accurate when $\|\delta\| \ll \|m\|$, i.e., the input variation is small relative to the shifted mean.
-This condition is increasingly well-satisfied as the steering magnitude $\|s\|$ grows (since $\|m\| \geq \|s\| - \|\mu\|$), which is precisely the regime where the diversity-reduction effect is strongest.
+This condition is increasingly well-satisfied as the steering magnitude $\|s\|$ grows (since $\|m\| \geq \|s\| - \|\mu\|$\footnote{%
+  This is the reverse triangle inequality:
+  $\|a + b\| \geq \bigl|\|a\|-\|b\|\bigr| \geq \|a\|-\|b\|$.
+  One-line proof: write $s = m + (-\mu)$ and apply the ordinary triangle inequality,
+  $\|s\| \leq \|m\| + \|\mu\|$, then rearrange.
+  Geometrically, $m = \mu + s$ lies in a ball of radius $\|\mu\|$ centered at $s$, so
+  the closest $m$ can come to the origin is $\|s\| - \|\mu\|$ (achieved when $\mu \parallel -s$).
+  The bound is only informative once $\|s\| > \|\mu\|$; otherwise $\|s\|-\|\mu\|$ is negative
+  and the inequality is vacuous.
+  We use this step in several places below (e.g.\ Section~\ref{sec:covariance}, and in the
+  geometric-bound proofs of Section~\ref{sec:geometric-bound}).%
+}), which is precisely the regime where the diversity-reduction effect is strongest.
 The approximation breaks down when $s \approx -\mu$ so that $\|m\| \approx 0$; this anti-pole regime is analyzed in Section~\ref{sec:conditions}.
 Second-order corrections are of order $O(\|\delta\|^2 / \|m\|^2)$.
 
